@@ -4,6 +4,25 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 Stop Point
+
+### Current State
+
+- Current branch: `feature/windows-installer`.
+- Latest commit: `7e2a45f Allow installer terms in README spellcheck`.
+- PR #2 is open as a draft from `feature/windows-installer` into
+  `feature/release-publish-path`.
+- The Inno Setup installer was built and installed successfully.
+- The installed app is running and bridge health is:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":false,"queued":0,"queueLimit":3}`
+
+### Next
+
+- Merge PR #2 into `feature/release-publish-path`.
+- Then start the VS Code extension first-run desktop bridge detection and
+  installer-link guidance work in `/var/www/CodeCompanion` if that is still the
+  priority.
+
 ## 2026-05-12 Windows Installer Packaging
 
 ### Changed
