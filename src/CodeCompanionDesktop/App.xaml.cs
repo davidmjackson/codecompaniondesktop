@@ -2,10 +2,11 @@ using System;
 using System.Drawing;
 using System.Windows;
 using Forms = System.Windows.Forms;
+using WpfApplication = System.Windows.Application;
 
 namespace CodeCompanionDesktop;
 
-public partial class App : Application
+public partial class App : WpfApplication
 {
     private Forms.NotifyIcon? trayIcon;
     private MainWindow? mainWindow;
@@ -93,4 +94,3 @@ public partial class App : Application
         return menu;
     }
 }
-

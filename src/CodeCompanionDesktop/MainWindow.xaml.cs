@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using CodeCompanionDesktop.Audio;
+using WpfApplication = System.Windows.Application;
 
 namespace CodeCompanionDesktop;
 
@@ -72,10 +73,9 @@ public partial class MainWindow : Window
 
     private void ExitButton_Click(object sender, RoutedEventArgs e)
     {
-        if (Application.Current is App app)
+        if (WpfApplication.Current is App app)
         {
             app.ExitApplication();
         }
     }
 }
-
