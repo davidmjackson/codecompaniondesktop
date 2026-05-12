@@ -22,16 +22,18 @@ public sealed class LocalBridgeServer : IDisposable
 
     private readonly string token;
     private readonly Func<string, Task> speakAsync;
+    private readonly BridgeRuntimeState runtimeState;
     private readonly CancellationTokenSource cancellation = new();
     private TcpListener? listener;
     private Task? listenTask;
 
-    public LocalBridgeServer(string token, Func<string, Task> speakAsync)
+    public LocalBridgeServer(string token, Func<string, Task> speakAsync, BridgeRuntimeState runtimeState)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
 
         this.token = token;
         this.speakAsync = speakAsync;
+        this.runtimeState = runtimeState;
     }
 
     public bool IsRunning => listener is not null;
@@ -103,7 +105,10 @@ public sealed class LocalBridgeServer : IDisposable
 
             if (request.Method == "GET" && request.Path == "/health")
             {
-                await WriteJsonAsync(stream, HttpStatusCode.OK, new HealthResponse("ok"));
+                await WriteJsonAsync(
+                    stream,
+                    HttpStatusCode.OK,
+                    new HealthResponse("ok", IsRunning ? "listening" : "stopped", runtimeState.IsSpeaking));
                 return;
             }
 
@@ -160,8 +165,23 @@ public sealed class LocalBridgeServer : IDisposable
             return;
         }
 
-        await speakAsync(text);
-        await WriteJsonAsync(stream, HttpStatusCode.OK, new SpeakResponse("spoken"));
+        if (!runtimeState.TryBeginSpeaking())
+        {
+            await WriteJsonAsync(stream, HttpStatusCode.Conflict, new ErrorResponse("busy"));
+            return;
+        }
+
+        try
+        {
+            await speakAsync(text);
+            runtimeState.CompleteSpeaking();
+            await WriteJsonAsync(stream, HttpStatusCode.OK, new SpeakResponse("spoken"));
+        }
+        catch (Exception ex)
+        {
+            runtimeState.FailSpeaking(ex.Message);
+            await WriteJsonAsync(stream, HttpStatusCode.InternalServerError, new ErrorResponse(ex.Message));
+        }
     }
 
     private bool IsAuthorized(IReadOnlyDictionary<string, string> headers)
@@ -297,6 +317,7 @@ public sealed class LocalBridgeServer : IDisposable
             HttpStatusCode.OK => "OK",
             HttpStatusCode.BadRequest => "Bad Request",
             HttpStatusCode.Unauthorized => "Unauthorized",
+            HttpStatusCode.Conflict => "Conflict",
             HttpStatusCode.NotFound => "Not Found",
             HttpStatusCode.InternalServerError => "Internal Server Error",
             _ => statusCode.ToString()
@@ -309,7 +330,10 @@ public sealed class LocalBridgeServer : IDisposable
         IReadOnlyDictionary<string, string> Headers,
         byte[] Body);
 
-    private sealed record HealthResponse([property: JsonPropertyName("status")] string Status);
+    private sealed record HealthResponse(
+        [property: JsonPropertyName("status")] string Status,
+        [property: JsonPropertyName("bridge")] string Bridge,
+        [property: JsonPropertyName("speaking")] bool Speaking);
 
     private sealed record SpeakRequest([property: JsonPropertyName("text")] string Text);
 

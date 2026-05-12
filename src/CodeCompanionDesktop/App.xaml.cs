@@ -14,18 +14,22 @@ public partial class App : WpfApplication
     private Forms.NotifyIcon? trayIcon;
     private MainWindow? mainWindow;
     private LocalBridgeServer? bridgeServer;
+    private BridgeTokenStore? bridgeTokenStore;
+    private BridgeRuntimeState? bridgeRuntimeState;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
         var credentialStore = new WindowsCredentialStore();
-        var bridgeTokenStore = new BridgeTokenStore(credentialStore);
+        bridgeTokenStore = new BridgeTokenStore(credentialStore);
         var bridgeToken = bridgeTokenStore.EnsureToken();
+        var runtimeState = new BridgeRuntimeState();
+        bridgeRuntimeState = runtimeState;
 
-        mainWindow = new MainWindow(bridgeTokenStore);
+        mainWindow = new MainWindow(bridgeTokenStore, runtimeState);
         ConfigureTrayIcon();
-        StartBridgeServer(bridgeToken);
+        StartBridgeServer(bridgeToken, runtimeState);
         mainWindow.Show();
     }
 
@@ -89,6 +93,9 @@ public partial class App : WpfApplication
         var menu = new Forms.ContextMenuStrip();
 
         menu.Items.Add("Show", null, (_, _) => ShowMainWindow());
+        menu.Items.Add("Bridge Status", null, (_, _) => ShowBridgeStatus());
+        menu.Items.Add("Copy Bridge Token", null, (_, _) => CopyBridgeTokenToClipboard());
+        menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Play Test Sound", null, async (_, _) =>
         {
             ShowMainWindow();
@@ -113,7 +120,7 @@ public partial class App : WpfApplication
         return menu;
     }
 
-    private void StartBridgeServer(string bridgeToken)
+    private void StartBridgeServer(string bridgeToken, BridgeRuntimeState runtimeState)
     {
         if (mainWindow is null)
         {
@@ -122,7 +129,7 @@ public partial class App : WpfApplication
 
         try
         {
-            bridgeServer = new LocalBridgeServer(bridgeToken, SpeakFromBridgeAsync);
+            bridgeServer = new LocalBridgeServer(bridgeToken, SpeakFromBridgeAsync, runtimeState);
             bridgeServer.Start();
             mainWindow.SetBridgeStatus($"Bridge listening on {LocalBridgeServer.BaseUrl}");
         }
@@ -140,5 +147,26 @@ public partial class App : WpfApplication
         }
 
         return mainWindow.Dispatcher.InvokeAsync(() => mainWindow.PlayBridgeSpeechAsync(text)).Task.Unwrap();
+    }
+
+    private void ShowBridgeStatus()
+    {
+        ShowMainWindow();
+
+        if (mainWindow is null)
+        {
+            return;
+        }
+
+        var bridge = bridgeServer?.IsRunning == true ? "listening" : "stopped";
+        var speaking = bridgeRuntimeState?.IsSpeaking == true ? "speaking" : "idle";
+        var lastStatus = bridgeRuntimeState?.LastStatus ?? "No bridge status available.";
+        mainWindow.SetBridgeStatus($"Bridge {bridge} on {LocalBridgeServer.BaseUrl}. State: {speaking}. {lastStatus}");
+    }
+
+    private void CopyBridgeTokenToClipboard()
+    {
+        ShowMainWindow();
+        mainWindow?.CopyBridgeTokenToClipboard();
     }
 }

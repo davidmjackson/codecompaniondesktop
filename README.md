@@ -112,11 +112,20 @@ GET  /health
 POST /speak
 ```
 
+`GET /health` returns bridge state:
+
+```json
+{ "status": "ok", "bridge": "listening", "speaking": false }
+```
+
 `POST /speak` requires an `Authorization: Bearer <token>` header and a JSON body:
 
 ```json
 { "text": "Speech text to generate and play." }
 ```
+
+If speech is already playing, `/speak` returns `409 Conflict` with
+`{"error":"busy"}`.
 
 The bridge token is generated once and stored in Windows Credential Manager:
 
@@ -128,6 +137,8 @@ User name: CodeCompanionDesktop Bridge
 Use the app's `Copy Token` button to paste the token into the VS Code extension
 with `Code Companion Voice: Set Desktop Bridge Token`.
 
+The tray menu also includes `Bridge Status` and `Copy Bridge Token` actions.
+
 The bridge listens on Windows port `47321`. From WSL, the extension discovers the
 Windows host IP and calls that address rather than `127.0.0.1`.
 
@@ -138,5 +149,5 @@ next steps.
 
 ## Next Milestones
 
-1. Manually verify VS Code extension speech through the desktop bridge.
-2. Add startup/minimize behavior and bridge health indicators suitable for daily use.
+1. Manually verify tray bridge status and Copy Bridge Token actions.
+2. Add startup/minimize behavior suitable for daily use.

@@ -6,6 +6,27 @@ options.
 
 ## 2026-05-12 Local Desktop Bridge Endpoint
 
+### Daily-Use Polish Follow-up
+
+- Added `BridgeRuntimeState` to track whether speech is currently playing and
+  the last bridge request status.
+- Expanded `/health` to return `status`, `bridge`, and `speaking`.
+- Changed `/speak` to return `409 Conflict` with `{"error":"busy"}` when a
+  speech request arrives while another speech request is already playing.
+- Added tray actions for Bridge Status and Copy Bridge Token.
+- Added a Refresh Status button in the Local Bridge UI.
+- Renamed the window button to Hide to Tray.
+- Updated README bridge health, busy, and tray action notes.
+
+### Daily-Use Polish Verification
+
+- `dotnet build CodeCompanionDesktop.sln`
+- WSL reached `http://<windows-host-ip>:47321/health` and received
+  `{"status":"ok","bridge":"listening","speaking":false}`.
+- Windows PowerShell reached `http://127.0.0.1:47321/health` and received the
+  same health shape.
+- WSL unauthenticated `POST /speak` still returned `401 Unauthorized`.
+
 ### Changed
 
 - Created branch `feature/local-bridge-endpoint` from the verified ElevenLabs

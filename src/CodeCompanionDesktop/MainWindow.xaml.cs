@@ -16,12 +16,14 @@ public partial class MainWindow : Window
     private readonly AudioFilePlayer audioFilePlayer = new();
     private readonly WindowsCredentialStore credentialStore = new();
     private readonly BridgeTokenStore bridgeTokenStore;
+    private readonly BridgeRuntimeState bridgeRuntimeState;
     private readonly ElevenLabsTextToSpeechClient textToSpeechClient = new();
     private bool isPlaying;
 
-    public MainWindow(BridgeTokenStore bridgeTokenStore)
+    public MainWindow(BridgeTokenStore bridgeTokenStore, BridgeRuntimeState bridgeRuntimeState)
     {
         this.bridgeTokenStore = bridgeTokenStore;
+        this.bridgeRuntimeState = bridgeRuntimeState;
         InitializeComponent();
     }
 
@@ -65,6 +67,7 @@ public partial class MainWindow : Window
     public async Task PlayBridgeSpeechAsync(string text)
     {
         await PlayElevenLabsSpeechAsync(text, "bridge request");
+        BridgeStatusText.Text = $"Last bridge request completed. Endpoint: {LocalBridgeServer.BaseUrl}";
     }
 
     public void SetBridgeStatus(string status)
@@ -230,6 +233,16 @@ public partial class MainWindow : Window
 
     private void CopyBridgeTokenButton_Click(object sender, RoutedEventArgs e)
     {
+        CopyBridgeTokenToClipboard();
+    }
+
+    private void RefreshBridgeStatusButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshBridgeStatus();
+    }
+
+    public void CopyBridgeTokenToClipboard()
+    {
         try
         {
             System.Windows.Clipboard.SetText(bridgeTokenStore.EnsureToken());
@@ -239,6 +252,12 @@ public partial class MainWindow : Window
         {
             BridgeStatusText.Text = $"Copy token failed: {ex.Message}";
         }
+    }
+
+    private void RefreshBridgeStatus()
+    {
+        var speaking = bridgeRuntimeState.IsSpeaking ? "speaking" : "idle";
+        BridgeStatusText.Text = $"Bridge listening on {LocalBridgeServer.BaseUrl}. State: {speaking}. {bridgeRuntimeState.LastStatus}";
     }
 
     private static string DescribeSecret(string secret)
