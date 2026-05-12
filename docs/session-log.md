@@ -4,6 +4,38 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 Bridge Speech Queue Settings
+
+### Changed
+
+- Created branch `feature/bridge-speech-queue`.
+- Added persisted bridge speech queue settings:
+  `QueueBridgeSpeechRequests` and `MaxQueuedBridgeSpeechRequests`.
+- Added a Local Bridge UI surface to enable queueing and choose a queue limit of
+  1, 3, 5, or 10 pending requests.
+- Added `BridgeSpeechQueue` to process queued bridge speech requests serially in
+  the background.
+- Kept existing default behavior: when queueing is disabled, busy bridge speech
+  still returns `409 {"error":"busy"}`.
+- Expanded bridge `/health` with `queueEnabled`, `queued`, and `queueLimit`.
+- Updated README bridge docs and next milestones.
+
+### Verified
+
+- `git diff --check`
+- `dotnet build CodeCompanionDesktop.sln --no-incremental` using
+  `C:\Program Files\dotnet\dotnet.exe`
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`
+- Launched the debug app and confirmed bridge health included queue fields:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":false,"queued":0,"queueLimit":3}`
+- Stopped the debug app after smoke testing.
+
+### Next
+
+- Add an installer or update flow for non-developer daily use.
+- Add bridge request history/logging for easier troubleshooting.
+
 ## 2026-05-12 Project Instruction Guardrail
 
 ### Changed

@@ -158,7 +158,14 @@ POST /speak
 `GET /health` returns bridge state:
 
 ```json
-{ "status": "ok", "bridge": "listening", "speaking": false }
+{
+  "status": "ok",
+  "bridge": "listening",
+  "speaking": false,
+  "queueEnabled": false,
+  "queued": 0,
+  "queueLimit": 3
+}
 ```
 
 `POST /speak` requires an `Authorization: Bearer <token>` header and a JSON body:
@@ -168,7 +175,14 @@ POST /speak
 ```
 
 If speech is already playing, `/speak` returns `409 Conflict` with
-`{"error":"busy"}`.
+`{"error":"busy"}` by default.
+
+The Local Bridge section includes `Queue bridge speech requests`. When enabled,
+new `/speak` requests are accepted into a bounded queue instead of being
+rejected while another bridge speech request is playing. The queue limit is
+stored with the app settings and can be set to 1, 3, 5, or 10 pending requests.
+When the queue is full, `/speak` returns `409 Conflict` with
+`{"error":"queue_full"}`.
 
 The bridge token is generated once and stored in Windows Credential Manager:
 
@@ -214,6 +228,8 @@ The hidden-to-tray preference is stored for the current Windows user at:
 %APPDATA%\CodeCompanionDesktop\settings.json
 ```
 
+Bridge speech queue preferences are stored in the same settings file.
+
 ## Session Notes
 
 See `docs/session-log.md` for the latest development status, verification, and
@@ -221,5 +237,5 @@ next steps.
 
 ## Next Milestones
 
-1. Add a queue/settings surface for bridge speech behavior.
-2. Add an installer or update flow for non-developer daily use.
+1. Add an installer or update flow for non-developer daily use.
+2. Add bridge request history/logging for easier troubleshooting.
