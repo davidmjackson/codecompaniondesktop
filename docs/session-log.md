@@ -4,6 +4,46 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 Windows Credential Manager Storage
+
+### Changed
+
+- Created branch `feature/windows-credential-manager` from the verified WPF tray
+  proof-of-concept baseline.
+- Added `WindowsCredentialStore`, a small P/Invoke wrapper over Windows
+  Credential Manager `CredWrite`, `CredRead`, and `CredDelete`.
+- Added an ElevenLabs API key panel to the main WPF window with Save, Load, and
+  Clear actions.
+- Stored the key under generic credential target
+  `CodeCompanionDesktop/ElevenLabsApiKey` with user name `ElevenLabs`.
+- Kept UI status messages from displaying the key value; they only report
+  presence and character count.
+- Updated the README credential storage notes and next milestone list.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- XML parse check passed for `MainWindow.xaml` and `CodeCompanionDesktop.csproj`.
+- `git diff --check`
+- Temporary Windows Credential Manager round-trip with a test target:
+  save, read, delete, and confirm missing after delete.
+- Launch smoke test started `CodeCompanionDesktop.exe`, confirmed the process was
+  running, then stopped it.
+
+### Decisions
+
+- Use direct Windows Credential Manager APIs for now instead of adding an
+  external package.
+- Keep the first credential UI in the main proof-of-concept window until the app
+  needs a separate settings surface.
+
+### Next
+
+- Manually test saving, loading, and clearing a non-production placeholder key
+  from the WPF UI.
+- Start Milestone 3: generate ElevenLabs TTS from a hardcoded test phrase using
+  the saved key, then play the returned audio.
+
 ## 2026-05-12 WPF Tray Proof Of Concept
 
 ### Manual Verification Follow-up

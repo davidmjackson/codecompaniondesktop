@@ -70,6 +70,20 @@ dotnet build .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj
 - Windows tray icon with Show, Play Test Sound, and Exit menu items
 - Generated local WAV test tone in the user's temp directory
 - Windows audio playback using `System.Media.SoundPlayer`
+- ElevenLabs API key storage in Windows Credential Manager
+
+## Credential Storage
+
+The ElevenLabs API key is stored as a generic Windows Credential Manager secret
+for the current Windows user.
+
+```text
+Target: CodeCompanionDesktop/ElevenLabsApiKey
+User name: ElevenLabs
+```
+
+The app UI can save, load, and clear this credential. Status messages report
+only whether a key exists and its character count; they do not display the key.
 
 ## Session Notes
 
@@ -78,6 +92,5 @@ next steps.
 
 ## Next Milestones
 
-1. Store and retrieve an ElevenLabs API key using Windows Credential Manager.
-2. Generate TTS from a hardcoded test phrase and play the audio.
-3. Add a local authenticated bridge endpoint for VS Code extension requests.
+1. Generate TTS from a hardcoded test phrase and play the audio.
+2. Add a local authenticated bridge endpoint for VS Code extension requests.
