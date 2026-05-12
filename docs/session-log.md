@@ -6,6 +6,31 @@ options.
 
 ## 2026-05-12 WPF Tray Proof Of Concept
 
+### Follow-up
+
+- Confirmed Windows `dotnet.exe` can build the project from WSL using the
+  installed Windows .NET SDK.
+- Confirmed `dotnet run` from the repository root fails unless the nested WPF
+  project is passed with `--project`.
+- Added the root solution file to source control and configured the tracked VS
+  Code workspace to use it as the default solution for C# Dev Kit.
+- Updated the README run instructions to call out the required `--project`
+  argument.
+
+### Follow-up Verification
+
+- `/mnt/c/Program Files/dotnet/dotnet.exe build CodeCompanionDesktop.sln`
+- `/mnt/c/Program Files/dotnet/dotnet.exe build src/CodeCompanionDesktop/CodeCompanionDesktop.csproj /v:minimal`
+- `/mnt/c/Program Files/dotnet/dotnet.exe run --project src/CodeCompanionDesktop/CodeCompanionDesktop.csproj`
+
+### Follow-up Next
+
+- Reopen `CodeCompanionDesktop.code-workspace` in VS Code so C# Dev Kit loads
+  `CodeCompanionDesktop.sln`.
+- From PowerShell in `D:\Development\CodeCompanionDesktop`, run
+  `dotnet run --project .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj`
+  and manually verify the tray window and test sound.
+
 ### Changed
 
 - Initialized the `CodeCompanionDesktop` git repository.
@@ -42,4 +67,3 @@ options.
 - Run `dotnet run --project .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj`.
 - Verify the window appears, the tray icon appears, Play Test Sound is audible, Hide minimizes to tray, tray Show restores the window, and Exit closes cleanly.
 - If Milestone 1 manual testing passes, start Milestone 2: Windows Credential Manager storage for the ElevenLabs API key.
-

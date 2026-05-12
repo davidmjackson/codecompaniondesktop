@@ -24,6 +24,9 @@ From PowerShell in this folder:
 dotnet run --project .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj
 ```
 
+Running plain `dotnet run` from the repository root will not find the nested
+project. Use the `--project` command above from the root folder.
+
 ## Build
 
 ```powershell
