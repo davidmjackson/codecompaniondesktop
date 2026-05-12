@@ -4,6 +4,26 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 Daily Install Guidance
+
+### Changed
+
+- Added README guidance for using the published folder as the current portable
+  daily build.
+- Documented the PowerShell publish command, published executable path,
+  startup setting order, diagnostics check, and re-registration requirement if
+  the published folder moves.
+- Updated the next milestones now that packaged-path autostart guidance exists.
+
+### Verified
+
+- `git diff --check`
+
+### Next
+
+- Add a queue/settings surface for bridge speech behavior.
+- Add an installer or update flow for non-developer daily use.
+
 ## 2026-05-12 Local Desktop Bridge Endpoint
 
 ### Release Publish Path

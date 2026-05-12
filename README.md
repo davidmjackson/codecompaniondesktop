@@ -85,6 +85,26 @@ If `Start with Windows sign-in` is already enabled from a debug build, launch
 the published app, turn `Start with Windows sign-in` off, then turn it back on.
 The Startup diagnostics should then show the published executable path.
 
+## Install For Daily Use
+
+There is no installer yet. Use the published folder as a portable daily build:
+
+1. Run `.\scripts\publish-release.ps1` from PowerShell in the repository root.
+2. Launch
+   `artifacts\publish\CodeCompanionDesktop-win-x64\CodeCompanionDesktop.exe`.
+3. Confirm the app opens with the Code Companion icon and the tray icon appears.
+4. In the Startup section, enable `Start hidden to tray` if you want the app to
+   stay out of the way after launch.
+5. Enable `Start with Windows sign-in` from the published app, not from a debug
+   build.
+6. Click `Refresh Diagnostics` and confirm the registered executable path points
+   to `artifacts\publish\CodeCompanionDesktop-win-x64\CodeCompanionDesktop.exe`.
+
+For normal use, start the published executable rather than the debug build under
+`src\CodeCompanionDesktop\bin`. If you move or delete the published folder,
+launch the app from its new location and toggle `Start with Windows sign-in`
+off and on again so Windows starts the correct executable.
+
 ## Current Scope
 
 - Styled WPF status window using the custom Code Companion app icon
@@ -201,5 +221,5 @@ next steps.
 
 ## Next Milestones
 
-1. Add installer/autostart guidance for the packaged app path.
-2. Add a queue/settings surface for bridge speech behavior.
+1. Add a queue/settings surface for bridge speech behavior.
+2. Add an installer or update flow for non-developer daily use.
