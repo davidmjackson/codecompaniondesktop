@@ -27,8 +27,10 @@ options.
 - `git diff --check`
 - Launch smoke test started `CodeCompanionDesktop.exe`, confirmed the process was
   running, then stopped it.
-- Live ElevenLabs playback is not yet verified because the real API key has not
-  been saved in the desktop app's Windows Credential Manager entry.
+- User saved the real ElevenLabs API key into the desktop app's Windows
+  Credential Manager entry.
+- User manually verified Play ElevenLabs Test generated and played live
+  ElevenLabs speech from the main window.
 
 ### Decisions
 
@@ -41,11 +43,7 @@ options.
 
 ### Next
 
-- Save a real ElevenLabs API key into the desktop app's Windows Credential
-  Manager entry.
-- Manually test Play ElevenLabs Test from the main window and tray menu.
-- After manual TTS playback passes, start the local authenticated bridge endpoint
-  for VS Code extension requests.
+- Start the local authenticated bridge endpoint for VS Code extension requests.
 
 ## 2026-05-12 Windows Credential Manager Storage
 
