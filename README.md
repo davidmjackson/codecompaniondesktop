@@ -33,7 +33,7 @@ it owns VS Code commands, workspace context, Codex log watching, and requests to
 the desktop bridge.
 
 Keep the two repositories separate for now. They have different runtimes,
-toolchains, packaging, and release lifecycles. Shared protocol details should be
+toolchains, packaging, and release lifecycle. Shared protocol details should be
 documented clearly before extracting any shared package.
 
 ## Requirements
