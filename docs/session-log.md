@@ -6,6 +6,30 @@ options.
 
 ## 2026-05-12 Local Desktop Bridge Endpoint
 
+### Windows Login Startup Follow-up
+
+- Created branch `feature/windows-login-startup` from
+  `feature/start-hidden-to-tray`.
+- Added `WindowsStartupRegistration`, using the current-user Windows Run key:
+  `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
+- Added `Start with Windows sign-in` to the Startup section.
+- Kept Windows login startup independent from `Start hidden to tray`; users can
+  enable both for tray-only login startup.
+- Documented the registry location and recommended pairing in the README.
+
+### Windows Login Startup Verification
+
+- Initial build encountered a locked `CodeCompanionDesktop.exe` from manual
+  testing; stopped the process and reran verification.
+- `dotnet build CodeCompanionDesktop.sln`
+- Clean rebuild completed with 0 warnings and 0 errors.
+- XML parse check passed for `MainWindow.xaml` and
+  `CodeCompanionDesktop.csproj`.
+- `git diff --check`
+- Hidden-to-tray launch smoke test with temporary app settings: process started
+  and bridge health returned
+  `{"status":"ok","bridge":"listening","speaking":false}`.
+
 ### Startup Behavior Follow-up
 
 - Created branch `feature/start-hidden-to-tray` from `feature/local-bridge-endpoint`.

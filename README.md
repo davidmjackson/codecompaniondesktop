@@ -150,7 +150,17 @@ running in the tray. Use `Exit` from the window or tray menu to stop the app.
 The Startup section includes `Start hidden to tray`. When enabled, future
 launches start the tray icon and bridge without showing the main window.
 
-This preference is stored for the current Windows user at:
+The same section includes `Start with Windows sign-in`. When enabled, the app
+registers itself for the current Windows user under:
+
+```text
+HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+```
+
+Use `Start with Windows sign-in` together with `Start hidden to tray` for a
+tray-only startup after signing in to Windows.
+
+The hidden-to-tray preference is stored for the current Windows user at:
 
 ```text
 %APPDATA%\CodeCompanionDesktop\settings.json
@@ -163,5 +173,5 @@ next steps.
 
 ## Next Milestones
 
-1. Manually verify Start hidden to tray across app restarts.
-2. Decide whether to add Windows login startup registration.
+1. Manually verify Start with Windows sign-in after signing out and back in.
+2. Add a small diagnostics surface for the registered startup command.

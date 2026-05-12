@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private readonly BridgeRuntimeState bridgeRuntimeState;
     private readonly AppSettingsStore settingsStore;
     private readonly AppSettings settings;
+    private readonly WindowsStartupRegistration startupRegistration = new();
     private readonly ElevenLabsTextToSpeechClient textToSpeechClient = new();
     private bool isPlaying;
     private bool isInitializing;
@@ -193,6 +194,16 @@ public partial class MainWindow : Window
         SaveSettings();
     }
 
+    private void StartWithWindowsCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (isInitializing)
+        {
+            return;
+        }
+
+        SaveWindowsStartupRegistration();
+    }
+
     private void SaveApiKeyButton_Click(object sender, RoutedEventArgs e)
     {
         var apiKey = ElevenLabsApiKeyBox.Password.Trim();
@@ -299,9 +310,8 @@ public partial class MainWindow : Window
         try
         {
             StartHiddenToTrayCheckBox.IsChecked = settings.StartHiddenToTray;
-            SettingsStatusText.Text = settings.StartHiddenToTray
-                ? "Startup preference loaded: hidden to tray."
-                : "Startup preference loaded: show window.";
+            StartWithWindowsCheckBox.IsChecked = startupRegistration.IsRegistered();
+            SettingsStatusText.Text = DescribeStartupPreferences("Startup preferences loaded.");
         }
         finally
         {
@@ -314,13 +324,54 @@ public partial class MainWindow : Window
         try
         {
             settingsStore.Save(settings);
-            SettingsStatusText.Text = settings.StartHiddenToTray
-                ? "Saved: app will start hidden to tray."
-                : "Saved: app will show the window at startup.";
+            SettingsStatusText.Text = DescribeStartupPreferences("Saved startup preference.");
         }
         catch (Exception ex)
         {
             SettingsStatusText.Text = $"Saving startup preference failed: {ex.Message}";
         }
+    }
+
+    private void SaveWindowsStartupRegistration()
+    {
+        try
+        {
+            if (StartWithWindowsCheckBox.IsChecked == true)
+            {
+                startupRegistration.Register();
+            }
+            else
+            {
+                startupRegistration.Unregister();
+            }
+
+            SettingsStatusText.Text = DescribeStartupPreferences("Saved Windows sign-in preference.");
+        }
+        catch (Exception ex)
+        {
+            isInitializing = true;
+            try
+            {
+                StartWithWindowsCheckBox.IsChecked = startupRegistration.IsRegistered();
+            }
+            finally
+            {
+                isInitializing = false;
+            }
+
+            SettingsStatusText.Text = $"Saving Windows sign-in preference failed: {ex.Message}";
+        }
+    }
+
+    private string DescribeStartupPreferences(string prefix)
+    {
+        var windowBehavior = settings.StartHiddenToTray
+            ? "starts hidden to tray"
+            : "shows the window";
+        var loginBehavior = StartWithWindowsCheckBox.IsChecked == true
+            ? "starts with Windows sign-in"
+            : "does not start with Windows sign-in";
+
+        return $"{prefix} App {windowBehavior} and {loginBehavior}.";
     }
 }

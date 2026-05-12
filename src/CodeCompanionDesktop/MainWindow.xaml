@@ -126,6 +126,11 @@
                                   Content="Start hidden to tray"
                                   Checked="StartHiddenToTrayCheckBox_Changed"
                                   Unchecked="StartHiddenToTrayCheckBox_Changed" />
+                        <CheckBox x:Name="StartWithWindowsCheckBox"
+                                  Margin="0,10,0,0"
+                                  Content="Start with Windows sign-in"
+                                  Checked="StartWithWindowsCheckBox_Changed"
+                                  Unchecked="StartWithWindowsCheckBox_Changed" />
                         <TextBlock x:Name="SettingsStatusText"
                                    Margin="0,10,0,0"
                                    FontSize="12"
