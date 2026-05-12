@@ -67,6 +67,7 @@ dotnet build .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj
 ## Current Scope
 
 - Styled WPF status window using the Code Companion extension icon
+- Packaged Windows executable icon metadata for release builds
 - Windows tray icon with Show, Play Test Sound, and Exit menu items
 - Generated local WAV test tone in the user's temp directory
 - Windows audio playback using `System.Media.SoundPlayer`
@@ -178,5 +179,5 @@ next steps.
 
 ## Next Milestones
 
-1. Add packaged app icon metadata for release builds.
-2. Add a release packaging path for daily desktop use.
+1. Add a release packaging path for daily desktop use.
+2. Add installer/autostart guidance for the packaged app path.

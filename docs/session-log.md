@@ -6,6 +6,31 @@ options.
 
 ## 2026-05-12 Local Desktop Bridge Endpoint
 
+### Packaged App Icon Metadata
+
+- Created branch `feature/app-icon-metadata` from
+  `feature/startup-diagnostics`.
+- Generated `Assets/app.ico` from the existing Code Companion PNG icon with
+  16, 24, 32, 48, 64, and 128 pixel entries.
+- Set `ApplicationIcon` in `CodeCompanionDesktop.csproj` so Windows build
+  outputs carry the app icon metadata.
+- Kept `Assets/icon-128.png` as the WPF window/tray rendering resource.
+- Updated README current scope and next milestones.
+
+### Packaged App Icon Verification
+
+- Stopped the running debug app before building to avoid executable lock
+  warnings.
+- `dotnet build CodeCompanionDesktop.sln` completed with 0 warnings and
+  0 errors using `C:\Program Files\dotnet\dotnet.exe`.
+- Confirmed Windows can extract an associated icon from the built
+  `CodeCompanionDesktop.exe`.
+- `dotnet test CodeCompanionDesktop.sln --no-build`
+- `git diff --check`
+- Relaunched the debug app and confirmed bridge health:
+  `{"status":"ok","bridge":"listening","speaking":false}`.
+- Next useful action: add a release packaging path for daily desktop use.
+
 ### Startup Diagnostics Surface
 
 - Created branch `feature/startup-diagnostics` from
