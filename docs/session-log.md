@@ -30,6 +30,9 @@ options.
 - Windows PowerShell reached `http://127.0.0.1:47321/health`.
 - WSL reached `http://<windows-host-ip>:47321/health`.
 - WSL unauthenticated `POST /speak` returned `401 Unauthorized`.
+- User copied the bridge token from the desktop app, stored it in the VS Code
+  extension, and confirmed `Code Companion Voice: Test Voice` speaks through the
+  desktop bridge.
 
 ### Decisions
 
@@ -40,8 +43,9 @@ options.
 
 ### Next
 
-- Wire the VS Code extension to store the bridge token and call `POST /speak`.
-- Manually verify extension speech through the desktop bridge.
+- Keep the desktop app running when VS Code voice playback should use the bridge.
+- Add startup/minimize behavior and bridge health indicators suitable for daily
+  use.
 
 ## 2026-05-12 ElevenLabs TTS Test Playback
 
