@@ -6,6 +6,30 @@ options.
 
 ## 2026-05-12 Local Desktop Bridge Endpoint
 
+### Custom App And Tray Icons
+
+- Created branch `feature/custom-app-icons` from `feature/app-icon-metadata`.
+- Added user-supplied `Assets/app.png` and `Assets/tray.png`.
+- Regenerated `Assets/app.ico` from `app.png` with 16, 24, 32, 48, 64, 128,
+  and 256 pixel entries.
+- Updated the WPF window icon/header image to use `app.png`.
+- Updated the WinForms tray icon generation to use `tray.png`.
+- Added both PNGs as WPF resources.
+- Updated README current scope to note custom app and tray icons.
+
+### Custom Icons Verification
+
+- Stopped the running debug app before building to avoid executable lock
+  warnings.
+- `dotnet build CodeCompanionDesktop.sln` completed with 0 warnings and
+  0 errors using `C:\Program Files\dotnet\dotnet.exe`.
+- Confirmed Windows can extract an associated icon from the built
+  `CodeCompanionDesktop.exe`.
+- `dotnet test CodeCompanionDesktop.sln --no-build`
+- `git diff --check`
+- Relaunched the debug app and confirmed bridge health:
+  `{"status":"ok","bridge":"listening","speaking":false}`.
+
 ### Packaged App Icon Metadata
 
 - Created branch `feature/app-icon-metadata` from

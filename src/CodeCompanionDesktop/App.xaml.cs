@@ -106,7 +106,7 @@ public partial class App : WpfApplication
 
     private static Icon CreateTrayIcon()
     {
-        var resourceInfo = WpfApplication.GetResourceStream(new Uri("pack://application:,,,/Assets/icon-128.png", UriKind.Absolute));
+        var resourceInfo = WpfApplication.GetResourceStream(new Uri("pack://application:,,,/Assets/tray.png", UriKind.Absolute));
         if (resourceInfo is null)
         {
             return SystemIcons.Application;

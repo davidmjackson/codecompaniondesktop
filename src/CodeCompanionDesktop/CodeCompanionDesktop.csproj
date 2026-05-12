@@ -12,6 +12,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\app.ico" />
+    <Resource Include="Assets\app.png" />
     <Resource Include="Assets\icon-128.png" />
+    <Resource Include="Assets\tray.png" />
   </ItemGroup>
 </Project>

@@ -66,9 +66,9 @@ dotnet build .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj
 
 ## Current Scope
 
-- Styled WPF status window using the Code Companion extension icon
+- Styled WPF status window using the custom Code Companion app icon
 - Packaged Windows executable icon metadata for release builds
-- Windows tray icon with Show, Play Test Sound, and Exit menu items
+- Custom Windows tray icon with Show, Play Test Sound, and Exit menu items
 - Generated local WAV test tone in the user's temp directory
 - Windows audio playback using `System.Media.SoundPlayer`
 - ElevenLabs API key storage in Windows Credential Manager

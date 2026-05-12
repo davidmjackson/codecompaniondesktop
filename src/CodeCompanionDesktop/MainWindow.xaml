@@ -6,7 +6,7 @@
         Height="680"
         MinWidth="420"
         MinHeight="520"
-        Icon="Assets/icon-128.png"
+        Icon="Assets/app.png"
         WindowStartupLocation="CenterScreen">
     <Grid Margin="24">
         <Grid.RowDefinitions>
@@ -33,7 +33,7 @@
                         BorderBrush="{StaticResource AppBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="8">
-                    <Image Source="Assets/icon-128.png"
+                    <Image Source="Assets/app.png"
                            Width="40"
                            Height="40"
                            RenderOptions.BitmapScalingMode="HighQuality" />
