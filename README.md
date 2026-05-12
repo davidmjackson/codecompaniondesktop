@@ -160,6 +160,11 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run
 Use `Start with Windows sign-in` together with `Start hidden to tray` for a
 tray-only startup after signing in to Windows.
 
+The Startup section also includes diagnostics for the registered Windows Run
+command. Use `Refresh Diagnostics` to re-read the registry value and confirm the
+registered executable still exists and matches the running app. Use
+`Copy Diagnostics` when pasting startup details into an issue or handover note.
+
 The hidden-to-tray preference is stored for the current Windows user at:
 
 ```text
@@ -173,5 +178,5 @@ next steps.
 
 ## Next Milestones
 
-1. Add a small diagnostics surface for the registered startup command.
-2. Add packaged app icon metadata for release builds.
+1. Add packaged app icon metadata for release builds.
+2. Add a release packaging path for daily desktop use.

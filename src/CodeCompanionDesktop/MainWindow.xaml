@@ -150,6 +150,30 @@
                                    Margin="0,10,0,0"
                                    Text="Startup preference loaded."
                                    Style="{StaticResource MutedTextStyle}" />
+                        <WrapPanel Margin="0,12,0,0">
+                            <Button MinWidth="154"
+                                    Height="32"
+                                    Margin="0,0,10,10"
+                                    Content="Refresh Diagnostics"
+                                    Click="RefreshStartupDiagnosticsButton_Click" />
+                            <Button MinWidth="154"
+                                    Height="32"
+                                    Margin="0,0,10,10"
+                                    Content="Copy Diagnostics"
+                                    Click="CopyStartupDiagnosticsButton_Click" />
+                        </WrapPanel>
+                        <TextBlock Text="Startup Diagnostics"
+                                   Margin="0,2,0,0"
+                                   Style="{StaticResource SectionTitleTextStyle}" />
+                        <TextBox x:Name="StartupDiagnosticsTextBox"
+                                 Margin="0,8,0,0"
+                                 MinHeight="108"
+                                 Padding="8"
+                                 FontFamily="Consolas"
+                                 FontSize="12"
+                                 IsReadOnly="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto" />
                     </StackPanel>
                 </Border>
             </StackPanel>

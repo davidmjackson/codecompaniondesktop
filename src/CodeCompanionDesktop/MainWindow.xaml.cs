@@ -274,6 +274,27 @@ public partial class MainWindow : Window
         RefreshBridgeStatus();
     }
 
+    private void RefreshStartupDiagnosticsButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshStartupDiagnostics();
+        SettingsStatusText.Text = DescribeStartupPreferences("Refreshed startup diagnostics.");
+    }
+
+    private void CopyStartupDiagnosticsButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshStartupDiagnostics();
+
+        try
+        {
+            System.Windows.Clipboard.SetText(StartupDiagnosticsTextBox.Text);
+            SettingsStatusText.Text = DescribeStartupPreferences("Copied startup diagnostics.");
+        }
+        catch (Exception ex)
+        {
+            SettingsStatusText.Text = $"Copying startup diagnostics failed: {ex.Message}";
+        }
+    }
+
     public void CopyBridgeTokenToClipboard()
     {
         try
@@ -312,6 +333,7 @@ public partial class MainWindow : Window
             StartHiddenToTrayCheckBox.IsChecked = settings.StartHiddenToTray;
             StartWithWindowsCheckBox.IsChecked = startupRegistration.IsRegistered();
             SettingsStatusText.Text = DescribeStartupPreferences("Startup preferences loaded.");
+            RefreshStartupDiagnostics();
         }
         finally
         {
@@ -325,6 +347,7 @@ public partial class MainWindow : Window
         {
             settingsStore.Save(settings);
             SettingsStatusText.Text = DescribeStartupPreferences("Saved startup preference.");
+            RefreshStartupDiagnostics();
         }
         catch (Exception ex)
         {
@@ -346,6 +369,7 @@ public partial class MainWindow : Window
             }
 
             SettingsStatusText.Text = DescribeStartupPreferences("Saved Windows sign-in preference.");
+            RefreshStartupDiagnostics();
         }
         catch (Exception ex)
         {
@@ -360,6 +384,7 @@ public partial class MainWindow : Window
             }
 
             SettingsStatusText.Text = $"Saving Windows sign-in preference failed: {ex.Message}";
+            RefreshStartupDiagnostics();
         }
     }
 
@@ -373,5 +398,34 @@ public partial class MainWindow : Window
             : "does not start with Windows sign-in";
 
         return $"{prefix} App {windowBehavior} and {loginBehavior}.";
+    }
+
+    private void RefreshStartupDiagnostics()
+    {
+        var diagnostics = startupRegistration.GetDiagnostics();
+        var registeredCommand = string.IsNullOrWhiteSpace(diagnostics.RegisteredCommand)
+            ? "(not registered)"
+            : diagnostics.RegisteredCommand;
+        var registeredExecutable = string.IsNullOrWhiteSpace(diagnostics.RegisteredExecutablePath)
+            ? "(not available)"
+            : diagnostics.RegisteredExecutablePath;
+        var currentExecutable = string.IsNullOrWhiteSpace(diagnostics.CurrentExecutablePath)
+            ? "(not available)"
+            : diagnostics.CurrentExecutablePath;
+
+        StartupDiagnosticsTextBox.Text = string.Join(
+            Environment.NewLine,
+            $"Registry path: {diagnostics.RegistryPath}",
+            $"Value name: {diagnostics.ValueName}",
+            $"Registered command: {registeredCommand}",
+            $"Registered executable: {registeredExecutable}",
+            $"Target exists: {DescribeBoolean(diagnostics.RegisteredTargetExists)}",
+            $"Matches this app: {DescribeBoolean(diagnostics.RegisteredExecutableMatchesCurrent)}",
+            $"This app executable: {currentExecutable}");
+    }
+
+    private static string DescribeBoolean(bool value)
+    {
+        return value ? "yes" : "no";
     }
 }

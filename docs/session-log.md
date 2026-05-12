@@ -6,6 +6,30 @@ options.
 
 ## 2026-05-12 Local Desktop Bridge Endpoint
 
+### Startup Diagnostics Surface
+
+- Created branch `feature/startup-diagnostics` from
+  `feature/windows-app-polish`.
+- Added `StartupRegistrationDiagnostics` to read the current Windows Run value,
+  extract the registered executable path, compare it with the running app, and
+  check whether the registered target exists.
+- Added `Refresh Diagnostics` and `Copy Diagnostics` actions to the Startup UI.
+- Startup diagnostics now refresh on app load, after startup preference changes,
+  and on demand.
+- Updated README startup behavior notes and next milestones.
+
+### Startup Diagnostics Verification
+
+- Stopped the running debug app before building to avoid executable lock
+  warnings.
+- `dotnet build CodeCompanionDesktop.sln` completed with 0 warnings and
+  0 errors using `C:\Program Files\dotnet\dotnet.exe`.
+- `dotnet test CodeCompanionDesktop.sln --no-build`
+- `git diff --check`
+- Relaunched the debug app and confirmed bridge health:
+  `{"status":"ok","bridge":"listening","speaking":false}`.
+- Next useful action: add packaged app icon metadata for release builds.
+
 ### Windows App Styling And Tray Icon
 
 - Created branch `feature/windows-app-polish` from
