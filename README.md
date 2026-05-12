@@ -64,10 +64,32 @@ project. Use the `--project` command above from the root folder.
 dotnet build .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj
 ```
 
+## Publish For Daily Use
+
+Create a self-contained Windows build from PowerShell in the repository root:
+
+```powershell
+.\scripts\publish-release.ps1
+```
+
+The default output is:
+
+```text
+artifacts\publish\CodeCompanionDesktop-win-x64\CodeCompanionDesktop.exe
+```
+
+Run that executable for normal desktop use instead of the `bin\Debug` build.
+The `artifacts` folder is ignored by git.
+
+If `Start with Windows sign-in` is already enabled from a debug build, launch
+the published app, turn `Start with Windows sign-in` off, then turn it back on.
+The Startup diagnostics should then show the published executable path.
+
 ## Current Scope
 
 - Styled WPF status window using the custom Code Companion app icon
 - Packaged Windows executable icon metadata for release builds
+- Self-contained Windows publish script for daily desktop use
 - Custom Windows tray icon with Show, Play Test Sound, and Exit menu items
 - Generated local WAV test tone in the user's temp directory
 - Windows audio playback using `System.Media.SoundPlayer`
@@ -179,5 +201,5 @@ next steps.
 
 ## Next Milestones
 
-1. Add a release packaging path for daily desktop use.
-2. Add installer/autostart guidance for the packaged app path.
+1. Add installer/autostart guidance for the packaged app path.
+2. Add a queue/settings surface for bridge speech behavior.

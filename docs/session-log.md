@@ -6,6 +6,38 @@ options.
 
 ## 2026-05-12 Local Desktop Bridge Endpoint
 
+### Release Publish Path
+
+- Created branch `feature/release-publish-path` from
+  `feature/custom-app-icons`.
+- Added `scripts/publish-release.ps1`.
+- The script publishes a self-contained `win-x64` single-file build to
+  `artifacts\publish\CodeCompanionDesktop-win-x64` by default.
+- The script resolves `dotnet.exe` from PATH first, then falls back to
+  `C:\Program Files\dotnet\dotnet.exe`.
+- Added `artifacts/` to `.gitignore`.
+- Documented the publish command, output path, daily-use executable, and
+  startup re-registration note in the README.
+
+### Release Publish Verification
+
+- `scripts/publish-release.ps1` published a self-contained `win-x64`
+  single-file build to
+  `artifacts\publish\CodeCompanionDesktop-win-x64`.
+- Published output included `CodeCompanionDesktop.exe` and
+  `CodeCompanionDesktop.pdb`; `artifacts/` is ignored by git.
+- Confirmed Windows can extract an associated icon from the published
+  executable.
+- Stopped the running debug app before the clean build/test checks.
+- `dotnet build CodeCompanionDesktop.sln` completed with 0 warnings and
+  0 errors using `C:\Program Files\dotnet\dotnet.exe`.
+- `dotnet test CodeCompanionDesktop.sln --no-build`
+- `git diff --check`
+- Launched the published executable and confirmed bridge health:
+  `{"status":"ok","bridge":"listening","speaking":false}`.
+- Next useful action: add installer/autostart guidance for the packaged app
+  path.
+
 ### Custom App And Tray Icons
 
 - Created branch `feature/custom-app-icons` from `feature/app-icon-metadata`.
