@@ -66,7 +66,7 @@ dotnet build .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj
 
 ## Current Scope
 
-- WPF status window
+- Styled WPF status window using the Code Companion extension icon
 - Windows tray icon with Show, Play Test Sound, and Exit menu items
 - Generated local WAV test tone in the user's temp directory
 - Windows audio playback using `System.Media.SoundPlayer`
@@ -154,7 +154,7 @@ The same section includes `Start with Windows sign-in`. When enabled, the app
 registers itself for the current Windows user under:
 
 ```text
-HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run
 ```
 
 Use `Start with Windows sign-in` together with `Start hidden to tray` for a
@@ -173,5 +173,5 @@ next steps.
 
 ## Next Milestones
 
-1. Manually verify Start with Windows sign-in after signing out and back in.
-2. Add a small diagnostics surface for the registered startup command.
+1. Add a small diagnostics surface for the registered startup command.
+2. Add packaged app icon metadata for release builds.

@@ -9,5 +9,7 @@
     <AssemblyName>CodeCompanionDesktop</AssemblyName>
     <RootNamespace>CodeCompanionDesktop</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets\icon-128.png" />
+  </ItemGroup>
 </Project>
-

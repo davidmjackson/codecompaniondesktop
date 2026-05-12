@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using CodeCompanionDesktop.Bridge;
@@ -94,13 +95,36 @@ public partial class App : WpfApplication
     {
         trayIcon = new Forms.NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            Icon = CreateTrayIcon(),
             Text = "Code Companion Desktop",
             Visible = true,
             ContextMenuStrip = BuildTrayMenu()
         };
 
         trayIcon.DoubleClick += (_, _) => ShowMainWindow();
+    }
+
+    private static Icon CreateTrayIcon()
+    {
+        var resourceInfo = WpfApplication.GetResourceStream(new Uri("pack://application:,,,/Assets/icon-128.png", UriKind.Absolute));
+        if (resourceInfo is null)
+        {
+            return SystemIcons.Application;
+        }
+
+        using var stream = resourceInfo.Stream;
+        using var bitmap = new Bitmap(stream);
+        var iconHandle = bitmap.GetHicon();
+
+        try
+        {
+            using var icon = Icon.FromHandle(iconHandle);
+            return (Icon)icon.Clone();
+        }
+        finally
+        {
+            DestroyIcon(iconHandle);
+        }
     }
 
     private Forms.ContextMenuStrip BuildTrayMenu()
@@ -185,4 +209,7 @@ public partial class App : WpfApplication
         ShowMainWindow();
         mainWindow?.CopyBridgeTokenToClipboard();
     }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool DestroyIcon(IntPtr hIcon);
 }

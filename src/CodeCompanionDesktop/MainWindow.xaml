@@ -2,10 +2,11 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Code Companion Desktop"
-        Width="560"
-        Height="540"
+        Width="640"
+        Height="680"
         MinWidth="420"
-        MinHeight="420"
+        MinHeight="520"
+        Icon="Assets/icon-128.png"
         WindowStartupLocation="CenterScreen">
     <Grid Margin="24">
         <Grid.RowDefinitions>
@@ -14,46 +15,68 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0">
-            <TextBlock Text="Code Companion Desktop"
-                       FontSize="22"
-                       FontWeight="SemiBold" />
-            <TextBlock Text="Desktop voice playback service"
-                       Margin="0,6,0,0"
-                       Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" />
-        </StackPanel>
+        <Border Grid.Row="0"
+                Background="{StaticResource AppSurfaceAltBrush}"
+                BorderBrush="{StaticResource AppBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="18">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Width="54"
+                        Height="54"
+                        Background="{StaticResource AppSurfaceBrush}"
+                        BorderBrush="{StaticResource AppBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                    <Image Source="Assets/icon-128.png"
+                           Width="40"
+                           Height="40"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
+                </Border>
+
+                <StackPanel Grid.Column="1"
+                            Margin="14,0,0,0"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="Code Companion Desktop"
+                               FontSize="24"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="Desktop voice playback service"
+                               Margin="0,6,0,0"
+                               Style="{StaticResource MutedTextStyle}" />
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <ScrollViewer Grid.Row="1"
-                      Margin="0,28,0,24"
+                      Margin="0,18,0,20"
                       VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <Border Padding="18"
-                        BorderThickness="1"
-                        BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
-                        CornerRadius="6">
+                        Style="{StaticResource CardBorderStyle}">
                     <StackPanel>
                         <TextBlock Text="Status"
-                                   FontWeight="SemiBold" />
+                                   Style="{StaticResource SectionTitleTextStyle}" />
                         <TextBlock x:Name="StatusText"
                                    Margin="0,8,0,0"
                                    Text="Ready. Tray icon is active."
                                    TextWrapping="Wrap" />
                         <TextBlock x:Name="AudioPathText"
                                    Margin="0,12,0,0"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                                   TextWrapping="Wrap" />
+                                   Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
                 </Border>
 
                 <Border Margin="0,18,0,0"
                         Padding="18"
-                        BorderThickness="1"
-                        BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
-                        CornerRadius="6">
+                        Style="{StaticResource CardBorderStyle}">
                     <StackPanel>
                         <TextBlock Text="ElevenLabs API Key"
-                                   FontWeight="SemiBold" />
+                                   Style="{StaticResource SectionTitleTextStyle}" />
                         <PasswordBox x:Name="ElevenLabsApiKeyBox"
                                      Margin="0,10,0,0"
                                      Height="32" />
@@ -75,21 +98,17 @@
                                     Click="ClearApiKeyButton_Click" />
                         </WrapPanel>
                         <TextBlock x:Name="CredentialStatusText"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                                    Text="No key loaded."
-                                   TextWrapping="Wrap" />
+                                   Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
                 </Border>
 
                 <Border Margin="0,18,0,0"
                         Padding="18"
-                        BorderThickness="1"
-                        BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
-                        CornerRadius="6">
+                        Style="{StaticResource CardBorderStyle}">
                     <StackPanel>
                         <TextBlock Text="Local Bridge"
-                                   FontWeight="SemiBold" />
+                                   Style="{StaticResource SectionTitleTextStyle}" />
                         <TextBlock x:Name="BridgeStatusText"
                                    Margin="0,8,0,0"
                                    Text="Bridge starting..."
@@ -107,20 +126,16 @@
                                     Click="RefreshBridgeStatusButton_Click" />
                         </WrapPanel>
                         <TextBlock Text="Use this token only with the local VS Code extension bridge."
-                                   FontSize="12"
-                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                                   TextWrapping="Wrap" />
+                                   Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
                 </Border>
 
                 <Border Margin="0,18,0,0"
                         Padding="18"
-                        BorderThickness="1"
-                        BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
-                        CornerRadius="6">
+                        Style="{StaticResource CardBorderStyle}">
                     <StackPanel>
                         <TextBlock Text="Startup"
-                                   FontWeight="SemiBold" />
+                                   Style="{StaticResource SectionTitleTextStyle}" />
                         <CheckBox x:Name="StartHiddenToTrayCheckBox"
                                   Margin="0,10,0,0"
                                   Content="Start hidden to tray"
@@ -133,10 +148,8 @@
                                   Unchecked="StartWithWindowsCheckBox_Changed" />
                         <TextBlock x:Name="SettingsStatusText"
                                    Margin="0,10,0,0"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                                    Text="Startup preference loaded."
-                                   TextWrapping="Wrap" />
+                                   Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -148,6 +161,7 @@
                     Height="36"
                     Margin="0,0,10,0"
                     Content="Play WAV Test"
+                    Style="{StaticResource PrimaryButtonStyle}"
                     Click="PlayButton_Click" />
             <Button x:Name="PlayElevenLabsButton"
                     MinWidth="154"

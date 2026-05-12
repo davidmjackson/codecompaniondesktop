@@ -6,12 +6,38 @@ options.
 
 ## 2026-05-12 Local Desktop Bridge Endpoint
 
+### Windows App Styling And Tray Icon
+
+- Created branch `feature/windows-app-polish` from
+  `feature/windows-login-startup`.
+- User verified after a Windows restart that the app loaded in the system tray
+  when `Start with Windows sign-in` and `Start hidden to tray` were enabled.
+- Reused the VS Code extension icon from
+  `/var/www/CodeCompanion/assets/icon-128.png` as a WPF resource.
+- Set the WPF window icon and generated the WinForms tray icon from the same
+  resource at runtime.
+- Added shared WPF styles for the app background, header, cards, buttons,
+  muted text, password box, and checkboxes.
+- Updated the README next milestones now that Windows sign-in startup has been
+  manually verified.
+
+### Windows App Styling Verification
+
+- Initial build hit retry warnings because the tray app was still running from
+  `bin\Debug`; stopped `CodeCompanionDesktop` process `14700` and reran.
+- `dotnet build CodeCompanionDesktop.sln` completed with 0 warnings and
+  0 errors using `C:\Program Files\dotnet\dotnet.exe`.
+- `dotnet test CodeCompanionDesktop.sln --no-build`
+- `git diff --check`
+- Next useful action: add the startup diagnostics surface for the registered
+  Windows Run command.
+
 ### Windows Login Startup Follow-up
 
 - Created branch `feature/windows-login-startup` from
   `feature/start-hidden-to-tray`.
 - Added `WindowsStartupRegistration`, using the current-user Windows Run key:
-  `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
+  `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`.
 - Added `Start with Windows sign-in` to the Startup section.
 - Kept Windows login startup independent from `Start hidden to tray`; users can
   enable both for tray-only login startup.
