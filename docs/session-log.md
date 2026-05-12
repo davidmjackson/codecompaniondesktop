@@ -29,6 +29,7 @@ options.
   save, read, delete, and confirm missing after delete.
 - Launch smoke test started `CodeCompanionDesktop.exe`, confirmed the process was
   running, then stopped it.
+- User manually verified the WPF credential UI Save, Load, and Clear flow.
 
 ### Decisions
 
@@ -39,8 +40,6 @@ options.
 
 ### Next
 
-- Manually test saving, loading, and clearing a non-production placeholder key
-  from the WPF UI.
 - Start Milestone 3: generate ElevenLabs TTS from a hardcoded test phrase using
   the saved key, then play the returned audio.
 
