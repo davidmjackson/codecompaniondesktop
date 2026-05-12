@@ -29,6 +29,19 @@ options.
 - Hidden-to-tray launch smoke test with temporary app settings: process started
   and bridge health returned
   `{"status":"ok","bridge":"listening","speaking":false}`.
+- Manual Windows sign-in verification is still pending. The user may need to
+  restart Windows rather than sign out/in because the machine uses the default
+  Windows account flow.
+
+### Current Stop Point
+
+- Current branch: `feature/windows-login-startup`.
+- Latest implementation commit: `6510f67 Add Windows login startup option`.
+- Working tree was clean before this stop-point note.
+- No `CodeCompanionDesktop` process was running.
+- Next useful action: after Windows restarts and signs in, confirm the app
+  starts in the tray when both `Start with Windows sign-in` and
+  `Start hidden to tray` are enabled.
 
 ### Startup Behavior Follow-up
 
