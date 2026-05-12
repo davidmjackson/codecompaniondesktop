@@ -4,6 +4,33 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 Bridge Queue Local Smoke Test
+
+### Changed
+
+- No application code changed.
+- Tested the `feature/bridge-speech-queue` branch in the Code Companion Desktop
+  checkout.
+
+### Verified
+
+- `git diff --check`
+- `dotnet build CodeCompanionDesktop.sln --no-incremental` using
+  `C:\Program Files\dotnet\dotnet.exe`
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`
+- Launched the debug app and confirmed default bridge health:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":false,"queued":0,"queueLimit":3}`
+- Backed up `%APPDATA%\CodeCompanionDesktop\settings.json`, temporarily enabled
+  bridge queueing with a limit of 5, launched the debug app, and confirmed
+  bridge health:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":true,"queued":0,"queueLimit":5}`
+- Stopped the debug app and restored the original settings file.
+
+### Next
+
+- Review and merge PR #1, then publish the updated daily build.
+
 ## 2026-05-12 Private GitHub Workflow Note
 
 ### Changed
