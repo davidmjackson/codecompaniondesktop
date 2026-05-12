@@ -1,5 +1,7 @@
 # Code Companion Desktop
 
+<!-- cspell:words Inno ISCC LOCALAPPDATA APPDATA -->
+
 Windows desktop companion app for Code Companion Voice.
 
 The first proof of concept is a small WPF tray app that can play a generated
