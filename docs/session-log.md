@@ -4,6 +4,31 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 Bridge Queue Publish
+
+### Changed
+
+- Marked PR #1 ready and merged `feature/bridge-speech-queue` into
+  `feature/release-publish-path`.
+- Pulled the merged `feature/release-publish-path` branch locally.
+- Published a fresh daily build to
+  `artifacts\publish\CodeCompanionDesktop-win-x64`.
+
+### Verified
+
+- `scripts\publish-release.ps1` completed successfully from PowerShell.
+- Launched the published executable from
+  `artifacts\publish\CodeCompanionDesktop-win-x64\CodeCompanionDesktop.exe`.
+- Confirmed published bridge health includes queue fields:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":false,"queued":0,"queueLimit":3}`
+- Stopped the published app after smoke testing.
+
+### Next
+
+- Use the published daily build normally with the VS Code extension.
+- Defer bridge request history/logging until troubleshooting visibility is
+  actually needed.
+
 ## 2026-05-12 Bridge Queue Local Smoke Test
 
 ### Changed
