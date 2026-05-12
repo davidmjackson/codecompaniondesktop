@@ -37,9 +37,13 @@ dotnet build .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj
 - Generated local WAV test tone in the user's temp directory
 - Windows audio playback using `System.Media.SoundPlayer`
 
+## Session Notes
+
+See `docs/session-log.md` for the latest development status, verification, and
+next steps.
+
 ## Next Milestones
 
 1. Store and retrieve an ElevenLabs API key using Windows Credential Manager.
 2. Generate TTS from a hardcoded test phrase and play the audio.
 3. Add a local authenticated bridge endpoint for VS Code extension requests.
-
