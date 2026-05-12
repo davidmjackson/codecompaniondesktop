@@ -71,6 +71,7 @@ dotnet build .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj
 - Generated local WAV test tone in the user's temp directory
 - Windows audio playback using `System.Media.SoundPlayer`
 - ElevenLabs API key storage in Windows Credential Manager
+- ElevenLabs test speech generation from a hardcoded phrase
 
 ## Credential Storage
 
@@ -85,6 +86,22 @@ User name: ElevenLabs
 The app UI can save, load, and clear this credential. Status messages report
 only whether a key exists and its character count; they do not display the key.
 
+## ElevenLabs Test Speech
+
+The app can generate and play a hardcoded ElevenLabs test phrase:
+
+```text
+Code Companion desktop speech test.
+```
+
+The test uses the ElevenLabs create-speech endpoint with voice
+`JBFqnCBsd6RMkjVDRZzb`, model `eleven_multilingual_v2`, and MP3 output format
+`mp3_44100_128`. Generated MP3 files are written to the user's temp directory
+under `CodeCompanionDesktop`.
+
+If no ElevenLabs API key is saved in Windows Credential Manager, the test button
+reports that a key must be saved first.
+
 ## Session Notes
 
 See `docs/session-log.md` for the latest development status, verification, and
@@ -92,5 +109,5 @@ next steps.
 
 ## Next Milestones
 
-1. Generate TTS from a hardcoded test phrase and play the audio.
+1. Manually verify ElevenLabs test playback with a real saved desktop API key.
 2. Add a local authenticated bridge endpoint for VS Code extension requests.

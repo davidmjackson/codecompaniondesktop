@@ -88,6 +88,15 @@ public partial class App : WpfApplication
                 await mainWindow.PlayTestSoundAsync();
             }
         });
+        menu.Items.Add("Play ElevenLabs Test", null, async (_, _) =>
+        {
+            ShowMainWindow();
+
+            if (mainWindow is not null)
+            {
+                await mainWindow.PlayElevenLabsTestSpeechAsync();
+            }
+        });
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Exit", null, (_, _) => ExitApplication());
 

@@ -4,6 +4,49 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 ElevenLabs TTS Test Playback
+
+### Changed
+
+- Created branch `feature/elevenlabs-tts-test` from
+  `feature/windows-credential-manager`.
+- Added `ElevenLabsTextToSpeechClient` for the ElevenLabs create-speech REST
+  endpoint.
+- Added `AudioFilePlayer` for MP3 playback through WPF `MediaPlayer`.
+- Added a Play ElevenLabs Test button to the main window and tray menu.
+- Kept the generated WAV button as a separate offline audio test.
+- Added a graceful missing-key path: if no desktop Credential Manager key is
+  saved, the UI reports that an ElevenLabs API key must be saved first.
+- Updated the README with the hardcoded test phrase, voice ID, model, output
+  format, temp-file behavior, and next milestone.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- XML parse check passed for `MainWindow.xaml` and `CodeCompanionDesktop.csproj`.
+- `git diff --check`
+- Launch smoke test started `CodeCompanionDesktop.exe`, confirmed the process was
+  running, then stopped it.
+- Live ElevenLabs playback is not yet verified because the real API key has not
+  been saved in the desktop app's Windows Credential Manager entry.
+
+### Decisions
+
+- Use the documented non-streaming ElevenLabs create-speech endpoint for the
+  first integration test before introducing streaming or queue behavior.
+- Use the sample documented voice ID `JBFqnCBsd6RMkjVDRZzb` for the first
+  hardcoded test.
+- Save generated test MP3 files under the existing `CodeCompanionDesktop` temp
+  directory.
+
+### Next
+
+- Save a real ElevenLabs API key into the desktop app's Windows Credential
+  Manager entry.
+- Manually test Play ElevenLabs Test from the main window and tray menu.
+- After manual TTS playback passes, start the local authenticated bridge endpoint
+  for VS Code extension requests.
+
 ## 2026-05-12 Windows Credential Manager Storage
 
 ### Changed

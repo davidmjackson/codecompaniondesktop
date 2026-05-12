@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using CodeCompanionDesktop.Audio;
 using CodeCompanionDesktop.Credentials;
+using CodeCompanionDesktop.ElevenLabs;
 using WpfApplication = System.Windows.Application;
 
 namespace CodeCompanionDesktop;
@@ -11,7 +12,9 @@ namespace CodeCompanionDesktop;
 public partial class MainWindow : Window
 {
     private readonly TestTonePlayer testTonePlayer = new();
+    private readonly AudioFilePlayer audioFilePlayer = new();
     private readonly WindowsCredentialStore credentialStore = new();
+    private readonly ElevenLabsTextToSpeechClient textToSpeechClient = new();
     private bool isPlaying;
 
     public MainWindow()
@@ -29,7 +32,7 @@ public partial class MainWindow : Window
         }
 
         isPlaying = true;
-        PlayButton.IsEnabled = false;
+        SetPlaybackButtonsEnabled(false);
         StatusText.Text = "Playing generated local WAV test tone...";
         AudioPathText.Text = string.Empty;
 
@@ -47,7 +50,58 @@ public partial class MainWindow : Window
         finally
         {
             isPlaying = false;
-            PlayButton.IsEnabled = true;
+            SetPlaybackButtonsEnabled(true);
+        }
+    }
+
+    public async Task PlayElevenLabsTestSpeechAsync()
+    {
+        if (isPlaying)
+        {
+            return;
+        }
+
+        string? apiKey;
+        try
+        {
+            apiKey = credentialStore.ReadSecret(WindowsCredentialStore.ElevenLabsApiKeyTarget)?.Trim();
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Unable to read ElevenLabs API key.";
+            AudioPathText.Text = ex.Message;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            StatusText.Text = "Save an ElevenLabs API key first.";
+            AudioPathText.Text = string.Empty;
+            return;
+        }
+
+        isPlaying = true;
+        SetPlaybackButtonsEnabled(false);
+        StatusText.Text = "Generating ElevenLabs test speech...";
+        AudioPathText.Text = string.Empty;
+
+        try
+        {
+            var path = await textToSpeechClient.CreateTestSpeechAsync(apiKey);
+            StatusText.Text = "Playing ElevenLabs test speech...";
+            AudioPathText.Text = path;
+            await audioFilePlayer.PlayAsync(path);
+            StatusText.Text = "ElevenLabs playback completed.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "ElevenLabs playback failed.";
+            AudioPathText.Text = ex.Message;
+        }
+        finally
+        {
+            isPlaying = false;
+            SetPlaybackButtonsEnabled(true);
         }
     }
 
@@ -66,6 +120,11 @@ public partial class MainWindow : Window
     private async void PlayButton_Click(object sender, RoutedEventArgs e)
     {
         await PlayTestSoundAsync();
+    }
+
+    private async void PlayElevenLabsButton_Click(object sender, RoutedEventArgs e)
+    {
+        await PlayElevenLabsTestSpeechAsync();
     }
 
     private void HideButton_Click(object sender, RoutedEventArgs e)
@@ -144,5 +203,11 @@ public partial class MainWindow : Window
     private static string DescribeSecret(string secret)
     {
         return $"{secret.Length} characters";
+    }
+
+    private void SetPlaybackButtonsEnabled(bool isEnabled)
+    {
+        PlayButton.IsEnabled = isEnabled;
+        PlayElevenLabsButton.IsEnabled = isEnabled;
     }
 }
