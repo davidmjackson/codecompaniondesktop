@@ -105,6 +105,24 @@ Use two projects:
 D:\Development\CodeCompanionDesktop
 ```
 
+Current direction:
+
+```text
+D:\Development\CodeCompanionDesktop
+- Primary repo for desktop-app sessions
+- .NET/WPF Windows app
+- Native Windows audio, credentials, provider calls, queueing, and bridge API
+
+/var/www/CodeCompanion
+- Existing VS Code extension repo in WSL
+- VS Code commands, settings, workspace context, Codex log watching, and bridge client
+```
+
+The previous WSL desktop-audio fallback is useful historical proof that Windows
+audio playback works from the extension, but it is not the target architecture.
+New playback work should move into the .NET desktop app and expose a small
+authenticated local bridge for the extension to call.
+
 Responsibilities:
 
 ```text
@@ -209,6 +227,12 @@ Reason:
 - It will use Windows audio APIs.
 - It may use Windows Credential Manager.
 - Building on the Windows filesystem avoids WSL path and tooling friction.
+
+Keep the VS Code extension in `/var/www/CodeCompanion` until the bridge is
+stable. Co-locating both codebases in one repository would add friction now:
+the desktop app and extension use different build tools, package formats, and
+runtime assumptions. Revisit a monorepo only after the bridge protocol and
+release process are stable.
 
 ## Permissions
 

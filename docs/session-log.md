@@ -6,6 +6,17 @@ options.
 
 ## 2026-05-12 WPF Tray Proof Of Concept
 
+### Repository Direction Follow-up
+
+- Confirmed `D:\Development\CodeCompanionDesktop` is the primary starting point
+  for desktop-app sessions.
+- Confirmed `/var/www/CodeCompanion` remains the existing VS Code extension
+  codebase and will still be needed for bridge integration.
+- Documented that playback work is moving out of the WSL fallback path and into
+  the .NET desktop app.
+- Recorded the current recommendation to keep the desktop app and extension in
+  separate repositories until the bridge protocol and release process are stable.
+
 ### Follow-up
 
 - Confirmed Windows `dotnet.exe` can build the project from WSL using the
