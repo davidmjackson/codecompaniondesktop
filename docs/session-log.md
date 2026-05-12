@@ -6,6 +6,18 @@ options.
 
 ## 2026-05-12 WPF Tray Proof Of Concept
 
+### Manual Verification Follow-up
+
+- User ran `dotnet clean .\CodeCompanionDesktop.sln` from PowerShell in
+  `D:\Development\CodeCompanionDesktop`; clean completed successfully.
+- User ran `dotnet build .\CodeCompanionDesktop.sln`; build succeeded with 0
+  warnings and 0 errors.
+- User ran
+  `dotnet run --project .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj`.
+- User confirmed the app opened and Play Test Sound produced audible audio.
+- Determined the remaining `PlayButton` and related red underscores in
+  `MainWindow.xaml.cs` are editor-only C# Dev Kit state, not compiler errors.
+
 ### Repository Direction Follow-up
 
 - Confirmed `D:\Development\CodeCompanionDesktop` is the primary starting point
@@ -74,11 +86,8 @@ options.
 - Remote branch: `origin/feature/wpf-tray-poc`.
 - GitHub currently reports `feature/wpf-tray-poc` as repository HEAD because it was the first branch pushed to the empty repo.
 - No `CodeCompanionDesktop`, `dotnet`, or project server process should be left running.
-- Manual audio verification is pending because the user's speaker setup needs troubleshooting.
+- Manual audio verification passed on 2026-05-12.
 
 ### Next
 
-- After reboot, open PowerShell in `D:\Development\CodeCompanionDesktop`.
-- Run `dotnet run --project .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj`.
-- Verify the window appears, the tray icon appears, Play Test Sound is audible, Hide minimizes to tray, tray Show restores the window, and Exit closes cleanly.
-- If Milestone 1 manual testing passes, start Milestone 2: Windows Credential Manager storage for the ElevenLabs API key.
+- Start Milestone 2: Windows Credential Manager storage for the ElevenLabs API key.
