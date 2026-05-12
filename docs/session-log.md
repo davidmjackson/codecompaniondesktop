@@ -43,6 +43,18 @@ options.
 - Add VS Code extension first-run checks for the desktop bridge and installer
   link.
 
+### Installer Follow-up Verification
+
+- User installed Inno Setup 6 and ran the installer build from PowerShell with
+  execution-policy bypass.
+- User ran the generated installer successfully.
+- Installer created the installed executable at
+  `%LOCALAPPDATA%\Programs\Code Companion Desktop\CodeCompanionDesktop.exe`.
+- User selected the optional desktop shortcut; verified
+  `Code Companion Desktop.lnk` points to the installed executable.
+- Confirmed the installed app bridge health:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":false,"queued":0,"queueLimit":3}`
+
 ## 2026-05-12 Bridge Queue Publish
 
 ### Changed
