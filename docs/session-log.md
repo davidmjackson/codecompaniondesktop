@@ -4,6 +4,24 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 Project Instruction Guardrail
+
+### Changed
+
+- Added root `AGENTS.md` with Code Companion Desktop-specific instructions.
+- Documented that this repository is not the Retrospective app and that agents
+  should not switch to `/var/www/retrospective` unless explicitly asked.
+- Captured the expected session-start checks, git workflow, build/test commands,
+  app process workflow, session-log expectations, and communication rules.
+
+### Verified
+
+- `git diff --check`
+
+### Next
+
+- Continue with the queue/settings surface for bridge speech behavior.
+
 ## 2026-05-12 Daily Install Guidance
 
 ### Changed
