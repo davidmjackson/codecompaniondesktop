@@ -35,6 +35,10 @@ this project unless the user explicitly asks to switch projects.
 - For coding work, create or use an appropriate feature branch.
 - Do not work directly on `main` unless the user explicitly asks.
 - Do not overwrite or revert user changes unless explicitly requested.
+- This GitHub repository is private. Use authenticated `gh` as the primary tool
+  for GitHub repository, PR, issue, and metadata operations.
+- The local `gh` session is expected to be authorized for this repo; verify with
+  `gh auth status` when GitHub access is needed.
 - After implementation, run relevant checks/tests, commit with a clear message,
   and push the branch.
 

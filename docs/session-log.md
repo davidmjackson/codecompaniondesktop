@@ -4,6 +4,24 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 Private GitHub Workflow Note
+
+### Changed
+
+- Updated `AGENTS.md` to note that the Code Companion Desktop GitHub repository
+  is private.
+- Documented that authenticated `gh` should be the primary tool for GitHub repo,
+  PR, issue, and metadata operations.
+- Added a reminder to verify GitHub access with `gh auth status` when needed.
+
+### Verified
+
+- `git diff --check`
+
+### Next
+
+- Continue using `gh` for private-repo GitHub operations.
+
 ## 2026-05-12 Bridge Speech Queue Settings
 
 ### Changed
