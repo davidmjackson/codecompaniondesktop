@@ -4,6 +4,83 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 Bridge Queue Local Smoke Test
+
+### Changed
+
+- No application code changed.
+- Tested the `feature/bridge-speech-queue` branch in the Code Companion Desktop
+  checkout.
+
+### Verified
+
+- `git diff --check`
+- `dotnet build CodeCompanionDesktop.sln --no-incremental` using
+  `C:\Program Files\dotnet\dotnet.exe`
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`
+- Launched the debug app and confirmed default bridge health:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":false,"queued":0,"queueLimit":3}`
+- Backed up `%APPDATA%\CodeCompanionDesktop\settings.json`, temporarily enabled
+  bridge queueing with a limit of 5, launched the debug app, and confirmed
+  bridge health:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":true,"queued":0,"queueLimit":5}`
+- Stopped the debug app and restored the original settings file.
+
+### Next
+
+- Review and merge PR #1, then publish the updated daily build.
+
+## 2026-05-12 Private GitHub Workflow Note
+
+### Changed
+
+- Updated `AGENTS.md` to note that the Code Companion Desktop GitHub repository
+  is private.
+- Documented that authenticated `gh` should be the primary tool for GitHub repo,
+  PR, issue, and metadata operations.
+- Added a reminder to verify GitHub access with `gh auth status` when needed.
+
+### Verified
+
+- `git diff --check`
+
+### Next
+
+- Continue using `gh` for private-repo GitHub operations.
+
+## 2026-05-12 Bridge Speech Queue Settings
+
+### Changed
+
+- Created branch `feature/bridge-speech-queue`.
+- Added persisted bridge speech queue settings:
+  `QueueBridgeSpeechRequests` and `MaxQueuedBridgeSpeechRequests`.
+- Added a Local Bridge UI surface to enable queueing and choose a queue limit of
+  1, 3, 5, or 10 pending requests.
+- Added `BridgeSpeechQueue` to process queued bridge speech requests serially in
+  the background.
+- Kept existing default behavior: when queueing is disabled, busy bridge speech
+  still returns `409 {"error":"busy"}`.
+- Expanded bridge `/health` with `queueEnabled`, `queued`, and `queueLimit`.
+- Updated README bridge docs and next milestones.
+
+### Verified
+
+- `git diff --check`
+- `dotnet build CodeCompanionDesktop.sln --no-incremental` using
+  `C:\Program Files\dotnet\dotnet.exe`
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`
+- Launched the debug app and confirmed bridge health included queue fields:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":false,"queued":0,"queueLimit":3}`
+- Stopped the debug app after smoke testing.
+
+### Next
+
+- Add an installer or update flow for non-developer daily use.
+- Add bridge request history/logging for easier troubleshooting.
+
 ## 2026-05-12 Project Instruction Guardrail
 
 ### Changed

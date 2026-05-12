@@ -32,7 +32,9 @@ public sealed class AppSettingsStore
         try
         {
             var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+            var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+            settings.Normalize();
+            return settings;
         }
         catch
         {

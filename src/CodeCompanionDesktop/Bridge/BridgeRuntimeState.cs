@@ -4,6 +4,9 @@ public sealed class BridgeRuntimeState
 {
     private readonly object syncRoot = new();
     private bool isSpeaking;
+    private bool queueBridgeSpeechRequests;
+    private int pendingSpeechRequests;
+    private int maxQueuedSpeechRequests = 3;
 
     public bool IsSpeaking
     {
@@ -16,7 +19,52 @@ public sealed class BridgeRuntimeState
         }
     }
 
+    public bool QueueBridgeSpeechRequests
+    {
+        get
+        {
+            lock (syncRoot)
+            {
+                return queueBridgeSpeechRequests;
+            }
+        }
+    }
+
+    public int PendingSpeechRequests
+    {
+        get
+        {
+            lock (syncRoot)
+            {
+                return pendingSpeechRequests;
+            }
+        }
+    }
+
+    public int MaxQueuedSpeechRequests
+    {
+        get
+        {
+            lock (syncRoot)
+            {
+                return maxQueuedSpeechRequests;
+            }
+        }
+    }
+
     public string LastStatus { get; private set; } = "No bridge requests yet.";
+
+    public void ConfigureQueue(bool isEnabled, int maxQueuedRequests)
+    {
+        lock (syncRoot)
+        {
+            queueBridgeSpeechRequests = isEnabled;
+            maxQueuedSpeechRequests = maxQueuedRequests;
+            LastStatus = isEnabled
+                ? $"Bridge speech queue enabled. Limit: {maxQueuedRequests}."
+                : "Bridge speech queue disabled. Busy requests are rejected.";
+        }
+    }
 
     public bool TryBeginSpeaking()
     {
@@ -31,6 +79,32 @@ public sealed class BridgeRuntimeState
             isSpeaking = true;
             LastStatus = "Bridge speech request started.";
             return true;
+        }
+    }
+
+    public void QueueSpeechRequest(int pendingCount)
+    {
+        lock (syncRoot)
+        {
+            pendingSpeechRequests = pendingCount;
+            LastStatus = $"Bridge speech request queued. Pending: {pendingCount}.";
+        }
+    }
+
+    public void DequeueSpeechRequest(int pendingCount)
+    {
+        lock (syncRoot)
+        {
+            pendingSpeechRequests = pendingCount;
+            LastStatus = $"Bridge speech request dequeued. Pending: {pendingCount}.";
+        }
+    }
+
+    public void RejectQueueFull()
+    {
+        lock (syncRoot)
+        {
+            LastStatus = $"Bridge rejected request: speech queue is full at {pendingSpeechRequests}/{maxQueuedSpeechRequests}.";
         }
     }
 

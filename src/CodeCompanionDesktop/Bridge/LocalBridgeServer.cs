@@ -23,17 +23,23 @@ public sealed class LocalBridgeServer : IDisposable
     private readonly string token;
     private readonly Func<string, Task> speakAsync;
     private readonly BridgeRuntimeState runtimeState;
+    private readonly BridgeSpeechQueue speechQueue;
     private readonly CancellationTokenSource cancellation = new();
     private TcpListener? listener;
     private Task? listenTask;
 
-    public LocalBridgeServer(string token, Func<string, Task> speakAsync, BridgeRuntimeState runtimeState)
+    public LocalBridgeServer(
+        string token,
+        Func<string, Task> speakAsync,
+        BridgeRuntimeState runtimeState,
+        BridgeSpeechQueue speechQueue)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
 
         this.token = token;
         this.speakAsync = speakAsync;
         this.runtimeState = runtimeState;
+        this.speechQueue = speechQueue;
     }
 
     public bool IsRunning => listener is not null;
@@ -108,7 +114,13 @@ public sealed class LocalBridgeServer : IDisposable
                 await WriteJsonAsync(
                     stream,
                     HttpStatusCode.OK,
-                    new HealthResponse("ok", IsRunning ? "listening" : "stopped", runtimeState.IsSpeaking));
+                    new HealthResponse(
+                        "ok",
+                        IsRunning ? "listening" : "stopped",
+                        runtimeState.IsSpeaking,
+                        runtimeState.QueueBridgeSpeechRequests,
+                        runtimeState.PendingSpeechRequests,
+                        runtimeState.MaxQueuedSpeechRequests));
                 return;
             }
 
@@ -165,6 +177,18 @@ public sealed class LocalBridgeServer : IDisposable
             return;
         }
 
+        if (runtimeState.QueueBridgeSpeechRequests)
+        {
+            if (!speechQueue.TryEnqueue(text, out var position))
+            {
+                await WriteJsonAsync(stream, HttpStatusCode.Conflict, new ErrorResponse("queue_full"));
+                return;
+            }
+
+            await WriteJsonAsync(stream, HttpStatusCode.OK, new SpeakResponse("queued", position));
+            return;
+        }
+
         if (!runtimeState.TryBeginSpeaking())
         {
             await WriteJsonAsync(stream, HttpStatusCode.Conflict, new ErrorResponse("busy"));
@@ -175,7 +199,7 @@ public sealed class LocalBridgeServer : IDisposable
         {
             await speakAsync(text);
             runtimeState.CompleteSpeaking();
-            await WriteJsonAsync(stream, HttpStatusCode.OK, new SpeakResponse("spoken"));
+            await WriteJsonAsync(stream, HttpStatusCode.OK, new SpeakResponse("spoken", 0));
         }
         catch (Exception ex)
         {
@@ -333,11 +357,16 @@ public sealed class LocalBridgeServer : IDisposable
     private sealed record HealthResponse(
         [property: JsonPropertyName("status")] string Status,
         [property: JsonPropertyName("bridge")] string Bridge,
-        [property: JsonPropertyName("speaking")] bool Speaking);
+        [property: JsonPropertyName("speaking")] bool Speaking,
+        [property: JsonPropertyName("queueEnabled")] bool QueueEnabled,
+        [property: JsonPropertyName("queued")] int Queued,
+        [property: JsonPropertyName("queueLimit")] int QueueLimit);
 
     private sealed record SpeakRequest([property: JsonPropertyName("text")] string Text);
 
-    private sealed record SpeakResponse([property: JsonPropertyName("status")] string Status);
+    private sealed record SpeakResponse(
+        [property: JsonPropertyName("status")] string Status,
+        [property: JsonPropertyName("queued")] int Queued);
 
     private sealed record ErrorResponse([property: JsonPropertyName("error")] string Error);
 }

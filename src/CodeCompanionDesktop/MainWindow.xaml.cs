@@ -35,6 +35,7 @@ public partial class MainWindow : Window
         this.bridgeRuntimeState = bridgeRuntimeState;
         this.settingsStore = settingsStore;
         this.settings = settings;
+        this.settings.Normalize();
         InitializeComponent();
         LoadSettings();
     }
@@ -274,6 +275,26 @@ public partial class MainWindow : Window
         RefreshBridgeStatus();
     }
 
+    private void QueueBridgeSpeechCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (isInitializing)
+        {
+            return;
+        }
+
+        SaveBridgeSpeechSettings();
+    }
+
+    private void MaxBridgeQueueComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (isInitializing)
+        {
+            return;
+        }
+
+        SaveBridgeSpeechSettings();
+    }
+
     private void RefreshStartupDiagnosticsButton_Click(object sender, RoutedEventArgs e)
     {
         RefreshStartupDiagnostics();
@@ -311,7 +332,10 @@ public partial class MainWindow : Window
     private void RefreshBridgeStatus()
     {
         var speaking = bridgeRuntimeState.IsSpeaking ? "speaking" : "idle";
-        BridgeStatusText.Text = $"Bridge listening on {LocalBridgeServer.BaseUrl}. State: {speaking}. {bridgeRuntimeState.LastStatus}";
+        var queue = bridgeRuntimeState.QueueBridgeSpeechRequests
+            ? $"Queue: {bridgeRuntimeState.PendingSpeechRequests}/{bridgeRuntimeState.MaxQueuedSpeechRequests}."
+            : "Queue disabled.";
+        BridgeStatusText.Text = $"Bridge listening on {LocalBridgeServer.BaseUrl}. State: {speaking}. {queue} {bridgeRuntimeState.LastStatus}";
     }
 
     private static string DescribeSecret(string secret)
@@ -332,8 +356,14 @@ public partial class MainWindow : Window
         {
             StartHiddenToTrayCheckBox.IsChecked = settings.StartHiddenToTray;
             StartWithWindowsCheckBox.IsChecked = startupRegistration.IsRegistered();
+            QueueBridgeSpeechCheckBox.IsChecked = settings.QueueBridgeSpeechRequests;
+            SetMaxBridgeQueueSelection(settings.MaxQueuedBridgeSpeechRequests);
+            bridgeRuntimeState.ConfigureQueue(
+                settings.QueueBridgeSpeechRequests,
+                settings.MaxQueuedBridgeSpeechRequests);
             SettingsStatusText.Text = DescribeStartupPreferences("Startup preferences loaded.");
             RefreshStartupDiagnostics();
+            RefreshBridgeStatus();
         }
         finally
         {
@@ -352,6 +382,26 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             SettingsStatusText.Text = $"Saving startup preference failed: {ex.Message}";
+        }
+    }
+
+    private void SaveBridgeSpeechSettings()
+    {
+        settings.QueueBridgeSpeechRequests = QueueBridgeSpeechCheckBox.IsChecked == true;
+        settings.MaxQueuedBridgeSpeechRequests = GetSelectedMaxBridgeQueue();
+        settings.Normalize();
+
+        try
+        {
+            settingsStore.Save(settings);
+            bridgeRuntimeState.ConfigureQueue(
+                settings.QueueBridgeSpeechRequests,
+                settings.MaxQueuedBridgeSpeechRequests);
+            RefreshBridgeStatus();
+        }
+        catch (Exception ex)
+        {
+            BridgeStatusText.Text = $"Saving bridge speech settings failed: {ex.Message}";
         }
     }
 
@@ -427,5 +477,32 @@ public partial class MainWindow : Window
     private static string DescribeBoolean(bool value)
     {
         return value ? "yes" : "no";
+    }
+
+    private void SetMaxBridgeQueueSelection(int value)
+    {
+        foreach (var item in MaxBridgeQueueComboBox.Items)
+        {
+            if (item is System.Windows.Controls.ComboBoxItem comboBoxItem
+                && int.TryParse(comboBoxItem.Content?.ToString(), out var itemValue)
+                && itemValue == value)
+            {
+                MaxBridgeQueueComboBox.SelectedItem = comboBoxItem;
+                return;
+            }
+        }
+
+        MaxBridgeQueueComboBox.SelectedIndex = 1;
+    }
+
+    private int GetSelectedMaxBridgeQueue()
+    {
+        if (MaxBridgeQueueComboBox.SelectedItem is System.Windows.Controls.ComboBoxItem comboBoxItem
+            && int.TryParse(comboBoxItem.Content?.ToString(), out var value))
+        {
+            return value;
+        }
+
+        return AppSettings.DefaultMaxQueuedBridgeSpeechRequests;
     }
 }
