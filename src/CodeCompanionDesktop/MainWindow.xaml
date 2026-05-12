@@ -81,6 +81,32 @@
                                    TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
+
+                <Border Margin="0,18,0,0"
+                        Padding="18"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                        CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock Text="Local Bridge"
+                                   FontWeight="SemiBold" />
+                        <TextBlock x:Name="BridgeStatusText"
+                                   Margin="0,8,0,0"
+                                   Text="Bridge starting..."
+                                   TextWrapping="Wrap" />
+                        <WrapPanel Margin="0,12,0,0">
+                            <Button MinWidth="128"
+                                    Height="32"
+                                    Margin="0,0,10,10"
+                                    Content="Copy Token"
+                                    Click="CopyBridgeTokenButton_Click" />
+                        </WrapPanel>
+                        <TextBlock Text="Use this token only with the local VS Code extension bridge."
+                                   FontSize="12"
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
 

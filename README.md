@@ -72,6 +72,7 @@ dotnet build .\src\CodeCompanionDesktop\CodeCompanionDesktop.csproj
 - Windows audio playback using `System.Media.SoundPlayer`
 - ElevenLabs API key storage in Windows Credential Manager
 - ElevenLabs test speech generation from a hardcoded phrase
+- Local authenticated bridge endpoint for VS Code extension requests
 
 ## Credential Storage
 
@@ -102,6 +103,34 @@ under `CodeCompanionDesktop`.
 If no ElevenLabs API key is saved in Windows Credential Manager, the test button
 reports that a key must be saved first.
 
+## Local Bridge
+
+The desktop app starts a local HTTP bridge on port `47321` when it launches.
+
+```text
+GET  /health
+POST /speak
+```
+
+`POST /speak` requires an `Authorization: Bearer <token>` header and a JSON body:
+
+```json
+{ "text": "Speech text to generate and play." }
+```
+
+The bridge token is generated once and stored in Windows Credential Manager:
+
+```text
+Target: CodeCompanionDesktop/BridgeToken
+User name: CodeCompanionDesktop Bridge
+```
+
+Use the app's `Copy Token` button to paste the token into the VS Code extension
+with `Code Companion Voice: Set Desktop Bridge Token`.
+
+The bridge listens on Windows port `47321`. From WSL, the extension discovers the
+Windows host IP and calls that address rather than `127.0.0.1`.
+
 ## Session Notes
 
 See `docs/session-log.md` for the latest development status, verification, and
@@ -109,5 +138,5 @@ next steps.
 
 ## Next Milestones
 
-1. Manually verify ElevenLabs test playback with a real saved desktop API key.
-2. Add a local authenticated bridge endpoint for VS Code extension requests.
+1. Manually verify VS Code extension speech through the desktop bridge.
+2. Add startup/minimize behavior and bridge health indicators suitable for daily use.

@@ -4,6 +4,45 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 Local Desktop Bridge Endpoint
+
+### Changed
+
+- Created branch `feature/local-bridge-endpoint` from the verified ElevenLabs
+  TTS test playback baseline.
+- Added a local HTTP bridge on Windows port `47321`.
+- Added unauthenticated `GET /health` and bearer-token-protected `POST /speak`.
+- Added one-time bridge token generation and storage in Windows Credential
+  Manager under `CodeCompanionDesktop/BridgeToken`.
+- Added a Local Bridge section to the WPF window with bridge status and Copy
+  Token.
+- Changed the bridge listener from Windows loopback-only to a TCP listener bound
+  on port `47321`, because the WSL extension cannot reach a Windows process
+  bound only to `127.0.0.1`.
+- Updated README bridge setup and next milestones.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- XML parse check passed for `MainWindow.xaml` and `CodeCompanionDesktop.csproj`.
+- `git diff --check`
+- Launch smoke test started `CodeCompanionDesktop.exe`.
+- Windows PowerShell reached `http://127.0.0.1:47321/health`.
+- WSL reached `http://<windows-host-ip>:47321/health`.
+- WSL unauthenticated `POST /speak` returned `401 Unauthorized`.
+
+### Decisions
+
+- Keep `/health` unauthenticated for diagnostics.
+- Require `Authorization: Bearer <token>` for `/speak`.
+- Bind the listener on port `47321` for WSL reachability and rely on the bridge
+  token to authorize speech requests.
+
+### Next
+
+- Wire the VS Code extension to store the bridge token and call `POST /speak`.
+- Manually verify extension speech through the desktop bridge.
+
 ## 2026-05-12 ElevenLabs TTS Test Playback
 
 ### Changed

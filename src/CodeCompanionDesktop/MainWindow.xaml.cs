@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using CodeCompanionDesktop.Audio;
+using CodeCompanionDesktop.Bridge;
 using CodeCompanionDesktop.Credentials;
 using CodeCompanionDesktop.ElevenLabs;
 using WpfApplication = System.Windows.Application;
@@ -14,11 +15,13 @@ public partial class MainWindow : Window
     private readonly TestTonePlayer testTonePlayer = new();
     private readonly AudioFilePlayer audioFilePlayer = new();
     private readonly WindowsCredentialStore credentialStore = new();
+    private readonly BridgeTokenStore bridgeTokenStore;
     private readonly ElevenLabsTextToSpeechClient textToSpeechClient = new();
     private bool isPlaying;
 
-    public MainWindow()
+    public MainWindow(BridgeTokenStore bridgeTokenStore)
     {
+        this.bridgeTokenStore = bridgeTokenStore;
         InitializeComponent();
     }
 
@@ -56,9 +59,34 @@ public partial class MainWindow : Window
 
     public async Task PlayElevenLabsTestSpeechAsync()
     {
+        await PlayElevenLabsSpeechAsync("Code Companion desktop speech test.", "ElevenLabs test");
+    }
+
+    public async Task PlayBridgeSpeechAsync(string text)
+    {
+        await PlayElevenLabsSpeechAsync(text, "bridge request");
+    }
+
+    public void SetBridgeStatus(string status)
+    {
+        BridgeStatusText.Text = status;
+    }
+
+    private async Task PlayElevenLabsSpeechAsync(string text, string source)
+    {
         if (isPlaying)
         {
-            return;
+            throw new InvalidOperationException("Speech playback is already in progress.");
+        }
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new ArgumentException("Speech text cannot be empty.", nameof(text));
+        }
+
+        if (text.Length > 1000)
+        {
+            throw new ArgumentException("Speech text cannot be longer than 1000 characters.", nameof(text));
         }
 
         string? apiKey;
@@ -82,16 +110,16 @@ public partial class MainWindow : Window
 
         isPlaying = true;
         SetPlaybackButtonsEnabled(false);
-        StatusText.Text = "Generating ElevenLabs test speech...";
+        StatusText.Text = $"Generating ElevenLabs speech from {source}...";
         AudioPathText.Text = string.Empty;
 
         try
         {
-            var path = await textToSpeechClient.CreateTestSpeechAsync(apiKey);
-            StatusText.Text = "Playing ElevenLabs test speech...";
+            var path = await textToSpeechClient.CreateSpeechAsync(apiKey, text);
+            StatusText.Text = $"Playing ElevenLabs speech from {source}...";
             AudioPathText.Text = path;
             await audioFilePlayer.PlayAsync(path);
-            StatusText.Text = "ElevenLabs playback completed.";
+            StatusText.Text = $"ElevenLabs playback completed from {source}.";
         }
         catch (Exception ex)
         {
@@ -197,6 +225,19 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             CredentialStatusText.Text = $"Clear failed: {ex.Message}";
+        }
+    }
+
+    private void CopyBridgeTokenButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(bridgeTokenStore.EnsureToken());
+            BridgeStatusText.Text = $"Copied bridge token. Endpoint: {LocalBridgeServer.BaseUrl}";
+        }
+        catch (Exception ex)
+        {
+            BridgeStatusText.Text = $"Copy token failed: {ex.Message}";
         }
     }
 

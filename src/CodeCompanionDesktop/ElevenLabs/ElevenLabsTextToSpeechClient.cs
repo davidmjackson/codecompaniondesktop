@@ -21,13 +21,19 @@ public sealed class ElevenLabsTextToSpeechClient
 
     public async Task<string> CreateTestSpeechAsync(string apiKey)
     {
+        return await CreateSpeechAsync(apiKey, TestPhrase);
+    }
+
+    public async Task<string> CreateSpeechAsync(string apiKey, string text)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(apiKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(text);
 
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
             $"/v1/text-to-speech/{TestVoiceId}?output_format={OutputFormat}");
         request.Headers.Add("xi-api-key", apiKey);
-        request.Content = JsonContent.Create(new TextToSpeechRequest(TestPhrase, ModelId));
+        request.Content = JsonContent.Create(new TextToSpeechRequest(text, ModelId));
 
         using var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         if (!response.IsSuccessStatusCode)
