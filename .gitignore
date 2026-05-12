@@ -3,9 +3,9 @@ obj/
 .vs/
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 *.user
 *.suo
 *.cache
 *.log
 TestResults/
-

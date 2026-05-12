@@ -112,6 +112,7 @@ D:\Development\CodeCompanionDesktop
 - Primary repo for desktop-app sessions
 - .NET/WPF Windows app
 - Native Windows audio, credentials, provider calls, queueing, and bridge API
+- Open in local Windows VS Code, not VS Code WSL Remote
 
 /var/www/CodeCompanion
 - Existing VS Code extension repo in WSL
@@ -214,6 +215,12 @@ Use the Windows filesystem for the desktop app:
 ```text
 D:\Development\CodeCompanionDesktop
 ```
+
+Open that path directly from Windows VS Code. Do not open the desktop app as
+`/mnt/d/Development/CodeCompanionDesktop` in a WSL Remote window for C# editing:
+C# Dev Kit would run in WSL and can show false unresolved-symbol errors in WPF
+code-behind because the WindowsDesktop SDK and XAML design-time build are on the
+Windows side.
 
 Do not build the Windows desktop app inside WSL paths such as:
 

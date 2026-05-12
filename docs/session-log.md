@@ -10,12 +10,16 @@ options.
 
 - Confirmed `D:\Development\CodeCompanionDesktop` is the primary starting point
   for desktop-app sessions.
+- Documented that the desktop app should be opened in local Windows VS Code, not
+  a VS Code WSL Remote window, so C# Dev Kit can load WPF design-time builds.
 - Confirmed `/var/www/CodeCompanion` remains the existing VS Code extension
   codebase and will still be needed for bridge integration.
 - Documented that playback work is moving out of the WSL fallback path and into
   the .NET desktop app.
 - Recorded the current recommendation to keep the desktop app and extension in
   separate repositories until the bridge protocol and release process are stable.
+- Added folder-level VS Code settings so opening the desktop folder directly
+  still selects `CodeCompanionDesktop.sln` as the default solution.
 
 ### Follow-up
 

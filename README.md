@@ -13,6 +13,13 @@ Start desktop-app work in this Windows checkout:
 D:\Development\CodeCompanionDesktop
 ```
 
+Open this folder in a normal local Windows VS Code window, not a VS Code WSL
+Remote window. WPF targets `net8.0-windows` and depends on the WindowsDesktop
+SDK, so C# Dev Kit needs to run on the Windows side. If the same files are
+opened through WSL, `MainWindow.xaml.cs` may show false red underscores for
+XAML-generated members such as `InitializeComponent`, `PlayButton`,
+`StatusText`, and `AudioPathText`.
+
 The existing VS Code extension remains in WSL:
 
 ```text
