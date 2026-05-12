@@ -142,6 +142,20 @@ The tray menu also includes `Bridge Status` and `Copy Bridge Token` actions.
 The bridge listens on Windows port `47321`. From WSL, the extension discovers the
 Windows host IP and calls that address rather than `127.0.0.1`.
 
+## Startup Behavior
+
+Closing the window with `X` or clicking `Hide to Tray` keeps the app and bridge
+running in the tray. Use `Exit` from the window or tray menu to stop the app.
+
+The Startup section includes `Start hidden to tray`. When enabled, future
+launches start the tray icon and bridge without showing the main window.
+
+This preference is stored for the current Windows user at:
+
+```text
+%APPDATA%\CodeCompanionDesktop\settings.json
+```
+
 ## Session Notes
 
 See `docs/session-log.md` for the latest development status, verification, and
@@ -149,5 +163,5 @@ next steps.
 
 ## Next Milestones
 
-1. Manually verify tray bridge status and Copy Bridge Token actions.
-2. Add startup/minimize behavior suitable for daily use.
+1. Manually verify Start hidden to tray across app restarts.
+2. Decide whether to add Windows login startup registration.

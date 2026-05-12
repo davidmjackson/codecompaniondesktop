@@ -6,6 +6,30 @@ options.
 
 ## 2026-05-12 Local Desktop Bridge Endpoint
 
+### Startup Behavior Follow-up
+
+- Created branch `feature/start-hidden-to-tray` from `feature/local-bridge-endpoint`.
+- Added `AppSettingsStore` and `AppSettings`.
+- Persisted startup preferences to
+  `%APPDATA%\CodeCompanionDesktop\settings.json`.
+- Added a Startup section with `Start hidden to tray`.
+- When enabled, the app launches the tray icon and bridge without showing the
+  main window.
+- Added a startup tray balloon when the app launches hidden.
+- Added `Hide to Tray` to the tray menu.
+- Documented hide/exit behavior and startup preference storage in the README.
+
+### Startup Behavior Verification
+
+- `dotnet build CodeCompanionDesktop.sln`
+- XML parse check passed for `MainWindow.xaml` and `CodeCompanionDesktop.csproj`.
+- `git diff --check`
+- Launch smoke test with temporary app settings and default visible startup:
+  process started and bridge health returned
+  `{"status":"ok","bridge":"listening","speaking":false}`.
+- Launch smoke test with temporary app settings and `StartHiddenToTray=true`:
+  process started hidden/tray-backed and bridge health returned the same shape.
+
 ### Daily-Use Polish Follow-up
 
 - Added `BridgeRuntimeState` to track whether speech is currently playing and

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using CodeCompanionDesktop.Bridge;
 using CodeCompanionDesktop.Credentials;
+using CodeCompanionDesktop.Settings;
 using Forms = System.Windows.Forms;
 using WpfApplication = System.Windows.Application;
 
@@ -16,20 +17,34 @@ public partial class App : WpfApplication
     private LocalBridgeServer? bridgeServer;
     private BridgeTokenStore? bridgeTokenStore;
     private BridgeRuntimeState? bridgeRuntimeState;
+    private AppSettingsStore? settingsStore;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
         var credentialStore = new WindowsCredentialStore();
+        settingsStore = new AppSettingsStore();
+        var settings = settingsStore.Load();
         bridgeTokenStore = new BridgeTokenStore(credentialStore);
         var bridgeToken = bridgeTokenStore.EnsureToken();
         var runtimeState = new BridgeRuntimeState();
         bridgeRuntimeState = runtimeState;
 
-        mainWindow = new MainWindow(bridgeTokenStore, runtimeState);
+        mainWindow = new MainWindow(bridgeTokenStore, runtimeState, settingsStore, settings);
         ConfigureTrayIcon();
         StartBridgeServer(bridgeToken, runtimeState);
+
+        if (settings.StartHiddenToTray)
+        {
+            trayIcon?.ShowBalloonTip(
+                2500,
+                "Code Companion Desktop",
+                $"Running in tray. Bridge listening on port {LocalBridgeServer.Port}.",
+                Forms.ToolTipIcon.Info);
+            return;
+        }
+
         mainWindow.Show();
     }
 
@@ -93,6 +108,7 @@ public partial class App : WpfApplication
         var menu = new Forms.ContextMenuStrip();
 
         menu.Items.Add("Show", null, (_, _) => ShowMainWindow());
+        menu.Items.Add("Hide to Tray", null, (_, _) => mainWindow?.Hide());
         menu.Items.Add("Bridge Status", null, (_, _) => ShowBridgeStatus());
         menu.Items.Add("Copy Bridge Token", null, (_, _) => CopyBridgeTokenToClipboard());
         menu.Items.Add(new Forms.ToolStripSeparator());

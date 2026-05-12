@@ -6,6 +6,7 @@ using CodeCompanionDesktop.Audio;
 using CodeCompanionDesktop.Bridge;
 using CodeCompanionDesktop.Credentials;
 using CodeCompanionDesktop.ElevenLabs;
+using CodeCompanionDesktop.Settings;
 using WpfApplication = System.Windows.Application;
 
 namespace CodeCompanionDesktop;
@@ -17,14 +18,24 @@ public partial class MainWindow : Window
     private readonly WindowsCredentialStore credentialStore = new();
     private readonly BridgeTokenStore bridgeTokenStore;
     private readonly BridgeRuntimeState bridgeRuntimeState;
+    private readonly AppSettingsStore settingsStore;
+    private readonly AppSettings settings;
     private readonly ElevenLabsTextToSpeechClient textToSpeechClient = new();
     private bool isPlaying;
+    private bool isInitializing;
 
-    public MainWindow(BridgeTokenStore bridgeTokenStore, BridgeRuntimeState bridgeRuntimeState)
+    public MainWindow(
+        BridgeTokenStore bridgeTokenStore,
+        BridgeRuntimeState bridgeRuntimeState,
+        AppSettingsStore settingsStore,
+        AppSettings settings)
     {
         this.bridgeTokenStore = bridgeTokenStore;
         this.bridgeRuntimeState = bridgeRuntimeState;
+        this.settingsStore = settingsStore;
+        this.settings = settings;
         InitializeComponent();
+        LoadSettings();
     }
 
     public bool AllowClose { get; set; }
@@ -171,6 +182,17 @@ public partial class MainWindow : Window
         }
     }
 
+    private void StartHiddenToTrayCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (isInitializing)
+        {
+            return;
+        }
+
+        settings.StartHiddenToTray = StartHiddenToTrayCheckBox.IsChecked == true;
+        SaveSettings();
+    }
+
     private void SaveApiKeyButton_Click(object sender, RoutedEventArgs e)
     {
         var apiKey = ElevenLabsApiKeyBox.Password.Trim();
@@ -269,5 +291,36 @@ public partial class MainWindow : Window
     {
         PlayButton.IsEnabled = isEnabled;
         PlayElevenLabsButton.IsEnabled = isEnabled;
+    }
+
+    private void LoadSettings()
+    {
+        isInitializing = true;
+        try
+        {
+            StartHiddenToTrayCheckBox.IsChecked = settings.StartHiddenToTray;
+            SettingsStatusText.Text = settings.StartHiddenToTray
+                ? "Startup preference loaded: hidden to tray."
+                : "Startup preference loaded: show window.";
+        }
+        finally
+        {
+            isInitializing = false;
+        }
+    }
+
+    private void SaveSettings()
+    {
+        try
+        {
+            settingsStore.Save(settings);
+            SettingsStatusText.Text = settings.StartHiddenToTray
+                ? "Saved: app will start hidden to tray."
+                : "Saved: app will show the window at startup.";
+        }
+        catch (Exception ex)
+        {
+            SettingsStatusText.Text = $"Saving startup preference failed: {ex.Message}";
+        }
     }
 }
