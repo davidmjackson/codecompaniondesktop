@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.vscode/*
+!.vscode/extensions.json
+*.user
+*.suo
+*.cache
+*.log
+TestResults/
+
