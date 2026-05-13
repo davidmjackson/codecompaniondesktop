@@ -4,6 +4,42 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Thin Client Normal Candidate Source
+
+### Current Milestone
+
+- Milestone 4A: Windows-Owned Candidate Ingress.
+
+### Changed
+
+- Updated `docs/architecture.md` to record the extension `0.0.40` thin-client
+  behavior.
+- The normal extension path now has a separate local Codex event source setting
+  and keeps the old Codex log root as legacy compatibility only.
+- Automatic assistant candidates now deliver to Code Companion Desktop only and
+  no longer fall back to VS Code-owned provider calls or audio playback when
+  Desktop delivery fails.
+- Startup VS Code webview audio unlock is skipped when Desktop bridge mode is
+  enabled.
+
+### Decision
+
+- The remaining JSONL detection is only a local event source until a direct
+  Codex event API or managed session source exists. `\\wsl.localhost` remains
+  out of the normal product path.
+
+### Verified
+
+- Voice extension automated checks and packaging were run in
+  `/mnt/d/Development/CodeCompanionVoice`; see that repository session log for
+  exact commands.
+- Desktop documentation-only change; `git diff --check` pending.
+
+### Next
+
+- Reload the Windows Voice project window and verify extension `0.0.40` starts
+  in Desktop bridge mode without the unlock prompt.
+
 ## 2026-05-13 UNC Log Root Architecture Correction
 
 ### Current Milestone

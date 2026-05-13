@@ -551,10 +551,19 @@ Acceptance criteria:
 
 Status:
 
-- Desktop side in progress. The candidate inbox exists and is covered by
-  focused tests.
-- Extension side still needs to write explicit candidate events to Desktop and
-  retire normal-path Codex log root scraping.
+- Desktop side complete for Milestone 4A. The candidate inbox exists, is
+  covered by focused tests, and feeds the same desktop policy/provider/audio
+  pipeline as `POST /v1/speech/candidates`.
+- Extension `0.0.39` manually verified the Desktop candidate path with
+  `Code Companion Voice: Send Desktop Candidate Test`.
+- Extension `0.0.40` separates the normal local Codex event source from the
+  legacy manual Codex log root, skips startup webview audio unlock in Desktop
+  bridge mode, and prevents automatic candidates from falling back to
+  VS Code-owned provider calls or audio playback when Desktop delivery fails.
+- Remaining migration gap: normal candidate detection still tails a local Codex
+  JSONL event source until a direct Codex event API or managed session source is
+  available. It must remain local to the active VS Code extension host and must
+  not use `\\wsl.localhost` as a normal product path.
 
 ### Milestone 5: Project Identity
 
