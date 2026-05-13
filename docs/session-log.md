@@ -4,6 +4,36 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 MainWindow IDE Error Triage
+
+### Changed
+
+- No application code changed.
+- Reproduced the desktop build after a VS Code restart and checked the
+  `MainWindow.xaml.cs` diagnostics context.
+- Stopped the running debug `CodeCompanionDesktop.exe` process because it was
+  locking the debug output executable during build.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` using
+  `C:\Program Files\dotnet\dotnet.exe` completed with `0 Error(s)`.
+- Confirmed the XAML generated members used by `MainWindow.xaml.cs` exist in
+  `src/CodeCompanionDesktop/obj/Debug/net8.0-windows/MainWindow.g.cs`.
+
+### Decision
+
+- The reported `MainWindow.xaml.cs` errors are design-time IDE diagnostics, not
+  compiler errors. This matches the README warning that opening the WPF project
+  through WSL can show false errors for XAML-generated members.
+
+### Next
+
+- Open this repository in a normal Windows VS Code window, not WSL Remote, for
+  WPF editing and C# Dev Kit diagnostics.
+- Continue with VS Code extension first-run desktop bridge detection and
+  installer-link guidance if that is still the priority.
+
 ## 2026-05-13 Installer PR Merge
 
 ### Changed
