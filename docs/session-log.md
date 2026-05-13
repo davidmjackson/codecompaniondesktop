@@ -36,12 +36,22 @@ options.
 - User reloaded the Windows Voice project window and confirmed Output showed
   `[startup-unlock] skipped: desktop-bridge-enabled` and
   `[desktop-bridge] startup-health: reachable http://127.0.0.1:47321`.
+- A real Codex chat test in the Voice window produced no extension output. Local
+  inspection showed the Windows Codex session root had no recent
+  `D:\Development\CodeCompanionVoice` session; the visible sessions were for
+  `d:\Development\Projects\Game\Automata`.
+- A controlled matching JSONL smoke session for
+  `d:\Development\CodeCompanionVoice` was appended under the Windows Codex
+  session root. The extension forwarded the assistant candidate to Desktop and
+  Desktop history recorded `Candidate spoken (accepted)` and
+  `Playback completed from bridge request`.
+- The temporary smoke-test JSONL file was removed after verification.
 - Desktop documentation-only change; `git diff --check`.
 
 ### Next
 
-- Check a real matching Codex assistant candidate from the active workspace and
-  confirm Desktop receives it through the normal candidate path.
+- Investigate why the Codex UI test in the Voice window did not create or append
+  a matching Windows Codex session file for `D:\Development\CodeCompanionVoice`.
 
 ## 2026-05-13 UNC Log Root Architecture Correction
 
