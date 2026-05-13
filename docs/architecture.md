@@ -420,11 +420,11 @@ Acceptance criteria:
 
 Status:
 
-- Initial desktop runtime pipeline complete in this branch.
+- Complete in commit `cbad66d` plus follow-up live smoke verification.
 - Automated tests cover accepted/spoken, queued, duplicate, and privacy-filtered
   candidate decisions.
-- Live ElevenLabs playback from `/v1/speech/candidates` still needs a manual
-  smoke test with a saved provider key before closing the milestone fully.
+- Live `/v1/speech/candidates` smoke test returned `decision: "spoken"` through
+  the desktop bridge and ElevenLabs playback path.
 
 ### Milestone 3: Desktop Configuration And Diagnostics
 

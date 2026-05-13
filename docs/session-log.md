@@ -167,15 +167,21 @@ options.
 
 ### Remaining Gap
 
-- Live provider smoke test from `/v1/speech/candidates` is still pending. The
-  automated tests use a fake speech delegate and do not call ElevenLabs.
+- None for the initial Milestone 2 desktop pipeline.
 
 ### Next
 
-- Run `git diff --check`.
-- Smoke-test `/v1/speech/candidates` against the running desktop app with a
-  saved ElevenLabs key.
-- Commit and push the Milestone 2 desktop pipeline work.
+- Start Milestone 3: Desktop Configuration And Diagnostics.
+- Add a desktop diagnostics view for last client, last speech candidate, last
+  policy decision, provider/key state, and recent speech results.
+
+### Follow-up Verification
+
+- Live `POST /v1/speech/candidates` smoke test against the running debug app
+  returned:
+  `{"status":"accepted","decision":"spoken","reason":"accepted","queuePosition":0}`.
+- The request used the bridge token from Windows Credential Manager and did not
+  require any provider key in VS Code.
 
 ## 2026-05-13 MainWindow IDE Error Triage
 
