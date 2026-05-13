@@ -43,6 +43,7 @@ public sealed class SpeechCandidateProcessor
             candidateRequest.Codex.MessageId,
             candidateRequest.Candidate.Kind,
             candidateRequest.Candidate.Phase,
+            candidateRequest.Candidate.SpeechHint,
             candidateRequest.Candidate.Text));
 
         if (pipelineResult.Decision == "ignored" || pipelineResult.Decision == "duplicate")

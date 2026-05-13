@@ -4,6 +4,40 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Voice Check-In Speech Hint Contract
+
+### Current Milestone
+
+- Milestone 4A: Windows-Owned Candidate Ingress.
+
+### Changed
+
+- Added optional `candidate.speechHint` to the Desktop speech candidate
+  contract.
+- Desktop speech candidate policy now accepts explicit speech requests with
+  known hints such as `voice-check-in` even when the Codex phase is not `final`.
+- Added contract tests proving `voice-check-in` commentary candidates speak and
+  ordinary non-final candidates are still ignored.
+
+### Decision
+
+- Non-final Codex candidates remain silent by default.
+- Explicit speech hints are the contract-level way for the thin client to carry
+  user intent, such as a voice check-in request, to Desktop.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- `dotnet test CodeCompanionDesktop.sln --no-build`; 19 tests passed.
+- `git diff --check`
+- Desktop debug app restarted from
+  `src\CodeCompanionDesktop\bin\Debug\net8.0-windows\CodeCompanionDesktop.exe`.
+
+### Next
+
+- Reload the WSL VS Code window and repeat the real voice check-in. Expected
+  Desktop response is `candidate spoken/voice-check-in`.
+
 ## 2026-05-13 Thin Client Normal Candidate Source
 
 ### Current Milestone

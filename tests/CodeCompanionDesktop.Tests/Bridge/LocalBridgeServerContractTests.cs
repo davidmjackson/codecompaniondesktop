@@ -170,6 +170,51 @@ public sealed class LocalBridgeServerContractTests
     }
 
     [Fact]
+    public async Task SpeechCandidateSpeaksVoiceCheckInWhenPhaseIsNotFinal()
+    {
+        using var fixture = BridgeFixture.Start();
+        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+
+        using var response = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson(
+                messageId: "message-voice-check",
+                text: "The voice check candidate is ready.",
+                phase: "commentary",
+                speechHint: "voice-check-in")));
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+
+        using var document = await ReadJsonAsync(response);
+        var root = document.RootElement;
+        Assert.Equal("spoken", root.GetProperty("decision").GetString());
+        Assert.Equal("voice-check-in", root.GetProperty("reason").GetString());
+        Assert.Equal(["The voice check candidate is ready."], fixture.SpokenTexts);
+    }
+
+    [Fact]
+    public async Task SpeechCandidateIgnoresNonFinalPayloadWithoutSpeechHint()
+    {
+        using var fixture = BridgeFixture.Start();
+        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+
+        using var response = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson(
+                messageId: "message-commentary",
+                text: "The commentary candidate should not speak.",
+                phase: "commentary")));
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+
+        using var document = await ReadJsonAsync(response);
+        var root = document.RootElement;
+        Assert.Equal("ignored", root.GetProperty("decision").GetString());
+        Assert.Equal("non_final_candidate", root.GetProperty("reason").GetString());
+        Assert.Empty(fixture.SpokenTexts);
+    }
+
+    [Fact]
     public async Task SpeechCandidateIgnoresDuplicateMessageId()
     {
         using var fixture = BridgeFixture.Start();
@@ -260,8 +305,14 @@ public sealed class LocalBridgeServerContractTests
 
     private static string ValidSpeechCandidateJson(
         string messageId = "message-1",
-        string text = "The bridge contract test candidate is ready.")
+        string text = "The bridge contract test candidate is ready.",
+        string phase = "final",
+        string? speechHint = null)
     {
+        var speechHintJson = speechHint is null
+            ? ""
+            : $"                \"speechHint\": \"{JsonEncodedText.Encode(speechHint)}\",\n";
+
         return $$"""
             {
               "schemaVersion": 1,
@@ -284,7 +335,8 @@ public sealed class LocalBridgeServerContractTests
               },
               "candidate": {
                 "kind": "assistant-message",
-                "phase": "final",
+                "phase": "{{JsonEncodedText.Encode(phase)}}",
+                {{speechHintJson}}
                 "text": "{{JsonEncodedText.Encode(text)}}",
                 "source": "codex-jsonl"
               }

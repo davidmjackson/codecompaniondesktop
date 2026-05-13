@@ -48,6 +48,7 @@ public sealed record CodexMetadata(
 public sealed record SpeechCandidate(
     [property: JsonPropertyName("kind")] string Kind,
     [property: JsonPropertyName("phase")] string? Phase,
+    [property: JsonPropertyName("speechHint")] string? SpeechHint,
     [property: JsonPropertyName("text")] string Text,
     [property: JsonPropertyName("source")] string? Source);
 

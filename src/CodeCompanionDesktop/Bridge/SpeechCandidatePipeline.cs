@@ -23,10 +23,14 @@ public sealed partial class SpeechCandidatePipeline
             return SpeechCandidatePipelineResult.Ignored("unsupported_candidate_kind");
         }
 
+        var speechHint = NormalizeSpeechHint(input.SpeechHint);
         if (!string.IsNullOrWhiteSpace(input.Phase)
             && !string.Equals(input.Phase.Trim(), "final", StringComparison.OrdinalIgnoreCase))
         {
-            return SpeechCandidatePipelineResult.Ignored("non_final_candidate");
+            if (!IsExplicitSpeechRequest(speechHint))
+            {
+                return SpeechCandidatePipelineResult.Ignored("non_final_candidate");
+            }
         }
 
         var normalized = NormalizeForSpeech(input.Text);
@@ -42,7 +46,7 @@ public sealed partial class SpeechCandidatePipeline
         }
 
         var reason = string.Equals(filtered, normalized, StringComparison.Ordinal)
-            ? "accepted"
+            ? IsExplicitSpeechRequest(speechHint) ? speechHint! : "accepted"
             : "privacy_filtered";
 
         if (filtered.Length > MaxSpeechTextLength)
@@ -93,6 +97,18 @@ public sealed partial class SpeechCandidatePipeline
         return filtered;
     }
 
+    private static bool IsExplicitSpeechRequest(string? speechHint)
+    {
+        return speechHint is "voice-check-in" or "manual-speak-last" or "manual-desktop-candidate-test";
+    }
+
+    private static string? NormalizeSpeechHint(string? speechHint)
+    {
+        return string.IsNullOrWhiteSpace(speechHint)
+            ? null
+            : speechHint.Trim().ToLowerInvariant();
+    }
+
     private static string HashNormalizedText(string text)
     {
         var normalized = text.Trim().ToUpperInvariant();
@@ -123,6 +139,7 @@ public sealed record SpeechCandidatePipelineInput(
     string MessageId,
     string Kind,
     string? Phase,
+    string? SpeechHint,
     string Text);
 
 public sealed record SpeechCandidateReservation(
