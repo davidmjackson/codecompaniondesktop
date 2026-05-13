@@ -1,10 +1,15 @@
+using CodeCompanionDesktop.History;
+
 namespace CodeCompanionDesktop.Bridge;
 
 public sealed class BridgeRuntimeState
 {
+    private const int MaxRecentBridgeClients = 8;
     private const int MaxRecentSpeechResults = 8;
 
     private readonly object syncRoot = new();
+    private readonly SpeechHistoryStore? speechHistoryStore;
+    private readonly List<string> recentBridgeClients = new();
     private readonly List<string> recentSpeechResults = new();
     private bool isSpeaking;
     private bool queueBridgeSpeechRequests;
@@ -67,6 +72,20 @@ public sealed class BridgeRuntimeState
 
     public string LastPlaybackError { get; private set; } = "No playback errors.";
 
+    public BridgeRuntimeState(SpeechHistoryStore? speechHistoryStore = null)
+    {
+        this.speechHistoryStore = speechHistoryStore;
+
+        var snapshot = speechHistoryStore?.Load();
+        if (snapshot is null)
+        {
+            return;
+        }
+
+        recentBridgeClients.AddRange(snapshot.RecentBridgeClients.Take(MaxRecentBridgeClients));
+        recentSpeechResults.AddRange(snapshot.RecentSpeechResults.Take(MaxRecentSpeechResults));
+    }
+
     public BridgeDiagnosticsSnapshot GetDiagnosticsSnapshot()
     {
         lock (syncRoot)
@@ -82,6 +101,7 @@ public sealed class BridgeRuntimeState
                 LastSpeechDecision,
                 LastProviderError,
                 LastPlaybackError,
+                recentBridgeClients.ToArray(),
                 recentSpeechResults.ToArray());
         }
     }
@@ -104,6 +124,7 @@ public sealed class BridgeRuntimeState
         {
             LastClient = $"{clientName} from {environment} for project {projectId}.";
             LastStatus = $"Bridge client hello received from {clientName}.";
+            AddRecentBridgeClient(LastClient);
         }
     }
 
@@ -239,6 +260,31 @@ public sealed class BridgeRuntimeState
         {
             recentSpeechResults.RemoveRange(MaxRecentSpeechResults, recentSpeechResults.Count - MaxRecentSpeechResults);
         }
+
+        SaveHistory();
+    }
+
+    private void AddRecentBridgeClient(string client)
+    {
+        var timestamp = DateTimeOffset.Now.ToString("HH:mm:ss");
+        var item = $"{timestamp} {client}";
+        recentBridgeClients.RemoveAll(existing => existing.EndsWith(client, StringComparison.Ordinal));
+        recentBridgeClients.Insert(0, item);
+        if (recentBridgeClients.Count > MaxRecentBridgeClients)
+        {
+            recentBridgeClients.RemoveRange(MaxRecentBridgeClients, recentBridgeClients.Count - MaxRecentBridgeClients);
+        }
+
+        SaveHistory();
+    }
+
+    private void SaveHistory()
+    {
+        speechHistoryStore?.Save(new SpeechHistorySnapshot
+        {
+            RecentBridgeClients = recentBridgeClients.ToList(),
+            RecentSpeechResults = recentSpeechResults.ToList()
+        });
     }
 }
 
@@ -253,4 +299,5 @@ public sealed record BridgeDiagnosticsSnapshot(
     string LastSpeechDecision,
     string LastProviderError,
     string LastPlaybackError,
+    IReadOnlyList<string> RecentBridgeClients,
     IReadOnlyList<string> RecentSpeechResults);

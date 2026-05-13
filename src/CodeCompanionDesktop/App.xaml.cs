@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using CodeCompanionDesktop.Bridge;
 using CodeCompanionDesktop.Credentials;
+using CodeCompanionDesktop.History;
 using CodeCompanionDesktop.Settings;
 using Forms = System.Windows.Forms;
 using WpfApplication = System.Windows.Application;
@@ -30,7 +31,7 @@ public partial class App : WpfApplication
         var settings = settingsStore.Load();
         bridgeTokenStore = new BridgeTokenStore(credentialStore);
         var bridgeToken = bridgeTokenStore.EnsureToken();
-        var runtimeState = new BridgeRuntimeState();
+        var runtimeState = new BridgeRuntimeState(new SpeechHistoryStore());
         runtimeState.ConfigureQueue(settings.QueueBridgeSpeechRequests, settings.MaxQueuedBridgeSpeechRequests);
         bridgeSpeechQueue = new BridgeSpeechQueue(SpeakFromBridgeAsync, runtimeState);
         bridgeRuntimeState = runtimeState;

@@ -24,6 +24,7 @@ public sealed class BridgeRuntimeStateTests
         Assert.Equal("spoken (accepted)", snapshot.LastSpeechDecision);
         Assert.Equal("provider unavailable", snapshot.LastProviderError);
         Assert.Equal("device unavailable", snapshot.LastPlaybackError);
+        Assert.Contains(snapshot.RecentBridgeClients, result => result.Contains("Code Companion Voice", StringComparison.Ordinal));
         Assert.Contains(snapshot.RecentSpeechResults, result => result.Contains("Candidate spoken (accepted).", StringComparison.Ordinal));
         Assert.Contains(snapshot.RecentSpeechResults, result => result.Contains("Provider error: provider unavailable", StringComparison.Ordinal));
         Assert.Contains(snapshot.RecentSpeechResults, result => result.Contains("Playback error: device unavailable", StringComparison.Ordinal));

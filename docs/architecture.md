@@ -452,13 +452,15 @@ Acceptance criteria:
 
 Status:
 
-- In progress.
+- Complete.
 - Initial desktop speech diagnostics panel added for bridge state, provider key
   state, last client, last speech candidate, last policy decision, provider and
   playback errors, and recent speech results.
 - Initial provider configuration added for ElevenLabs voice ID, model ID, and
   output format.
-- Broader provider selection remains pending until a second provider exists.
+- Persisted recent bridge client and speech result history added under
+  `%APPDATA%\CodeCompanionDesktop`.
+- Broader provider selection is deferred until a second provider exists.
 
 ### Milestone 4: Thin VS Code Client
 

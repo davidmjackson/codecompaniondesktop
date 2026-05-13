@@ -432,6 +432,11 @@ public partial class MainWindow : Window
             ? $"{snapshot.PendingSpeechRequests}/{snapshot.MaxQueuedSpeechRequests}"
             : "disabled";
         var providerKeyStatus = GetProviderKeyStatus();
+        var recentClients = snapshot.RecentBridgeClients.Count == 0
+            ? "Recent clients: none"
+            : string.Join(
+                Environment.NewLine,
+                snapshot.RecentBridgeClients.Select(client => $"Client: {client}"));
         var recent = snapshot.RecentSpeechResults.Count == 0
             ? "Recent speech results: none"
             : string.Join(
@@ -454,6 +459,7 @@ public partial class MainWindow : Window
             $"Last provider error: {snapshot.LastProviderError}",
             $"Last playback error: {snapshot.LastPlaybackError}",
             $"Last bridge status: {snapshot.LastStatus}",
+            recentClients,
             recent);
     }
 

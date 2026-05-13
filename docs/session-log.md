@@ -261,6 +261,47 @@ options.
 - Decide whether to close Milestone 3 with the current diagnostics/configuration
   surface or add recent client/history persistence before moving to Milestone 4.
 
+## 2026-05-13 Desktop Recent History
+
+### Current Milestone
+
+- Milestone 3: Desktop Configuration And Diagnostics.
+
+### Changed
+
+- Added `SpeechHistoryStore` for desktop-owned recent bridge client and speech
+  result history.
+- Persisted diagnostics history to
+  `%APPDATA%\CodeCompanionDesktop\speech-history.json`.
+- Loaded persisted recent bridge clients and speech results into
+  `BridgeRuntimeState` during app startup.
+- Expanded speech diagnostics output with recent bridge clients.
+- Added tests for history store round-tripping and runtime-state loading from
+  persisted history.
+- Updated README and architecture notes for persisted diagnostic history.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` using
+  `C:\Program Files\dotnet\dotnet.exe`.
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`; 15 tests passed.
+
+### Decision
+
+- Milestone 3 is complete for the current architecture. The Windows app now
+  owns provider key storage, provider voice/model/output configuration, queue
+  settings, bridge status, speech diagnostics, recent clients, and recent
+  speech history.
+- Broader provider selection remains deferred until a second real provider is
+  introduced.
+
+### Next
+
+- Start Milestone 4: Thin VS Code Client.
+- Move the extension toward forwarding structured candidates to
+  `/v1/speech/candidates` and remove VS Code-owned TTS/audio responsibilities.
+
 ## 2026-05-13 MainWindow IDE Error Triage
 
 ### Changed

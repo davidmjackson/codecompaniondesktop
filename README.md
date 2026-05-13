@@ -198,6 +198,8 @@ off and on again so Windows starts the correct executable.
 - Desktop speech diagnostics for bridge clients, candidates, policy decisions,
   queue state, provider key state, provider errors, playback errors, and recent
   speech results
+- Persisted recent bridge client and speech result history under
+  `%APPDATA%\CodeCompanionDesktop`
 
 ## Credential Storage
 
@@ -228,6 +230,17 @@ under `CodeCompanionDesktop`.
 
 If no ElevenLabs API key is saved in Windows Credential Manager, the test button
 reports that a key must be saved first.
+
+## Speech History
+
+Recent bridge clients and speech results are stored for desktop diagnostics in:
+
+```text
+%APPDATA%\CodeCompanionDesktop\speech-history.json
+```
+
+The history is diagnostic only. Provider API keys remain in Windows Credential
+Manager and are not written to this file.
 
 ## Local Bridge
 
