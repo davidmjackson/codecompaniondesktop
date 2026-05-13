@@ -1,5 +1,7 @@
 # Code Companion Desktop
 
+<!-- cspell:words Inno ISCC LOCALAPPDATA APPDATA -->
+
 Windows desktop companion app for Code Companion Voice.
 
 The first proof of concept is a small WPF tray app that can play a generated
@@ -47,6 +49,25 @@ Check the SDK from PowerShell:
 dotnet --info
 ```
 
+Building the Windows installer also requires Inno Setup 6. The installer build
+script looks for `ISCC.exe` on PATH and in the default Inno Setup install
+locations.
+
+## Distribution Model
+
+Code Companion uses two separate installs:
+
+- The VS Code extension is installed from the VS Code Marketplace.
+- Code Companion Desktop is installed separately as a Windows app.
+
+The VS Code extension owns VS Code commands, workspace context, Codex log
+watching, and calls to the local desktop bridge. The Windows app owns
+credentials, ElevenLabs calls, queueing, and native Windows audio playback.
+
+They are paired by launching Code Companion Desktop, copying the bridge token,
+and saving it in the VS Code extension with
+`Code Companion Voice: Set Desktop Bridge Token`.
+
 ## Run
 
 From PowerShell in this folder:
@@ -85,9 +106,52 @@ If `Start with Windows sign-in` is already enabled from a debug build, launch
 the published app, turn `Start with Windows sign-in` off, then turn it back on.
 The Startup diagnostics should then show the published executable path.
 
+## Build Installer
+
+Create a self-contained publish output and compile the Windows installer from
+PowerShell in the repository root:
+
+```powershell
+.\scripts\build-installer.ps1 -AppVersion 0.1.0
+```
+
+The default installer output is:
+
+```text
+artifacts\installer\CodeCompanionDesktopSetup-0.1.0.exe
+```
+
+The installer is a per-user install. It installs to:
+
+```text
+%LOCALAPPDATA%\Programs\Code Companion Desktop
+```
+
+It creates a Start Menu shortcut, offers an optional desktop shortcut, and shows
+a post-install option to launch Code Companion Desktop. The app still stores
+credentials in Windows Credential Manager and stores user settings under
+`%APPDATA%\CodeCompanionDesktop`.
+
 ## Install For Daily Use
 
-There is no installer yet. Use the published folder as a portable daily build:
+Preferred path after building an installer:
+
+1. Run `artifacts\installer\CodeCompanionDesktopSetup-0.1.0.exe`.
+2. Launch Code Companion Desktop from the installer, Start Menu, or desktop
+   shortcut.
+3. Confirm the app opens with the Code Companion icon and the tray icon appears.
+4. Save or confirm the ElevenLabs API key in the desktop app.
+5. Use `Copy Token` in the Local Bridge section.
+6. In VS Code, run `Code Companion Voice: Set Desktop Bridge Token` and paste the
+   token.
+7. In the Startup section, enable `Start hidden to tray` if you want the app to
+   stay out of the way after launch.
+8. Enable `Start with Windows sign-in` from the installed app.
+9. Click `Refresh Diagnostics` and confirm the registered executable path points
+   to `%LOCALAPPDATA%\Programs\Code Companion Desktop\CodeCompanionDesktop.exe`.
+
+For developer testing, the published folder can still be used as a portable
+daily build:
 
 1. Run `.\scripts\publish-release.ps1` from PowerShell in the repository root.
 2. Launch
@@ -110,6 +174,7 @@ off and on again so Windows starts the correct executable.
 - Styled WPF status window using the custom Code Companion app icon
 - Packaged Windows executable icon metadata for release builds
 - Self-contained Windows publish script for daily desktop use
+- Inno Setup installer script and build wrapper for per-user Windows installs
 - Custom Windows tray icon with Show, Play Test Sound, and Exit menu items
 - Generated local WAV test tone in the user's temp directory
 - Windows audio playback using `System.Media.SoundPlayer`
@@ -237,5 +302,6 @@ next steps.
 
 ## Next Milestones
 
-1. Add an installer or update flow for non-developer daily use.
-2. Add bridge request history/logging for easier troubleshooting.
+1. Add VS Code extension first-run checks for the desktop bridge and installer
+   link.
+2. Add an update/signing flow for non-developer daily use.

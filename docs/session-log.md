@@ -4,6 +4,76 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-12 Stop Point
+
+### Current State
+
+- Current branch: `feature/windows-installer`.
+- Latest commit: `7e2a45f Allow installer terms in README spellcheck`.
+- PR #2 is open as a draft from `feature/windows-installer` into
+  `feature/release-publish-path`.
+- The Inno Setup installer was built and installed successfully.
+- The installed app is running and bridge health is:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":false,"queued":0,"queueLimit":3}`
+
+### Next
+
+- Merge PR #2 into `feature/release-publish-path`.
+- Then start the VS Code extension first-run desktop bridge detection and
+  installer-link guidance work in `/var/www/CodeCompanion` if that is still the
+  priority.
+
+## 2026-05-12 Windows Installer Packaging
+
+### Changed
+
+- Created branch `feature/windows-installer` from `feature/release-publish-path`.
+- Added `installer/CodeCompanionDesktop.iss` for a per-user Inno Setup installer.
+- Added `scripts/build-installer.ps1` to publish the self-contained app and
+  compile the installer with `ISCC.exe`.
+- The installer targets
+  `%LOCALAPPDATA%\Programs\Code Companion Desktop`, adds a Start Menu shortcut,
+  offers an optional desktop shortcut, and can launch the app after install.
+- Updated README with the two-install distribution model: VS Code extension from
+  the Marketplace, Windows desktop app from the installer, paired by bridge
+  token.
+- Updated README installer build and daily install steps.
+
+### Verified
+
+- `git diff --check`
+- PowerShell parser check for `scripts/build-installer.ps1`
+- `dotnet build CodeCompanionDesktop.sln --no-incremental` using
+  `C:\Program Files\dotnet\dotnet.exe`
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`
+- `scripts\build-installer.ps1 -AppVersion 0.1.0` published the app, then
+  stopped with the expected message because Inno Setup `ISCC.exe` is not
+  installed on this machine.
+- Launched the published executable and confirmed bridge health:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":false,"queued":0,"queueLimit":3}`
+- Stopped the published app after smoke testing.
+
+### Next
+
+- Install Inno Setup 6 on the Windows side and rerun
+  `scripts\build-installer.ps1 -AppVersion 0.1.0` to compile the `.exe`
+  installer.
+- Add VS Code extension first-run checks for the desktop bridge and installer
+  link.
+
+### Installer Follow-up Verification
+
+- User installed Inno Setup 6 and ran the installer build from PowerShell with
+  execution-policy bypass.
+- User ran the generated installer successfully.
+- Installer created the installed executable at
+  `%LOCALAPPDATA%\Programs\Code Companion Desktop\CodeCompanionDesktop.exe`.
+- User selected the optional desktop shortcut; verified
+  `Code Companion Desktop.lnk` points to the installed executable.
+- Confirmed the installed app bridge health:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":false,"queued":0,"queueLimit":3}`
+
 ## 2026-05-12 Bridge Queue Publish
 
 ### Changed
