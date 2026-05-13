@@ -368,7 +368,7 @@ Acceptance criteria:
 
 Status:
 
-- In progress.
+- Complete in commit `28504ce`.
 
 ### Milestone 1: Desktop Bridge Contract
 
@@ -391,6 +391,13 @@ Acceptance criteria:
 - `POST /v1/speech/candidates` validates payload shape and returns a policy
   placeholder decision.
 - Unit tests cover validation and error responses.
+
+Status:
+
+- In progress.
+- Runtime endpoints are implemented.
+- Automated bridge contract tests are still pending because the repository does
+  not yet have a test project.
 
 ### Milestone 2: Desktop Speech Pipeline
 

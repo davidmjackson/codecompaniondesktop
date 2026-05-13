@@ -54,6 +54,10 @@ public sealed class BridgeRuntimeState
 
     public string LastStatus { get; private set; } = "No bridge requests yet.";
 
+    public string LastClient { get; private set; } = "No bridge clients seen yet.";
+
+    public string LastSpeechCandidate { get; private set; } = "No speech candidates received yet.";
+
     public void ConfigureQueue(bool isEnabled, int maxQueuedRequests)
     {
         lock (syncRoot)
@@ -63,6 +67,25 @@ public sealed class BridgeRuntimeState
             LastStatus = isEnabled
                 ? $"Bridge speech queue enabled. Limit: {maxQueuedRequests}."
                 : "Bridge speech queue disabled. Busy requests are rejected.";
+        }
+    }
+
+    public void RecordClientSeen(string clientName, string environment, string projectId)
+    {
+        lock (syncRoot)
+        {
+            LastClient = $"{clientName} from {environment} for project {projectId}.";
+            LastStatus = $"Bridge client hello received from {clientName}.";
+        }
+    }
+
+    public void RecordSpeechCandidate(string environment, string projectId, string messageId, string text)
+    {
+        lock (syncRoot)
+        {
+            var preview = text.Length <= 80 ? text : $"{text[..80]}...";
+            LastSpeechCandidate = $"{environment} project {projectId} message {messageId}: {preview}";
+            LastStatus = "Bridge speech candidate accepted for future desktop pipeline.";
         }
     }
 

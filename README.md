@@ -230,6 +230,8 @@ The desktop app starts a local HTTP bridge on port `47321` when it launches.
 
 ```text
 GET  /health
+POST /v1/client/hello
+POST /v1/speech/candidates
 POST /speak
 ```
 
@@ -239,10 +241,95 @@ POST /speak
 {
   "status": "ok",
   "bridge": "listening",
+  "version": "0.2.0",
+  "protocolVersion": 1,
+  "appVersion": "1.0.0",
   "speaking": false,
   "queueEnabled": false,
   "queued": 0,
   "queueLimit": 3
+}
+```
+
+`POST /v1/client/hello` accepts VS Code client and workspace metadata. It is the
+first versioned bridge contract for the environment-agnostic speech
+architecture:
+
+```json
+{
+  "schemaVersion": 1,
+  "client": {
+    "clientId": "generated-non-secret-id",
+    "name": "Code Companion Voice",
+    "version": "0.1.0",
+    "host": "windows",
+    "environment": "windows"
+  },
+  "workspace": {
+    "projectId": "codecompaniondesktop",
+    "displayName": "Code Companion Desktop",
+    "roots": ["D:\\Development\\CodeCompanionDesktop"]
+  }
+}
+```
+
+The current response uses compatibility authorization while desktop-managed
+pairing is still pending:
+
+```json
+{
+  "status": "ok",
+  "authorization": "allowed",
+  "mode": "compatibility-token",
+  "bridgeVersion": "0.2.0",
+  "protocolVersion": 1
+}
+```
+
+`POST /v1/speech/candidates` accepts structured Codex speech candidate events.
+During the Milestone 1 bridge-contract phase, it validates the request and
+returns a placeholder decision. Milestone 2 will connect this endpoint to the
+desktop-owned speech policy, rewrite, queue, provider, and playback pipeline.
+This endpoint currently requires the same `Authorization: Bearer <token>` header
+as `/speak`.
+
+```json
+{
+  "schemaVersion": 1,
+  "client": {
+    "clientId": "generated-non-secret-id",
+    "name": "Code Companion Voice",
+    "version": "0.1.0",
+    "host": "wsl",
+    "environment": "wsl:Ubuntu-24.04"
+  },
+  "workspace": {
+    "projectId": "codecompaniondesktop",
+    "displayName": "Code Companion Desktop",
+    "roots": ["/mnt/d/Development/CodeCompanionDesktop"]
+  },
+  "codex": {
+    "sessionId": "019e1ff1-6137-72d2-abc1-8095584e6adf",
+    "messageId": "732d2e9ba4e5ce04",
+    "timestamp": "2026-05-13T07:06:13.303Z"
+  },
+  "candidate": {
+    "kind": "assistant-message",
+    "phase": "final",
+    "text": "Implemented the bridge health check and verified tests.",
+    "source": "codex-jsonl"
+  }
+}
+```
+
+Current placeholder response:
+
+```json
+{
+  "status": "accepted",
+  "decision": "ignored",
+  "reason": "speech_pipeline_not_implemented",
+  "queuePosition": 0
 }
 ```
 

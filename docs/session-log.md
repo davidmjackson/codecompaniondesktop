@@ -47,6 +47,59 @@ options.
 - Add versioned bridge DTOs and endpoints in the Windows app while keeping
   `/speak` as a temporary compatibility endpoint.
 
+## 2026-05-13 Desktop Bridge Contract Endpoints
+
+### Current Milestone
+
+- Milestone 1: Desktop Bridge Contract.
+
+### Changed
+
+- Expanded `GET /health` with bridge `version`, `protocolVersion`, and
+  `appVersion` fields while preserving existing queue and speaking fields.
+- Added `POST /v1/client/hello` for VS Code client/workspace metadata.
+- Added `POST /v1/speech/candidates` for structured Codex speech candidate
+  events.
+- Kept existing `POST /speak` behavior as the compatibility speech endpoint.
+- Added bridge runtime tracking for the last client hello and last speech
+  candidate.
+- Documented the versioned bridge endpoints in `README.md`.
+- Updated `docs/architecture.md` milestone status.
+
+### Decisions
+
+- `POST /v1/client/hello` is unauthenticated for Milestone 1 and returns
+  `authorization: "allowed"` with `mode: "compatibility-token"`.
+- `POST /v1/speech/candidates` requires the existing bearer token until the
+  desktop-managed pairing milestone replaces copied tokens.
+- `POST /v1/speech/candidates` validates the contract but returns
+  `decision: "ignored"` and `reason: "speech_pipeline_not_implemented"` until
+  Milestone 2 moves policy, rewrite, queueing, provider calls, and playback into
+  the desktop pipeline.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` using
+  `C:\Program Files\dotnet\dotnet.exe`.
+- Launched the debug build and verified `GET /health` returns version fields:
+  `version`, `protocolVersion`, and `appVersion`.
+- Verified `POST /v1/client/hello` returns:
+  `{"status":"ok","authorization":"allowed","mode":"compatibility-token","bridgeVersion":"0.2.0","protocolVersion":1}`.
+- Verified unauthenticated `POST /v1/speech/candidates` returns
+  `401 Unauthorized`.
+- Verified authenticated `POST /v1/speech/candidates` returns:
+  `{"status":"accepted","decision":"ignored","reason":"speech_pipeline_not_implemented","queuePosition":0}`.
+
+### Remaining Gap
+
+- Milestone 1 automated validation/error-response tests are still pending. The
+  repository does not yet have a test project.
+
+### Next
+
+- Add a focused bridge contract test project or move directly into Milestone 2
+  with tests included there.
+
 ## 2026-05-13 MainWindow IDE Error Triage
 
 ### Changed
