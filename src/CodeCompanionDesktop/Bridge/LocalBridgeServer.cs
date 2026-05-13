@@ -28,6 +28,7 @@ public sealed class LocalBridgeServer : IDisposable
     private readonly BridgeRuntimeState runtimeState;
     private readonly BridgeSpeechQueue speechQueue;
     private readonly SpeechCandidateProcessor speechCandidateProcessor;
+    private readonly ClientTrustStore? clientTrustStore;
     private readonly int port;
     private readonly CancellationTokenSource cancellation = new();
     private TcpListener? listener;
@@ -40,6 +41,7 @@ public sealed class LocalBridgeServer : IDisposable
         BridgeSpeechQueue speechQueue,
         SpeechCandidatePipeline? speechCandidatePipeline = null,
         SpeechCandidateProcessor? speechCandidateProcessor = null,
+        ClientTrustStore? clientTrustStore = null,
         int port = Port)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
@@ -57,6 +59,7 @@ public sealed class LocalBridgeServer : IDisposable
             runtimeState,
             speechQueue,
             speechCandidatePipeline);
+        this.clientTrustStore = clientTrustStore;
         this.port = port;
     }
 
@@ -187,14 +190,21 @@ public sealed class LocalBridgeServer : IDisposable
         }
 
         runtimeState.RecordClientSeen(helloRequest.Client, helloRequest.Workspace);
+        var authorization = ClientTrustStore.Allowed;
+        var mode = "compatibility-token";
+        if (clientTrustStore is not null)
+        {
+            authorization = clientTrustStore.RecordHello(helloRequest.Client, helloRequest.Workspace).Authorization;
+            mode = "desktop-pairing";
+        }
 
         await WriteJsonAsync(
             stream,
             HttpStatusCode.OK,
             new ClientHelloResponse(
                 "ok",
-                "allowed",
-                "compatibility-token",
+                authorization,
+                mode,
                 BridgeVersion,
                 ProtocolVersion));
     }

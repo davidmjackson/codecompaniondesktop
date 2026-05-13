@@ -23,6 +23,7 @@ public partial class App : WpfApplication
     private BridgeSpeechQueue? bridgeSpeechQueue;
     private SpeechCandidateProcessor? speechCandidateProcessor;
     private AppSettingsStore? settingsStore;
+    private ClientTrustStore? clientTrustStore;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -37,6 +38,7 @@ public partial class App : WpfApplication
         runtimeState.ConfigureQueue(settings.QueueBridgeSpeechRequests, settings.MaxQueuedBridgeSpeechRequests);
         bridgeSpeechQueue = new BridgeSpeechQueue(SpeakFromBridgeAsync, runtimeState);
         speechCandidateProcessor = new SpeechCandidateProcessor(SpeakFromBridgeAsync, runtimeState, bridgeSpeechQueue);
+        clientTrustStore = new ClientTrustStore();
         bridgeRuntimeState = runtimeState;
 
         mainWindow = new MainWindow(bridgeTokenStore, runtimeState, settingsStore, settings);
@@ -183,7 +185,8 @@ public partial class App : WpfApplication
                 SpeakFromBridgeAsync,
                 runtimeState,
                 bridgeSpeechQueue,
-                speechCandidateProcessor: speechCandidateProcessor);
+                speechCandidateProcessor: speechCandidateProcessor,
+                clientTrustStore: clientTrustStore);
             bridgeServer.Start();
             mainWindow.SetBridgeStatus($"Bridge listening on {LocalBridgeServer.BaseUrl}");
         }

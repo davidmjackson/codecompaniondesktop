@@ -317,6 +317,19 @@ treat Windows and WSL paths as aliases of one project instead of as separate
 project identities. The main Desktop window includes a Project Registry panel
 with Refresh, Copy, Add Alias, and Remove Alias actions for troubleshooting.
 
+## Client Trust
+
+Desktop-owned bridge client trust state is stored in:
+
+```text
+%APPDATA%\CodeCompanionDesktop\client-trust.json
+```
+
+When the desktop app receives `/v1/client/hello`, unknown clients are recorded
+as `pending`. Previously approved clients return `allowed`. The copied bridge
+token remains as a temporary compatibility path until Milestone 6 fully replaces
+long-lived VS Code token storage with Desktop-owned pairing.
+
 ## Local Bridge
 
 The desktop app starts a local HTTP bridge on port `47321` when it launches.

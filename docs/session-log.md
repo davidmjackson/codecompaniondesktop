@@ -4,6 +4,37 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Client Trust Registry
+
+### Current Milestone
+
+- Milestone 6: Pairing Without Persistent VS Code Secrets.
+
+### Changed
+
+- Added `ClientTrustStore` for Desktop-owned bridge client trust state.
+- Production Desktop now supplies the trust store to `LocalBridgeServer`.
+- `/v1/client/hello` records unknown clients as `pending` in
+  `%APPDATA%\CodeCompanionDesktop\client-trust.json`.
+- Approved clients return `allowed` from `/v1/client/hello`.
+- The bridge keeps compatibility-token behavior when no trust store is supplied,
+  preserving the migration fallback.
+
+### Decision
+
+- This is the pairing registry baseline only. User approval UI and short-lived
+  session authorization remain separate Milestone 6 slices.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- `dotnet test CodeCompanionDesktop.sln --no-build`; 23 tests passed.
+- `git diff --check`
+
+### Next
+
+- Add Desktop UI for pending clients with approve and deny actions.
+
 ## 2026-05-13 Project Speech History
 
 ### Current Milestone

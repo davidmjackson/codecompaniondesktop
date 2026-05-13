@@ -619,6 +619,20 @@ Acceptance criteria:
 - Durable trust lives in the Windows app.
 - VS Code stores no long-lived secret token.
 
+Status:
+
+- In progress.
+- Desktop now stores bridge client trust state in
+  `%APPDATA%\CodeCompanionDesktop\client-trust.json`.
+- `/v1/client/hello` records unknown clients as `pending` when Desktop-owned
+  pairing is enabled.
+- Previously approved clients return `allowed` from `/v1/client/hello`.
+- The compatibility-token mode remains available for migration and existing
+  token-based speech candidate calls.
+- Remaining work: approval/deny UI, allowed-client management UI, short-lived
+  session authorization, and Voice extension migration away from persistent
+  token storage.
+
 ### Milestone 7: Local Packaging And First Run
 
 Goal:

@@ -70,6 +70,58 @@ public sealed class LocalBridgeServerContractTests
     }
 
     [Fact]
+    public async Task ClientHelloRecordsPendingClientWhenTrustStoreIsEnabled()
+    {
+        using var fixture = BridgeFixture.StartWithClientTrust();
+
+        using var response = await fixture.Client.PostAsync(
+            "v1/client/hello",
+            JsonContent(ValidClientHelloJson()));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = await ReadJsonAsync(response);
+        var root = document.RootElement;
+        Assert.Equal("pending", root.GetProperty("authorization").GetString());
+        Assert.Equal("desktop-pairing", root.GetProperty("mode").GetString());
+
+        var client = Assert.Single(fixture.ClientTrustStore!.Load().Clients);
+        Assert.Equal("test-client", client.ClientId);
+        Assert.Equal("pending", client.Authorization);
+        Assert.Equal("codecompaniondesktop", client.ProjectId);
+    }
+
+    [Fact]
+    public async Task ClientHelloReturnsAllowedForTrustedClient()
+    {
+        using var fixture = BridgeFixture.StartWithClientTrust();
+        fixture.ClientTrustStore!.Save(new ClientTrustSnapshot
+        {
+            Clients =
+            [
+                new ClientTrustRecord
+                {
+                    ClientId = "test-client",
+                    Authorization = ClientTrustStore.Allowed,
+                    FirstSeenUtc = DateTimeOffset.UtcNow,
+                    LastSeenUtc = DateTimeOffset.UtcNow
+                }
+            ]
+        });
+
+        using var response = await fixture.Client.PostAsync(
+            "v1/client/hello",
+            JsonContent(ValidClientHelloJson()));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = await ReadJsonAsync(response);
+        var root = document.RootElement;
+        Assert.Equal("allowed", root.GetProperty("authorization").GetString());
+        Assert.Equal("desktop-pairing", root.GetProperty("mode").GetString());
+    }
+
+    [Fact]
     public async Task ClientHelloRejectsUnsupportedSchemaVersion()
     {
         using var fixture = BridgeFixture.Start();
@@ -344,6 +396,27 @@ public sealed class LocalBridgeServerContractTests
             """;
     }
 
+    private static string ValidClientHelloJson()
+    {
+        return """
+            {
+              "schemaVersion": 1,
+              "client": {
+                "clientId": "test-client",
+                "name": "Code Companion Voice",
+                "version": "0.0.0",
+                "host": "windows",
+                "environment": "windows"
+              },
+              "workspace": {
+                "projectId": "codecompaniondesktop",
+                "displayName": "Code Companion Desktop",
+                "roots": ["D:\\Development\\CodeCompanionDesktop"]
+              }
+            }
+            """;
+    }
+
     private static StringContent JsonContent(string json)
     {
         return new StringContent(json, Encoding.UTF8, "application/json");
@@ -368,11 +441,15 @@ public sealed class LocalBridgeServerContractTests
         private BridgeFixture(
             LocalBridgeServer server,
             BridgeRuntimeState runtimeState,
-            ConcurrentQueue<string> spokenTexts)
+            ConcurrentQueue<string> spokenTexts,
+            ClientTrustStore? clientTrustStore = null,
+            string? clientTrustDirectory = null)
         {
             this.server = server;
             RuntimeState = runtimeState;
             SpokenTexts = spokenTexts;
+            ClientTrustStore = clientTrustStore;
+            ClientTrustDirectory = clientTrustDirectory;
             Client = new HttpClient
             {
                 BaseAddress = new Uri(server.LocalBaseUrl)
@@ -385,7 +462,27 @@ public sealed class LocalBridgeServerContractTests
 
         public ConcurrentQueue<string> SpokenTexts { get; }
 
+        public ClientTrustStore? ClientTrustStore { get; }
+
+        private string? ClientTrustDirectory { get; }
+
         public static BridgeFixture Start(bool queueEnabled = false, Func<string, Task>? speakAsync = null)
+        {
+            return Start(queueEnabled, speakAsync, null, null);
+        }
+
+        public static BridgeFixture StartWithClientTrust()
+        {
+            var directory = Directory.CreateTempSubdirectory("code-companion-client-trust-");
+            var store = new ClientTrustStore(Path.Combine(directory.FullName, "client-trust.json"));
+            return Start(queueEnabled: false, speakAsync: null, store, directory.FullName);
+        }
+
+        private static BridgeFixture Start(
+            bool queueEnabled,
+            Func<string, Task>? speakAsync,
+            ClientTrustStore? clientTrustStore,
+            string? clientTrustDirectory)
         {
             var runtimeState = new BridgeRuntimeState();
             runtimeState.ConfigureQueue(queueEnabled, 3);
@@ -402,16 +499,21 @@ public sealed class LocalBridgeServerContractTests
                 runtimeState,
                 queue,
                 new SpeechCandidatePipeline(),
+                clientTrustStore: clientTrustStore,
                 port: 0);
             server.Start();
 
-            return new BridgeFixture(server, runtimeState, spokenTexts);
+            return new BridgeFixture(server, runtimeState, spokenTexts, clientTrustStore, clientTrustDirectory);
         }
 
         public void Dispose()
         {
             Client.Dispose();
             server.Dispose();
+            if (ClientTrustDirectory is not null && Directory.Exists(ClientTrustDirectory))
+            {
+                Directory.Delete(ClientTrustDirectory, recursive: true);
+            }
         }
     }
 }
