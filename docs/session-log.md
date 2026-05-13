@@ -4,6 +4,46 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Local Fresh Install Smoke Test
+
+### Current Milestone
+
+- Milestone 7: Packaging And First Run.
+
+### Verified
+
+- Built `artifacts\installer\CodeCompanionDesktopSetup-0.1.0.exe` with
+  `.\scripts\build-installer.ps1 -AppVersion 0.1.0` using a process-scoped
+  PowerShell execution-policy bypass.
+- Inno Setup completed successfully. It emitted a non-blocking warning that the
+  `x64` architecture identifier is deprecated.
+- Stopped the debug desktop app before installer testing.
+- Installed and launched Code Companion Desktop from:
+  `%LOCALAPPDATA%\Programs\Code Companion Desktop\CodeCompanionDesktop.exe`.
+- Confirmed the installed app was running as process ID `17500`.
+- Confirmed `GET http://127.0.0.1:47321/health` returned `status: ok`,
+  `bridge: listening`, `version: 0.2.0`, and `protocolVersion: 1`.
+- Confirmed the ElevenLabs key was saved in the desktop app.
+- Copied the bridge token from Desktop, saved it in VS Code, opened a new
+  VS Code window to avoid losing chat context, opened the Code Companion Voice
+  panel, and confirmed the panel showed `Enable Voice`, `Mute`, and
+  `Desktop Test`.
+- Clicked `Desktop Test` and heard speech through Code Companion Desktop.
+- Extension output showed
+  `candidate spoken/manual-desktop-candidate-test at http://192.168.16.1:47321`.
+
+### Decision
+
+- The current local installer plus local VSIX path is verified for the basic
+  fresh-install pairing and Desktop bridge speech test.
+
+### Next
+
+- Clean up the Inno Setup architecture warning by replacing deprecated `x64`
+  usage with the current recommended architecture identifier.
+- Continue Milestone 7 release work for GitHub Releases and Marketplace
+  publication.
+
 ## 2026-05-13 Fresh Install Documentation Refresh
 
 ### Current Milestone
