@@ -32,6 +32,7 @@ if (-not $SkipPublish.IsPresent) {
     & $publishScript `
         -Configuration $Configuration `
         -Runtime $Runtime `
+        -AppVersion $AppVersion `
         -OutputPath $PublishPath
 }
 
@@ -42,6 +43,21 @@ for ($attempt = 0; $attempt -lt 20 -and -not (Test-Path $publishedExe); $attempt
 
 if (-not (Test-Path $publishedExe)) {
     throw "Published executable was not found at $publishedExe. Run scripts\publish-release.ps1 first or omit -SkipPublish."
+}
+
+for ($attempt = 0; $attempt -lt 40; $attempt++) {
+    try {
+        $stream = [System.IO.File]::Open($publishedExe, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+        $stream.Dispose()
+        break
+    }
+    catch {
+        if ($attempt -eq 39) {
+            throw "Published executable is still locked at $publishedExe."
+        }
+
+        Start-Sleep -Milliseconds 250
+    }
 }
 
 $isccCommand = Get-Command ISCC.exe -ErrorAction SilentlyContinue
@@ -63,6 +79,11 @@ if ([string]::IsNullOrWhiteSpace($isccPath) -or -not (Test-Path $isccPath)) {
 
 New-Item -ItemType Directory -Path $InstallerOutputPath -Force | Out-Null
 
+$installerPath = Join-Path $InstallerOutputPath "CodeCompanionDesktopSetup-$AppVersion.exe"
+if (Test-Path $installerPath) {
+    Remove-Item -Path $installerPath -Force
+}
+
 $isccArgs = @(
     "/DAppVersion=$AppVersion",
     "/DSourceDir=$PublishPath",
@@ -70,9 +91,11 @@ $isccArgs = @(
     $installerScript
 )
 
-& $isccPath @isccArgs
+$isccProcess = Start-Process -FilePath $isccPath -ArgumentList $isccArgs -WorkingDirectory $repoRoot -Wait -PassThru
+if ($isccProcess.ExitCode -ne 0) {
+    throw "Inno Setup compiler failed with exit code $($isccProcess.ExitCode)."
+}
 
-$installerPath = Join-Path $InstallerOutputPath "CodeCompanionDesktopSetup-$AppVersion.exe"
 if (-not (Test-Path $installerPath)) {
     throw "Installer build completed but expected output was not found at $installerPath."
 }

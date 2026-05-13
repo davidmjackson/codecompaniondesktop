@@ -287,7 +287,7 @@ POST /speak
   "bridge": "listening",
   "version": "0.2.0",
   "protocolVersion": 1,
-  "appVersion": "1.0.0",
+  "appVersion": "0.1.0",
   "speaking": false,
   "queueEnabled": false,
   "queued": 0,

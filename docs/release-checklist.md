@@ -24,8 +24,8 @@ Before packaging:
 
 - Choose one release version for Code Companion Desktop.
 - Set the Desktop installer `AppVersion`.
-- Set the Desktop assembly/product version metadata once version metadata is
-  added to `CodeCompanionDesktop.csproj`.
+- Confirm the Desktop assembly/product version metadata in
+  `CodeCompanionDesktop.csproj` matches the installer `AppVersion`.
 - Confirm `GET /health` reports the expected Desktop `appVersion`.
 - Choose the Code Companion Voice extension version.
 - Update `package.json` and `package-lock.json`.
@@ -187,4 +187,3 @@ Repeat the extension-host part from:
   folder.
 - VS Code extension rollback should install the previous Marketplace version or
   previous local VSIX into the same extension host that was upgraded.
-

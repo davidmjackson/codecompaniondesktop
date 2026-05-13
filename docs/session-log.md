@@ -4,6 +4,37 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Desktop Version Metadata Alignment
+
+### Current Milestone
+
+- Milestone 7: Packaging And First Run.
+
+### Changed
+
+- Added explicit Desktop assembly, file, package, and informational version
+  metadata to `CodeCompanionDesktop.csproj`.
+- Added `-AppVersion` support to `scripts/publish-release.ps1`.
+- Updated `scripts/build-installer.ps1` so the installer `AppVersion` also
+  drives the .NET publish metadata.
+- Updated release documentation now that Desktop version metadata exists.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` using the Windows .NET SDK path.
+- `dotnet test CodeCompanionDesktop.sln --no-build`; 19 tests passed.
+- `git diff --check`
+- `scripts\build-installer.ps1 -AppVersion 0.1.0` rebuilt
+  `artifacts\installer\CodeCompanionDesktopSetup-0.1.0.exe`.
+- Ran the freshly published executable and confirmed
+  `GET http://127.0.0.1:47321/health` reports `appVersion: 0.1.0`.
+- Restarted the installed app from
+  `%LOCALAPPDATA%\Programs\Code Companion Desktop\CodeCompanionDesktop.exe`.
+
+### Next
+
+- Continue Milestone 7 release publishing work.
+
 ## 2026-05-13 Paired Release Checklist
 
 ### Current Milestone

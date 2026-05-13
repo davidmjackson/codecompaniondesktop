@@ -5,6 +5,8 @@ param(
 
     [string] $Runtime = "win-x64",
 
+    [string] $AppVersion = "0.1.0",
+
     [switch] $FrameworkDependent,
 
     [switch] $NoClean,
@@ -34,6 +36,17 @@ if ([string]::IsNullOrWhiteSpace($OutputPath)) {
 
 $isSelfContained = -not $FrameworkDependent.IsPresent
 
+if ($AppVersion -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') {
+    throw "AppVersion must be a numeric version like 0.1.0 or 0.1.0.0."
+}
+
+$assemblyVersion = if (($AppVersion -split '\.').Count -eq 3) {
+    "$AppVersion.0"
+}
+else {
+    $AppVersion
+}
+
 if ((Test-Path $OutputPath) -and -not $NoClean.IsPresent) {
     Remove-Item -Path $OutputPath -Recurse -Force
 }
@@ -47,7 +60,11 @@ $publishArgs = @(
     "--output", $OutputPath,
     "-p:PublishSingleFile=true",
     "-p:IncludeNativeLibrariesForSelfExtract=true",
-    "-p:EnableCompressionInSingleFile=true"
+    "-p:EnableCompressionInSingleFile=true",
+    "-p:Version=$AppVersion",
+    "-p:AssemblyVersion=$assemblyVersion",
+    "-p:FileVersion=$assemblyVersion",
+    "-p:InformationalVersion=$AppVersion"
 )
 
 & $dotnetPath @publishArgs
