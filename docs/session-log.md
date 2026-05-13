@@ -34,6 +34,48 @@ options.
 - Finish forwarding structured candidates to desktop
   `/v1/speech/candidates`.
 
+## 2026-05-13 Thin Client Candidate Forwarding
+
+### Current Milestone
+
+- Milestone 4: Thin VS Code Client.
+
+### Changed
+
+- In the extension repository, added typed `POST /v1/speech/candidates`
+  support for the desktop bridge.
+- Changed the normal Codex assistant candidate path to send structured raw
+  candidate events to Code Companion Desktop before VS Code filtering, rewrite,
+  provider calls, or playback.
+- Added client identity, environment metadata, workspace identity, Codex session
+  metadata, and candidate text to the bridge payload.
+- Added `.code-companion/project.json` support when present, with workspace
+  metadata fallback.
+- Kept legacy VS Code provider/webview/desktop-audio paths as migration
+  fallback until manual verification is complete.
+- Packaged and installed `code-companion-voice-0.0.33.vsix`.
+
+### Verified
+
+- In `/mnt/d/Development/CodeCompanionVoice`: `npm run compile`.
+- In `/mnt/d/Development/CodeCompanionVoice`: `npm test`; 51 tests passed.
+- In `/mnt/d/Development/CodeCompanionVoice`:
+  `find dist -name '*.js' -print0 | xargs -0 -n1 node --check`.
+- In `/mnt/d/Development/CodeCompanionVoice`: `git diff --check`.
+- In `/mnt/d/Development/CodeCompanionVoice`: `npm audit --omit=dev`; 0
+  vulnerabilities.
+- In `/mnt/d/Development/CodeCompanionVoice`: `npm run package:vsix`.
+- Installed extension version `local.code-companion-voice@0.0.33`.
+- Extension commit `95fd7f4` pushed to `feature/desktop-bridge-client`.
+
+### Next
+
+- Reload VS Code so the extension host loads `0.0.33`.
+- Smoke-test a real Codex candidate and confirm Code Companion Desktop speech
+  diagnostics show `/v1/speech/candidates` activity.
+- Remove VS Code-owned provider key/audio/webview responsibilities after the
+  structured candidate path is manually verified.
+
 ## 2026-05-13 Environment-Agnostic Speech Architecture
 
 ### Current Milestone

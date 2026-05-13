@@ -479,6 +479,15 @@ Acceptance criteria:
 - No provider key or provider token is stored in VS Code.
 - No audio unlock is required in VS Code.
 
+Status:
+
+- In progress.
+- Extension commit `95fd7f4` sends structured Codex assistant candidates to
+  desktop `POST /v1/speech/candidates` before VS Code filtering, rewrite,
+  provider calls, or playback.
+- VS Code-owned provider/webview/desktop-audio paths still exist as migration
+  fallback and need removal after manual verification.
+
 ### Milestone 5: Project Identity
 
 Goal:
