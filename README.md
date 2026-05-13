@@ -357,6 +357,25 @@ When bridge queueing is enabled, a valid candidate can return
 return `"decision": "duplicate"` and are not spoken. Non-final or unsupported
 candidate kinds return `"decision": "ignored"`.
 
+## Candidate Inbox
+
+Code Companion Desktop also watches a Windows-owned candidate inbox:
+
+```text
+%APPDATA%\CodeCompanionDesktop\candidate-inbox
+```
+
+Each `*.json` file in this directory uses the same JSON shape as
+`POST /v1/speech/candidates`. The desktop app validates the file, applies the
+same speech pipeline as the HTTP bridge, then deletes accepted files. Invalid or
+rejected files are moved under `candidate-inbox\rejected`.
+
+This inbox is the Milestone 4A migration path away from `\\wsl.localhost` Codex
+log scraping. Windows, WSL, and future clients can write explicit structured
+candidate events into a Windows-owned location while Code Companion Desktop
+remains the only component that owns policy, provider calls, diagnostics, and
+native audio playback.
+
 `POST /speak` requires an `Authorization: Bearer <token>` header and a JSON body:
 
 ```json

@@ -17,9 +17,11 @@ public partial class App : WpfApplication
     private Forms.NotifyIcon? trayIcon;
     private MainWindow? mainWindow;
     private LocalBridgeServer? bridgeServer;
+    private SpeechCandidateInboxWatcher? candidateInboxWatcher;
     private BridgeTokenStore? bridgeTokenStore;
     private BridgeRuntimeState? bridgeRuntimeState;
     private BridgeSpeechQueue? bridgeSpeechQueue;
+    private SpeechCandidateProcessor? speechCandidateProcessor;
     private AppSettingsStore? settingsStore;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -34,11 +36,13 @@ public partial class App : WpfApplication
         var runtimeState = new BridgeRuntimeState(new SpeechHistoryStore());
         runtimeState.ConfigureQueue(settings.QueueBridgeSpeechRequests, settings.MaxQueuedBridgeSpeechRequests);
         bridgeSpeechQueue = new BridgeSpeechQueue(SpeakFromBridgeAsync, runtimeState);
+        speechCandidateProcessor = new SpeechCandidateProcessor(SpeakFromBridgeAsync, runtimeState, bridgeSpeechQueue);
         bridgeRuntimeState = runtimeState;
 
         mainWindow = new MainWindow(bridgeTokenStore, runtimeState, settingsStore, settings);
         ConfigureTrayIcon();
         StartBridgeServer(bridgeToken, runtimeState);
+        StartCandidateInbox(runtimeState);
 
         if (settings.StartHiddenToTray)
         {
@@ -56,6 +60,7 @@ public partial class App : WpfApplication
     protected override void OnExit(ExitEventArgs e)
     {
         bridgeServer?.Dispose();
+        candidateInboxWatcher?.Dispose();
         trayIcon?.Dispose();
         base.OnExit(e);
     }
@@ -166,20 +171,49 @@ public partial class App : WpfApplication
 
     private void StartBridgeServer(string bridgeToken, BridgeRuntimeState runtimeState)
     {
-        if (mainWindow is null || bridgeSpeechQueue is null)
+        if (mainWindow is null || bridgeSpeechQueue is null || speechCandidateProcessor is null)
         {
             return;
         }
 
         try
         {
-            bridgeServer = new LocalBridgeServer(bridgeToken, SpeakFromBridgeAsync, runtimeState, bridgeSpeechQueue);
+            bridgeServer = new LocalBridgeServer(
+                bridgeToken,
+                SpeakFromBridgeAsync,
+                runtimeState,
+                bridgeSpeechQueue,
+                speechCandidateProcessor: speechCandidateProcessor);
             bridgeServer.Start();
             mainWindow.SetBridgeStatus($"Bridge listening on {LocalBridgeServer.BaseUrl}");
         }
         catch (Exception ex)
         {
             mainWindow.SetBridgeStatus($"Bridge failed to start: {ex.Message}");
+        }
+    }
+
+    private void StartCandidateInbox(BridgeRuntimeState runtimeState)
+    {
+        if (speechCandidateProcessor is null || mainWindow is null)
+        {
+            return;
+        }
+
+        try
+        {
+            candidateInboxWatcher = new SpeechCandidateInboxWatcher(
+                SpeechCandidateInboxWatcher.GetDefaultInboxDirectory(),
+                speechCandidateProcessor,
+                runtimeState);
+            candidateInboxWatcher.Start();
+            mainWindow.SetBridgeStatus(
+                $"Bridge listening on {LocalBridgeServer.BaseUrl}. Candidate inbox: {candidateInboxWatcher.InboxDirectory}");
+        }
+        catch (Exception ex)
+        {
+            runtimeState.RecordCandidateInboxError(ex.Message);
+            mainWindow.SetBridgeStatus($"Candidate inbox failed to start: {ex.Message}");
         }
     }
 

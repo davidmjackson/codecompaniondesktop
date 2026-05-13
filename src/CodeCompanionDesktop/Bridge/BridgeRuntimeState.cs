@@ -128,6 +128,23 @@ public sealed class BridgeRuntimeState
         }
     }
 
+    public void RecordCandidateInboxStarted(string inboxDirectory)
+    {
+        lock (syncRoot)
+        {
+            LastStatus = $"Candidate inbox watching: {inboxDirectory}";
+        }
+    }
+
+    public void RecordCandidateInboxError(string error)
+    {
+        lock (syncRoot)
+        {
+            LastStatus = $"Candidate inbox error: {error}";
+            AddRecentSpeechResult($"Candidate inbox error: {error}");
+        }
+    }
+
     public void RecordSpeechCandidate(string environment, string projectId, string messageId, string text)
     {
         lock (syncRoot)

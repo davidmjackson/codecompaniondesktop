@@ -497,7 +497,7 @@ Acceptance criteria:
 
 Status:
 
-- In progress.
+- Desktop ingress implemented; extension migration still in progress.
 - Extension commit `95fd7f4` sends structured Codex assistant candidates to
   desktop `POST /v1/speech/candidates` before VS Code filtering, rewrite,
   provider calls, or playback.
@@ -507,6 +507,10 @@ Status:
   from a normal Windows VS Code extension host is brittle and violates the
   target environment-agnostic boundary. Do not build more product behavior on
   UNC log scraping.
+- Desktop commit pending for Milestone 4A adds a Windows-owned
+  `%APPDATA%\CodeCompanionDesktop\candidate-inbox` watched folder. Inbox files
+  use the same speech candidate contract as `POST /v1/speech/candidates` and
+  flow through the same desktop policy/provider/audio pipeline.
 
 ### Milestone 4A: Windows-Owned Candidate Ingress
 
@@ -529,14 +533,28 @@ Scope:
 
 Acceptance criteria:
 
+- Code Companion Desktop creates and watches
+  `%APPDATA%\CodeCompanionDesktop\candidate-inbox`.
+- Candidate inbox files use the same structured payload shape as
+  `POST /v1/speech/candidates`.
+- Inbox candidates flow through the same desktop policy, dedupe, queueing,
+  provider, playback, diagnostics, and history path as HTTP candidates.
 - A Windows project can produce speech without configuring a Codex log root in
-  VS Code.
+  VS Code once the extension writes explicit candidate events.
 - A WSL/Linux project can produce speech without configuring
-  `\\wsl.localhost\...` in VS Code.
+  `\\wsl.localhost\...` in VS Code once the extension writes explicit candidate
+  events.
 - VS Code stores no provider keys and does not read another environment's
   Codex log directory for normal operation.
 - Code Companion Desktop diagnostics show received candidates with project ID,
   client ID, environment, decision, and reason.
+
+Status:
+
+- Desktop side in progress. The candidate inbox exists and is covered by
+  focused tests.
+- Extension side still needs to write explicit candidate events to Desktop and
+  retire normal-path Codex log root scraping.
 
 ### Milestone 5: Project Identity
 

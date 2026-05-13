@@ -33,6 +33,42 @@ options.
 
 - Design and implement Milestone 4A before continuing more UNC watcher work.
 
+## 2026-05-13 Windows-Owned Candidate Inbox
+
+### Current Milestone
+
+- Milestone 4A: Windows-Owned Candidate Ingress.
+
+### Changed
+
+- Added public bridge contract DTOs and shared validation for client hello and
+  speech candidate payloads.
+- Extracted `SpeechCandidateProcessor` so HTTP bridge requests and inbox files
+  share the same desktop-owned policy, dedupe, queueing, provider, playback,
+  diagnostics, and history path.
+- Added `SpeechCandidateInboxWatcher`, which watches:
+  `%APPDATA%\CodeCompanionDesktop\candidate-inbox`.
+- Valid `*.json` inbox files use the same payload shape as
+  `POST /v1/speech/candidates`, are processed through the desktop speech
+  pipeline, and are deleted after acceptance.
+- Invalid or rejected inbox files are moved under `candidate-inbox\rejected`.
+- The app starts the inbox watcher alongside the local HTTP bridge.
+- Updated `README.md` and `docs/architecture.md` for Milestone 4A.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` using
+  `C:\Program Files\dotnet\dotnet.exe`.
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`; 17 tests passed.
+- `git diff --check` pending.
+
+### Next
+
+- Update Code Companion Voice so the normal path writes explicit structured
+  candidate events to Desktop instead of depending on `\\wsl.localhost` Codex
+  log scraping.
+
 ## 2026-05-13 Extension Checkout Moved To Windows
 
 ### Current Milestone

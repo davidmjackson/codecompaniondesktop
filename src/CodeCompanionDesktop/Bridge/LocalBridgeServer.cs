@@ -22,14 +22,12 @@ public sealed class LocalBridgeServer : IDisposable
     private const int MaxHeaderBytes = 16 * 1024;
     private const int MaxBodyBytes = 16 * 1024;
     private const int MaxTextLength = 1000;
-    private const int MaxCandidateTextLength = 8000;
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly string token;
     private readonly Func<string, Task> speakAsync;
     private readonly BridgeRuntimeState runtimeState;
     private readonly BridgeSpeechQueue speechQueue;
-    private readonly SpeechCandidatePipeline speechCandidatePipeline;
+    private readonly SpeechCandidateProcessor speechCandidateProcessor;
     private readonly int port;
     private readonly CancellationTokenSource cancellation = new();
     private TcpListener? listener;
@@ -41,6 +39,7 @@ public sealed class LocalBridgeServer : IDisposable
         BridgeRuntimeState runtimeState,
         BridgeSpeechQueue speechQueue,
         SpeechCandidatePipeline? speechCandidatePipeline = null,
+        SpeechCandidateProcessor? speechCandidateProcessor = null,
         int port = Port)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
@@ -53,7 +52,11 @@ public sealed class LocalBridgeServer : IDisposable
         this.speakAsync = speakAsync;
         this.runtimeState = runtimeState;
         this.speechQueue = speechQueue;
-        this.speechCandidatePipeline = speechCandidatePipeline ?? new SpeechCandidatePipeline();
+        this.speechCandidateProcessor = speechCandidateProcessor ?? new SpeechCandidateProcessor(
+            speakAsync,
+            runtimeState,
+            speechQueue,
+            speechCandidatePipeline);
         this.port = port;
     }
 
@@ -176,7 +179,7 @@ public sealed class LocalBridgeServer : IDisposable
             return;
         }
 
-        var error = ValidateClientHello(helloRequest);
+        var error = BridgeContractValidator.ValidateClientHello(helloRequest);
         if (error is not null)
         {
             await WriteJsonAsync(stream, HttpStatusCode.BadRequest, new ErrorResponse(error));
@@ -214,120 +217,8 @@ public sealed class LocalBridgeServer : IDisposable
             return;
         }
 
-        var error = ValidateSpeechCandidate(candidateRequest);
-        if (error is not null)
-        {
-            await WriteJsonAsync(stream, HttpStatusCode.BadRequest, new ErrorResponse(error));
-            return;
-        }
-
-        runtimeState.RecordSpeechCandidate(
-            candidateRequest.Client.Environment,
-            candidateRequest.Workspace.ProjectId,
-            candidateRequest.Codex.MessageId,
-            candidateRequest.Candidate.Text);
-
-        var pipelineResult = speechCandidatePipeline.Prepare(new SpeechCandidatePipelineInput(
-            candidateRequest.Codex.MessageId,
-            candidateRequest.Candidate.Kind,
-            candidateRequest.Candidate.Phase,
-            candidateRequest.Candidate.Text));
-
-        if (pipelineResult.Decision == "ignored" || pipelineResult.Decision == "duplicate")
-        {
-            runtimeState.RecordSpeechCandidateDecision(pipelineResult.Decision, pipelineResult.Reason);
-            await WriteJsonAsync(
-                stream,
-                HttpStatusCode.Accepted,
-                new SpeechCandidateResponse(
-                    "accepted",
-                    pipelineResult.Decision,
-                    pipelineResult.Reason,
-                    0));
-            return;
-        }
-
-        if (pipelineResult.SpeechText is null || pipelineResult.Reservation is null)
-        {
-            runtimeState.RecordSpeechCandidateDecision("rejected", "invalid_pipeline_result");
-            await WriteJsonAsync(
-                stream,
-                HttpStatusCode.InternalServerError,
-                new SpeechCandidateResponse(
-                    "rejected",
-                    "rejected",
-                    "invalid_pipeline_result",
-                    0));
-            return;
-        }
-
-        if (runtimeState.QueueBridgeSpeechRequests)
-        {
-            if (!speechQueue.TryEnqueue(
-                pipelineResult.SpeechText,
-                exception =>
-                {
-                    if (exception is not null)
-                    {
-                        speechCandidatePipeline.Release(pipelineResult.Reservation);
-                    }
-
-                    return Task.CompletedTask;
-                },
-                out var position))
-            {
-                speechCandidatePipeline.Release(pipelineResult.Reservation);
-                runtimeState.RecordSpeechCandidateDecision("rejected", "queue_full");
-                await WriteJsonAsync(
-                    stream,
-                    HttpStatusCode.Conflict,
-                    new SpeechCandidateResponse("rejected", "rejected", "queue_full", 0));
-                return;
-            }
-
-            runtimeState.RecordSpeechCandidateDecision("queued", pipelineResult.Reason);
-            await WriteJsonAsync(
-                stream,
-                HttpStatusCode.Accepted,
-                new SpeechCandidateResponse(
-                    "accepted",
-                    "queued",
-                    pipelineResult.Reason,
-                    position));
-            return;
-        }
-
-        if (!runtimeState.TryBeginSpeaking())
-        {
-            speechCandidatePipeline.Release(pipelineResult.Reservation);
-            runtimeState.RecordSpeechCandidateDecision("rejected", "busy");
-            await WriteJsonAsync(
-                stream,
-                HttpStatusCode.Conflict,
-                new SpeechCandidateResponse("rejected", "rejected", "busy", 0));
-            return;
-        }
-
-        try
-        {
-            await speakAsync(pipelineResult.SpeechText);
-            runtimeState.CompleteSpeaking();
-            runtimeState.RecordSpeechCandidateDecision("spoken", pipelineResult.Reason);
-            await WriteJsonAsync(
-                stream,
-                HttpStatusCode.Accepted,
-                new SpeechCandidateResponse(
-                    "accepted",
-                    "spoken",
-                    pipelineResult.Reason,
-                    0));
-        }
-        catch (Exception ex)
-        {
-            speechCandidatePipeline.Release(pipelineResult.Reservation);
-            runtimeState.FailSpeaking(ex.Message);
-            await WriteJsonAsync(stream, HttpStatusCode.InternalServerError, new ErrorResponse(ex.Message));
-        }
+        var result = await speechCandidateProcessor.ProcessAsync(candidateRequest);
+        await WriteJsonAsync(stream, result.StatusCode, result.Payload);
     }
 
     private async Task HandleSpeakAsync(Stream stream, BridgeRequest request)
@@ -409,91 +300,12 @@ public sealed class LocalBridgeServer : IDisposable
     {
         try
         {
-            return JsonSerializer.Deserialize<T>(body, JsonOptions);
+            return JsonSerializer.Deserialize<T>(body, BridgeJson.Options);
         }
         catch (JsonException)
         {
             return default;
         }
-    }
-
-    private static string? ValidateClientHello(ClientHelloRequest request)
-    {
-        if (request.SchemaVersion != 1)
-        {
-            return "unsupported_schema_version";
-        }
-
-        if (request.Client is null)
-        {
-            return "invalid_client";
-        }
-
-        if (request.Workspace is null)
-        {
-            return "invalid_workspace";
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Client.ClientId)
-            || string.IsNullOrWhiteSpace(request.Client.Name)
-            || string.IsNullOrWhiteSpace(request.Client.Version)
-            || string.IsNullOrWhiteSpace(request.Client.Host)
-            || string.IsNullOrWhiteSpace(request.Client.Environment))
-        {
-            return "invalid_client";
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Workspace.ProjectId)
-            || string.IsNullOrWhiteSpace(request.Workspace.DisplayName)
-            || request.Workspace.Roots is null
-            || request.Workspace.Roots.Count == 0)
-        {
-            return "invalid_workspace";
-        }
-
-        return null;
-    }
-
-    private static string? ValidateSpeechCandidate(SpeechCandidateRequest request)
-    {
-        var clientError = ValidateClientHello(new ClientHelloRequest(
-            request.SchemaVersion,
-            request.Client,
-            request.Workspace));
-        if (clientError is not null)
-        {
-            return clientError;
-        }
-
-        if (request.Codex is null)
-        {
-            return "invalid_codex_metadata";
-        }
-
-        if (request.Candidate is null)
-        {
-            return "invalid_candidate";
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Codex.SessionId)
-            || string.IsNullOrWhiteSpace(request.Codex.MessageId)
-            || string.IsNullOrWhiteSpace(request.Codex.Timestamp))
-        {
-            return "invalid_codex_metadata";
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Candidate.Kind)
-            || string.IsNullOrWhiteSpace(request.Candidate.Text))
-        {
-            return "invalid_candidate";
-        }
-
-        if (request.Candidate.Text.Length > MaxCandidateTextLength)
-        {
-            return "candidate_text_too_long";
-        }
-
-        return null;
     }
 
     private static string GetAppVersion()
@@ -605,7 +417,7 @@ public sealed class LocalBridgeServer : IDisposable
 
     private static async Task WriteJsonAsync(Stream stream, HttpStatusCode statusCode, object payload)
     {
-        var json = JsonSerializer.Serialize(payload, JsonOptions);
+        var json = JsonSerializer.Serialize(payload, BridgeJson.Options);
         var body = Encoding.UTF8.GetBytes(json);
         var reason = ReasonPhrase(statusCode);
         var headers = Encoding.ASCII.GetBytes(
@@ -659,53 +471,4 @@ public sealed class LocalBridgeServer : IDisposable
         [property: JsonPropertyName("status")] string Status,
         [property: JsonPropertyName("queued")] int Queued);
 
-    private sealed record ClientHelloRequest(
-        [property: JsonPropertyName("schemaVersion")] int SchemaVersion,
-        [property: JsonPropertyName("client")] BridgeClient Client,
-        [property: JsonPropertyName("workspace")] BridgeWorkspace Workspace);
-
-    private sealed record BridgeClient(
-        [property: JsonPropertyName("clientId")] string ClientId,
-        [property: JsonPropertyName("name")] string Name,
-        [property: JsonPropertyName("version")] string Version,
-        [property: JsonPropertyName("host")] string Host,
-        [property: JsonPropertyName("environment")] string Environment);
-
-    private sealed record BridgeWorkspace(
-        [property: JsonPropertyName("projectId")] string ProjectId,
-        [property: JsonPropertyName("displayName")] string DisplayName,
-        [property: JsonPropertyName("roots")] IReadOnlyList<string> Roots);
-
-    private sealed record ClientHelloResponse(
-        [property: JsonPropertyName("status")] string Status,
-        [property: JsonPropertyName("authorization")] string Authorization,
-        [property: JsonPropertyName("mode")] string Mode,
-        [property: JsonPropertyName("bridgeVersion")] string BridgeVersion,
-        [property: JsonPropertyName("protocolVersion")] int ProtocolVersion);
-
-    private sealed record SpeechCandidateRequest(
-        [property: JsonPropertyName("schemaVersion")] int SchemaVersion,
-        [property: JsonPropertyName("client")] BridgeClient Client,
-        [property: JsonPropertyName("workspace")] BridgeWorkspace Workspace,
-        [property: JsonPropertyName("codex")] CodexMetadata Codex,
-        [property: JsonPropertyName("candidate")] SpeechCandidate Candidate);
-
-    private sealed record CodexMetadata(
-        [property: JsonPropertyName("sessionId")] string SessionId,
-        [property: JsonPropertyName("messageId")] string MessageId,
-        [property: JsonPropertyName("timestamp")] string Timestamp);
-
-    private sealed record SpeechCandidate(
-        [property: JsonPropertyName("kind")] string Kind,
-        [property: JsonPropertyName("phase")] string? Phase,
-        [property: JsonPropertyName("text")] string Text,
-        [property: JsonPropertyName("source")] string? Source);
-
-    private sealed record SpeechCandidateResponse(
-        [property: JsonPropertyName("status")] string Status,
-        [property: JsonPropertyName("decision")] string Decision,
-        [property: JsonPropertyName("reason")] string Reason,
-        [property: JsonPropertyName("queuePosition")] int QueuePosition);
-
-    private sealed record ErrorResponse([property: JsonPropertyName("error")] string Error);
 }
