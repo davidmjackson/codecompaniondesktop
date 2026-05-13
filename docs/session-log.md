@@ -4,6 +4,35 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 VS Code Panel Control Cleanup Decision
+
+### Current Milestone
+
+- Milestone 8: Cleanup And Compatibility Removal.
+
+### Decision
+
+- Add removal of normal VS Code panel audio controls to Milestone 8.
+- `Enable Voice` and `Mute` should move out of the normal Code Companion Voice
+  panel because Code Companion Desktop owns voice enablement, mute, playback,
+  queueing, and provider state.
+- Keep `Desktop Test` in the VS Code panel for now as a bridge diagnostic.
+
+### Changed
+
+- Updated `docs/architecture.md` Milestone 8 scope, acceptance criteria, and
+  status to include the VS Code panel audio-control cleanup.
+
+### Verified
+
+- Documentation-only change.
+- `git diff --check`
+
+### Next
+
+- Implement the Code Companion Voice panel cleanup in the Voice repository,
+  then package a new VSIX and smoke test `Desktop Test`.
+
 ## 2026-05-13 Legacy Token Wording Cleanup
 
 ### Current Milestone

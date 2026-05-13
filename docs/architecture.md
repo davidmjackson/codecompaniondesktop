@@ -702,6 +702,11 @@ Goal:
 Scope:
 
 - Remove VS Code webview audio unlock.
+- Remove normal VS Code panel audio controls such as `Enable Voice` and `Mute`;
+  the Windows desktop app owns voice enablement, mute, playback, queueing, and
+  provider state.
+- Keep `Desktop Test` in the VS Code panel as a bridge diagnostic until there
+  is an equivalent first-run diagnostic path in Desktop.
 - Remove VS Code provider key commands.
 - Remove VS Code provider calls.
 - Remove VS Code desktop-audio playback fallback.
@@ -711,6 +716,8 @@ Acceptance criteria:
 
 - The only normal speech path is VS Code candidate forwarding to the Windows
   desktop app.
+- The VS Code panel presents bridge status, pairing state, project identity,
+  last decision diagnostics, and `Desktop Test`, not audio ownership controls.
 - Tests reflect the new responsibility boundaries.
 
 Status:
@@ -719,6 +726,8 @@ Status:
 - Desktop setup documentation now uses Client Pairing as the normal path.
 - Desktop token UI has been relabelled as legacy compatibility only.
 - Documentation no longer describes VS Code-owned TTS.
+- Milestone 8 now includes removing `Enable Voice` and `Mute` from the normal
+  VS Code panel UI so Desktop remains the only voice control surface.
 
 ### Milestone 9: Public Release Packaging
 
