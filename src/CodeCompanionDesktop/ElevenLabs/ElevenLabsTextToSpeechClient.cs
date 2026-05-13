@@ -4,14 +4,12 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using CodeCompanionDesktop.Settings;
 
 namespace CodeCompanionDesktop.ElevenLabs;
 
 public sealed class ElevenLabsTextToSpeechClient
 {
-    private const string TestVoiceId = "JBFqnCBsd6RMkjVDRZzb";
-    private const string ModelId = "eleven_multilingual_v2";
-    private const string OutputFormat = "mp3_44100_128";
     private const string TestPhrase = "Code Companion desktop speech test.";
 
     private static readonly HttpClient HttpClient = new()
@@ -26,14 +24,29 @@ public sealed class ElevenLabsTextToSpeechClient
 
     public async Task<string> CreateSpeechAsync(string apiKey, string text)
     {
+        return await CreateSpeechAsync(
+            apiKey,
+            text,
+            new ElevenLabsSpeechOptions(
+                AppSettings.DefaultElevenLabsVoiceId,
+                AppSettings.DefaultElevenLabsModelId,
+                AppSettings.DefaultElevenLabsOutputFormat));
+    }
+
+    public async Task<string> CreateSpeechAsync(string apiKey, string text, ElevenLabsSpeechOptions options)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(apiKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentException.ThrowIfNullOrWhiteSpace(options.VoiceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(options.ModelId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(options.OutputFormat);
 
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
-            $"/v1/text-to-speech/{TestVoiceId}?output_format={OutputFormat}");
+            $"/v1/text-to-speech/{Uri.EscapeDataString(options.VoiceId)}?output_format={Uri.EscapeDataString(options.OutputFormat)}");
         request.Headers.Add("xi-api-key", apiKey);
-        request.Content = JsonContent.Create(new TextToSpeechRequest(text, ModelId));
+        request.Content = JsonContent.Create(new TextToSpeechRequest(text, options.ModelId));
 
         using var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         if (!response.IsSuccessStatusCode)
@@ -76,3 +89,8 @@ public sealed class ElevenLabsTextToSpeechClient
         [property: JsonPropertyName("text")] string Text,
         [property: JsonPropertyName("model_id")] string ModelId);
 }
+
+public sealed record ElevenLabsSpeechOptions(
+    string VoiceId,
+    string ModelId,
+    string OutputFormat);

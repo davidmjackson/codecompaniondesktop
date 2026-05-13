@@ -225,6 +225,42 @@ options.
   and output format.
 - Move the hardcoded ElevenLabs voice/model constants behind app settings.
 
+## 2026-05-13 Desktop Provider Configuration
+
+### Current Milestone
+
+- Milestone 3: Desktop Configuration And Diagnostics.
+
+### Changed
+
+- Added persisted desktop settings for speech provider, ElevenLabs voice ID,
+  ElevenLabs model ID, and ElevenLabs output format.
+- Added a Speech Provider UI section in the Windows app.
+- Moved live ElevenLabs speech generation to use the configured desktop
+  settings instead of hardcoded voice/model/output values.
+- Added provider configuration details to the speech diagnostics output.
+- Added settings normalization tests for provider defaults and trimming.
+- Updated README and architecture notes for the desktop-owned provider
+  settings.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` using
+  `C:\Program Files\dotnet\dotnet.exe`.
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`; 13 tests passed.
+
+### Remaining Gap
+
+- Milestone 3 can still be expanded with richer recent client/history lists,
+  but the current Windows app now owns the provider key, queue settings, bridge
+  diagnostics, and ElevenLabs voice/model/output configuration.
+
+### Next
+
+- Decide whether to close Milestone 3 with the current diagnostics/configuration
+  surface or add recent client/history persistence before moving to Milestone 4.
+
 ## 2026-05-13 MainWindow IDE Error Triage
 
 ### Changed

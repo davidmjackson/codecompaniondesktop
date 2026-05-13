@@ -143,10 +143,20 @@ public partial class MainWindow : Window
 
         try
         {
+            settings.Normalize();
+            if (!string.Equals(settings.SpeechProvider, AppSettings.ElevenLabsProvider, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Unsupported speech provider: {settings.SpeechProvider}");
+            }
+
+            var speechOptions = new ElevenLabsSpeechOptions(
+                settings.ElevenLabsVoiceId,
+                settings.ElevenLabsModelId,
+                settings.ElevenLabsOutputFormat);
             string path;
             try
             {
-                path = await textToSpeechClient.CreateSpeechAsync(apiKey, text);
+                path = await textToSpeechClient.CreateSpeechAsync(apiKey, text, speechOptions);
                 bridgeRuntimeState.ClearProviderError();
             }
             catch (Exception ex)
@@ -238,6 +248,27 @@ public partial class MainWindow : Window
         }
 
         SaveWindowsStartupRegistration();
+    }
+
+    private void SaveProviderSettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        settings.SpeechProvider = GetSelectedSpeechProvider();
+        settings.ElevenLabsVoiceId = ElevenLabsVoiceIdTextBox.Text;
+        settings.ElevenLabsModelId = ElevenLabsModelIdTextBox.Text;
+        settings.ElevenLabsOutputFormat = ElevenLabsOutputFormatTextBox.Text;
+        settings.Normalize();
+        ApplyProviderSettingsToUi();
+
+        try
+        {
+            settingsStore.Save(settings);
+            ProviderSettingsStatusText.Text = $"Saved {settings.SpeechProvider} voice settings.";
+            RefreshSpeechDiagnostics();
+        }
+        catch (Exception ex)
+        {
+            ProviderSettingsStatusText.Text = $"Saving provider settings failed: {ex.Message}";
+        }
     }
 
     private void SaveApiKeyButton_Click(object sender, RoutedEventArgs e)
@@ -412,6 +443,10 @@ public partial class MainWindow : Window
             $"Bridge endpoint: {LocalBridgeServer.BaseUrl}",
             $"Bridge state: {(snapshot.IsSpeaking ? "speaking" : "idle")}",
             $"Queue: {queue}",
+            $"Provider: {settings.SpeechProvider}",
+            $"ElevenLabs voice ID: {settings.ElevenLabsVoiceId}",
+            $"ElevenLabs model ID: {settings.ElevenLabsModelId}",
+            $"ElevenLabs output format: {settings.ElevenLabsOutputFormat}",
             $"Provider key: {providerKeyStatus}",
             $"Last client: {snapshot.LastClient}",
             $"Last candidate: {snapshot.LastSpeechCandidate}",
@@ -457,6 +492,7 @@ public partial class MainWindow : Window
             StartWithWindowsCheckBox.IsChecked = startupRegistration.IsRegistered();
             QueueBridgeSpeechCheckBox.IsChecked = settings.QueueBridgeSpeechRequests;
             SetMaxBridgeQueueSelection(settings.MaxQueuedBridgeSpeechRequests);
+            ApplyProviderSettingsToUi();
             bridgeRuntimeState.ConfigureQueue(
                 settings.QueueBridgeSpeechRequests,
                 settings.MaxQueuedBridgeSpeechRequests);
@@ -475,6 +511,7 @@ public partial class MainWindow : Window
     {
         try
         {
+            settings.Normalize();
             settingsStore.Save(settings);
             SettingsStatusText.Text = DescribeStartupPreferences("Saved startup preference.");
             RefreshStartupDiagnostics();
@@ -604,5 +641,40 @@ public partial class MainWindow : Window
         }
 
         return AppSettings.DefaultMaxQueuedBridgeSpeechRequests;
+    }
+
+    private void ApplyProviderSettingsToUi()
+    {
+        SetSpeechProviderSelection(settings.SpeechProvider);
+        ElevenLabsVoiceIdTextBox.Text = settings.ElevenLabsVoiceId;
+        ElevenLabsModelIdTextBox.Text = settings.ElevenLabsModelId;
+        ElevenLabsOutputFormatTextBox.Text = settings.ElevenLabsOutputFormat;
+        ProviderSettingsStatusText.Text = $"{settings.SpeechProvider} voice settings loaded.";
+    }
+
+    private void SetSpeechProviderSelection(string value)
+    {
+        foreach (var item in SpeechProviderComboBox.Items)
+        {
+            if (item is System.Windows.Controls.ComboBoxItem comboBoxItem
+                && string.Equals(comboBoxItem.Content?.ToString(), value, StringComparison.OrdinalIgnoreCase))
+            {
+                SpeechProviderComboBox.SelectedItem = comboBoxItem;
+                return;
+            }
+        }
+
+        SpeechProviderComboBox.SelectedIndex = 0;
+    }
+
+    private string GetSelectedSpeechProvider()
+    {
+        if (SpeechProviderComboBox.SelectedItem is System.Windows.Controls.ComboBoxItem comboBoxItem
+            && !string.IsNullOrWhiteSpace(comboBoxItem.Content?.ToString()))
+        {
+            return comboBoxItem.Content.ToString()!;
+        }
+
+        return AppSettings.ElevenLabsProvider;
     }
 }

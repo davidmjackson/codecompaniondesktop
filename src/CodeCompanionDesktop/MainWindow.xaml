@@ -75,7 +75,46 @@
                         Padding="18"
                         Style="{StaticResource CardBorderStyle}">
                     <StackPanel>
+                        <TextBlock Text="Speech Provider"
+                                   Style="{StaticResource SectionTitleTextStyle}" />
+                        <TextBlock Text="Provider"
+                                   Margin="0,10,0,0"
+                                   Style="{StaticResource MutedTextStyle}" />
+                        <ComboBox x:Name="SpeechProviderComboBox"
+                                  Height="32"
+                                  Margin="0,4,0,0">
+                            <ComboBoxItem Content="ElevenLabs" />
+                        </ComboBox>
+                        <TextBlock Text="ElevenLabs voice ID"
+                                   Margin="0,10,0,0"
+                                   Style="{StaticResource MutedTextStyle}" />
+                        <TextBox x:Name="ElevenLabsVoiceIdTextBox"
+                                 Height="32"
+                                 Margin="0,4,0,0" />
+                        <TextBlock Text="ElevenLabs model ID"
+                                   Margin="0,10,0,0"
+                                   Style="{StaticResource MutedTextStyle}" />
+                        <TextBox x:Name="ElevenLabsModelIdTextBox"
+                                 Height="32"
+                                 Margin="0,4,0,0" />
+                        <TextBlock Text="ElevenLabs output format"
+                                   Margin="0,10,0,0"
+                                   Style="{StaticResource MutedTextStyle}" />
+                        <TextBox x:Name="ElevenLabsOutputFormatTextBox"
+                                 Height="32"
+                                 Margin="0,4,0,0" />
+                        <WrapPanel Margin="0,12,0,0">
+                            <Button MinWidth="156"
+                                    Height="32"
+                                    Margin="0,0,10,10"
+                                    Content="Save Provider"
+                                    Click="SaveProviderSettingsButton_Click" />
+                        </WrapPanel>
+                        <TextBlock x:Name="ProviderSettingsStatusText"
+                                   Text="Provider settings loaded."
+                                   Style="{StaticResource MutedTextStyle}" />
                         <TextBlock Text="ElevenLabs API Key"
+                                   Margin="0,16,0,0"
                                    Style="{StaticResource SectionTitleTextStyle}" />
                         <PasswordBox x:Name="ElevenLabsApiKeyBox"
                                      Margin="0,10,0,0"

@@ -192,6 +192,7 @@ off and on again so Windows starts the correct executable.
 - Generated local WAV test tone in the user's temp directory
 - Windows audio playback using `System.Media.SoundPlayer`
 - ElevenLabs API key storage in Windows Credential Manager
+- Desktop-owned ElevenLabs voice, model, and output format settings
 - ElevenLabs test speech generation from a hardcoded phrase
 - Local authenticated bridge endpoint for VS Code extension requests
 - Desktop speech diagnostics for bridge clients, candidates, policy decisions,
@@ -219,7 +220,8 @@ The app can generate and play a hardcoded ElevenLabs test phrase:
 Code Companion desktop speech test.
 ```
 
-The test uses the ElevenLabs create-speech endpoint with voice
+The test uses the ElevenLabs create-speech endpoint with the voice, model, and
+output format configured in the Windows app. Defaults are voice
 `JBFqnCBsd6RMkjVDRZzb`, model `eleven_multilingual_v2`, and MP3 output format
 `mp3_44100_128`. Generated MP3 files are written to the user's temp directory
 under `CodeCompanionDesktop`.
