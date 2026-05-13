@@ -215,7 +215,8 @@ Preferred path after building an installer:
    the pending VS Code client in the Desktop Client Pairing panel.
 7. Click `Desktop Test` again and confirm Code Companion Desktop speaks.
 8. Run `Code Companion Voice: Open Panel` and confirm
-   the panel shows `Enable Voice`, `Mute`, and `Desktop Test`.
+   the panel shows `Desktop Test` and bridge diagnostics, not VS Code-owned
+   audio controls.
 9. In the Startup section, enable `Start hidden to tray` if you want the app to
    stay out of the way after launch.
 10. Enable `Start with Windows sign-in` from the installed app.

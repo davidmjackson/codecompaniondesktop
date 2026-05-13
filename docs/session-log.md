@@ -4,6 +4,46 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Compatibility Audit
+
+### Current Milestone
+
+- Milestone 8: Cleanup And Compatibility Removal.
+
+### Changed
+
+- Audited Desktop and Voice repositories for legacy speech surfaces.
+- Updated `docs/architecture.md` with the remaining compatibility surface.
+- Updated Desktop install and release-checklist expectations for the new thin
+  Code Companion Voice panel.
+
+### Findings
+
+- Code Companion Voice `0.0.50` no longer stores provider keys, long-lived
+  bridge tokens, or VS Code-owned playback/provider code.
+- Code Companion Voice still supports Desktop-owned candidate inbox fallback.
+- Code Companion Desktop still has the compatibility-only `/speak` endpoint,
+  legacy bridge token authorization on `/v1/speech/candidates`, and legacy token
+  copy actions.
+
+### Decision
+
+- Candidate inbox fallback remains because it is a Windows Desktop-owned
+  ingress path.
+- Desktop `/speak` and legacy token authorization are the last Milestone 8
+  compatibility items. Remove them after confirming older installed extension
+  builds no longer need support.
+
+### Verified
+
+- Documentation-only Desktop change.
+- `git diff --check`
+
+### Next
+
+- Remove Desktop `/speak` and legacy token authorization, or explicitly defer
+  them until the first public release boundary.
+
 ## 2026-05-13 VS Code Panel Control Cleanup Decision
 
 ### Current Milestone

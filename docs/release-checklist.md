@@ -166,7 +166,7 @@ artifacts:
 7. Open a new VS Code window if reloading the current window would lose chat
    context.
 8. Run `Code Companion Voice: Open Panel`.
-9. Confirm the panel shows `Enable Voice`, `Mute`, and `Desktop Test`.
+9. Confirm the panel shows `Desktop Test` and bridge diagnostics only.
 10. Click `Desktop Test`.
 11. Approve the pending VS Code client in the Desktop Client Pairing panel.
 12. Click `Desktop Test` again.

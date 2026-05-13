@@ -678,8 +678,8 @@ Acceptance criteria:
 - Pair the extension with the desktop app through Desktop-owned client approval.
 - Reload VS Code.
 - Open the Code Companion Voice panel.
-- Confirm the normal Desktop bridge panel shows only `Enable Voice`, `Mute`,
-  and `Desktop Test`.
+- Confirm the normal Desktop bridge panel shows `Desktop Test` and bridge
+  diagnostics only.
 - Click `Desktop Test`.
 - Confirm Code Companion Desktop speaks and the extension output includes
   `candidate spoken`.
@@ -726,8 +726,24 @@ Status:
 - Desktop setup documentation now uses Client Pairing as the normal path.
 - Desktop token UI has been relabelled as legacy compatibility only.
 - Documentation no longer describes VS Code-owned TTS.
-- Milestone 8 now includes removing `Enable Voice` and `Mute` from the normal
-  VS Code panel UI so Desktop remains the only voice control surface.
+- Code Companion Voice `0.0.50` removes VS Code-owned webview playback,
+  provider calls, provider/key settings, desktop-audio fallback, speech queue,
+  `/speak` client compatibility, and long-lived bridge token storage.
+- Code Companion Voice now uses Desktop pairing with short-lived session
+  authorization for HTTP candidate delivery.
+- Candidate inbox fallback remains because it is a Desktop-owned ingress path.
+
+Compatibility surface still present:
+
+- Code Companion Desktop still accepts `POST /speak` with the legacy bridge
+  token for older extension builds.
+- Code Companion Desktop still accepts the legacy bridge token on
+  `/v1/speech/candidates` during migration.
+- Code Companion Desktop still exposes `Copy Legacy Token` and
+  `Copy Legacy Bridge Token` as compatibility-only actions.
+- The final Milestone 8 Desktop cleanup is to remove `/speak` and legacy token
+  authorization after any installed older extension builds are no longer
+  supported.
 
 ### Milestone 9: Public Release Packaging
 
