@@ -591,8 +591,11 @@ Status:
   `codecompaniondesktop`.
 - Code Companion Voice already reads `.code-companion/project.json` when present
   and sends that identity in Desktop bridge speech candidate payloads.
-- Remaining work: Desktop-owned project registry, alias merging, history
-  grouping, and diagnostics for observed roots.
+- Desktop now persists observed project identities and path aliases in
+  `%APPDATA%\CodeCompanionDesktop\project-registry.json`.
+- Desktop diagnostics show recent observed projects and roots.
+- Remaining work: richer project registry UI, explicit alias management, and
+  history views grouped by project ID.
 
 ### Milestone 6: Pairing Without Persistent VS Code Secrets
 

@@ -290,6 +290,18 @@ Recent bridge clients and speech results are stored for desktop diagnostics in:
 The history is diagnostic only. Provider API keys remain in Windows Credential
 Manager and are not written to this file.
 
+Observed project identities and path aliases are stored for desktop diagnostics
+in:
+
+```text
+%APPDATA%\CodeCompanionDesktop\project-registry.json
+```
+
+The project registry is keyed by stable `projectId` and records display names,
+observed roots, client names, environments, and last-seen times. It lets Desktop
+treat Windows and WSL paths as aliases of one project instead of as separate
+project identities.
+
 ## Local Bridge
 
 The desktop app starts a local HTTP bridge on port `47321` when it launches.

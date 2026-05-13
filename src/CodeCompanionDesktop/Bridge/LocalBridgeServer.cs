@@ -186,10 +186,7 @@ public sealed class LocalBridgeServer : IDisposable
             return;
         }
 
-        runtimeState.RecordClientSeen(
-            helloRequest.Client.Name,
-            helloRequest.Client.Environment,
-            helloRequest.Workspace.ProjectId);
+        runtimeState.RecordClientSeen(helloRequest.Client, helloRequest.Workspace);
 
         await WriteJsonAsync(
             stream,

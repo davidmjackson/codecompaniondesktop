@@ -4,6 +4,36 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Desktop Project Registry
+
+### Current Milestone
+
+- Milestone 5: Project Identity.
+
+### Changed
+
+- Added `ProjectRegistryStore` for Desktop-owned project identity persistence.
+- Desktop now records observed project IDs, display names, roots, environments,
+  client names, and last-seen times from bridge client hello and speech
+  candidate payloads.
+- Added recent project diagnostics to the Desktop diagnostics text.
+- Documented `%APPDATA%\CodeCompanionDesktop\project-registry.json`.
+
+### Decision
+
+- The registry is keyed by stable `projectId`; Windows and WSL roots are stored
+  as observed aliases for that project.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- `dotnet test CodeCompanionDesktop.sln --no-build`; 20 tests passed.
+- `git diff --check`
+
+### Next
+
+- Add richer project registry UI and history views grouped by project ID.
+
 ## 2026-05-13 Project Identity Baseline
 
 ### Current Milestone

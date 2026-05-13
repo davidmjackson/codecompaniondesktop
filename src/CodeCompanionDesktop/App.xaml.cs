@@ -33,7 +33,7 @@ public partial class App : WpfApplication
         var settings = settingsStore.Load();
         bridgeTokenStore = new BridgeTokenStore(credentialStore);
         var bridgeToken = bridgeTokenStore.EnsureToken();
-        var runtimeState = new BridgeRuntimeState(new SpeechHistoryStore());
+        var runtimeState = new BridgeRuntimeState(new SpeechHistoryStore(), new ProjectRegistryStore());
         runtimeState.ConfigureQueue(settings.QueueBridgeSpeechRequests, settings.MaxQueuedBridgeSpeechRequests);
         bridgeSpeechQueue = new BridgeSpeechQueue(SpeakFromBridgeAsync, runtimeState);
         speechCandidateProcessor = new SpeechCandidateProcessor(SpeakFromBridgeAsync, runtimeState, bridgeSpeechQueue);

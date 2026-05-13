@@ -34,8 +34,8 @@ public sealed class SpeechCandidateProcessor
         }
 
         runtimeState.RecordSpeechCandidate(
-            candidateRequest.Client.Environment,
-            candidateRequest.Workspace.ProjectId,
+            candidateRequest.Client,
+            candidateRequest.Workspace,
             candidateRequest.Codex.MessageId,
             candidateRequest.Candidate.Text);
 

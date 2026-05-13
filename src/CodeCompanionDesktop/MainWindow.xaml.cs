@@ -437,6 +437,11 @@ public partial class MainWindow : Window
             : string.Join(
                 Environment.NewLine,
                 snapshot.RecentBridgeClients.Select(client => $"Client: {client}"));
+        var recentProjects = snapshot.RecentProjects.Count == 0
+            ? "Recent projects: none"
+            : string.Join(
+                Environment.NewLine,
+                snapshot.RecentProjects.Select(project => $"Project: {project}"));
         var recent = snapshot.RecentSpeechResults.Count == 0
             ? "Recent speech results: none"
             : string.Join(
@@ -459,6 +464,7 @@ public partial class MainWindow : Window
             $"Last provider error: {snapshot.LastProviderError}",
             $"Last playback error: {snapshot.LastPlaybackError}",
             $"Last bridge status: {snapshot.LastStatus}",
+            recentProjects,
             recentClients,
             recent);
     }
