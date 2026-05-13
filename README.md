@@ -329,9 +329,7 @@ When the desktop app receives `/v1/client/hello`, unknown clients are recorded
 as `pending`. Previously approved clients return `allowed`. The main Desktop
 window includes a Client Pairing panel with Refresh, Copy, Approve, and Deny
 actions. Approved clients receive a short-lived in-memory session token from
-`/v1/client/hello`, and `/v1/speech/candidates` accepts that session token. The
-copied bridge token remains as a temporary compatibility path until the VS Code
-extension migration fully removes long-lived token storage.
+`/v1/client/hello`, and `/v1/speech/candidates` accepts that session token.
 
 ## Local Bridge
 
@@ -341,7 +339,6 @@ The desktop app starts a local HTTP bridge on port `47321` when it launches.
 GET  /health
 POST /v1/client/hello
 POST /v1/speech/candidates
-POST /speak
 ```
 
 `GET /health` returns bridge state:
@@ -382,16 +379,17 @@ architecture:
 }
 ```
 
-The current response uses compatibility authorization while desktop-managed
-pairing is still pending:
+Approved clients receive a short-lived session token:
 
 ```json
 {
   "status": "ok",
   "authorization": "allowed",
-  "mode": "compatibility-token",
+  "mode": "desktop-pairing",
   "bridgeVersion": "0.2.0",
-  "protocolVersion": 1
+  "protocolVersion": 1,
+  "sessionToken": "short-lived-session-token",
+  "sessionExpiresAtUtc": "2026-05-13T20:00:00.0000000Z"
 }
 ```
 
@@ -400,7 +398,7 @@ The desktop app validates the request, applies deterministic speech policy,
 redacts common secret patterns, deduplicates by message ID and normalized text,
 then sends accepted text through the desktop queue and ElevenLabs playback path.
 This endpoint currently requires the same `Authorization: Bearer <token>` header
-as `/speak` until desktop-managed pairing replaces copied tokens.
+with the short-lived session token returned from `/v1/client/hello`.
 
 ```json
 {
@@ -466,37 +464,16 @@ candidate events into a Windows-owned location while Code Companion Desktop
 remains the only component that owns policy, provider calls, diagnostics, and
 native audio playback.
 
-`POST /speak` requires an `Authorization: Bearer <token>` header and a JSON body:
-
-```json
-{ "text": "Speech text to generate and play." }
-```
-
-If speech is already playing, `/speak` returns `409 Conflict` with
-`{"error":"busy"}` by default.
-
 The Local Bridge section includes `Queue bridge speech requests`. When enabled,
-new `/speak` requests and valid `/v1/speech/candidates` requests are accepted
-into a bounded queue instead of being rejected while another bridge speech
-request is playing. The queue limit is stored with the app settings and can be
-set to 1, 3, 5, or 10 pending requests. When the queue is full, `/speak` returns
-`409 Conflict` with `{"error":"queue_full"}` and speech candidates return a
-structured rejected decision with reason `queue_full`.
+valid `/v1/speech/candidates` requests are accepted into a bounded queue instead
+of being rejected while another bridge speech request is playing. The queue
+limit is stored with the app settings and can be set to 1, 3, 5, or 10 pending
+requests. When the queue is full, speech candidates return a structured
+rejected decision with reason `queue_full`.
 
-The legacy bridge token is generated once and stored in Windows Credential
-Manager:
-
-```text
-Target: CodeCompanionDesktop/BridgeToken
-User name: CodeCompanionDesktop Bridge
-```
-
-Use `Copy Legacy Token` only for older extension builds and compatibility
-testing. Normal pairing uses the Client Pairing panel and short-lived session
+The old token-based `/speak` endpoint and token copy actions have been removed.
+Normal pairing uses the Client Pairing panel and short-lived session
 authorization.
-
-The tray menu also includes `Bridge Status` and `Copy Legacy Bridge Token`
-actions.
 
 The bridge listens on Windows port `47321`. From WSL, the extension discovers the
 Windows host IP and calls that address rather than `127.0.0.1`.

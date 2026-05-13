@@ -16,7 +16,6 @@ public partial class MainWindow : Window
     private readonly TestTonePlayer testTonePlayer = new();
     private readonly AudioFilePlayer audioFilePlayer = new();
     private readonly WindowsCredentialStore credentialStore = new();
-    private readonly BridgeTokenStore bridgeTokenStore;
     private readonly BridgeRuntimeState bridgeRuntimeState;
     private readonly ClientTrustStore clientTrustStore;
     private readonly AppSettingsStore settingsStore;
@@ -27,13 +26,11 @@ public partial class MainWindow : Window
     private bool isInitializing;
 
     public MainWindow(
-        BridgeTokenStore bridgeTokenStore,
         BridgeRuntimeState bridgeRuntimeState,
         ClientTrustStore clientTrustStore,
         AppSettingsStore settingsStore,
         AppSettings settings)
     {
-        this.bridgeTokenStore = bridgeTokenStore;
         this.bridgeRuntimeState = bridgeRuntimeState;
         this.clientTrustStore = clientTrustStore;
         this.settingsStore = settingsStore;
@@ -337,11 +334,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void CopyBridgeTokenButton_Click(object sender, RoutedEventArgs e)
-    {
-        CopyBridgeTokenToClipboard();
-    }
-
     private void RefreshBridgeStatusButton_Click(object sender, RoutedEventArgs e)
     {
         RefreshBridgeStatus();
@@ -485,19 +477,6 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             SettingsStatusText.Text = $"Copying startup diagnostics failed: {ex.Message}";
-        }
-    }
-
-    public void CopyBridgeTokenToClipboard()
-    {
-        try
-        {
-            System.Windows.Clipboard.SetText(bridgeTokenStore.EnsureToken());
-            BridgeStatusText.Text = $"Copied legacy bridge token. Endpoint: {LocalBridgeServer.BaseUrl}";
-        }
-        catch (Exception ex)
-        {
-            BridgeStatusText.Text = $"Copy legacy token failed: {ex.Message}";
         }
     }
 

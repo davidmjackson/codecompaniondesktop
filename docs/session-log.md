@@ -4,6 +4,42 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Remove Desktop Legacy Bridge Token
+
+### Current Milestone
+
+- Milestone 8: Cleanup And Compatibility Removal.
+
+### Changed
+
+- Removed Desktop `POST /speak` compatibility endpoint.
+- Removed legacy bridge-token authorization from `/v1/speech/candidates`.
+- Removed `BridgeTokenStore` and no longer creates
+  `CodeCompanionDesktop/BridgeToken` in Windows Credential Manager.
+- Removed `Copy Legacy Token` from the main window and
+  `Copy Legacy Bridge Token` from the tray menu.
+- Updated bridge tests to authorize speech candidates with `/v1/client/hello`
+  session tokens.
+- Updated README and architecture docs to describe Client Pairing plus
+  short-lived session authorization as the only HTTP speech path.
+
+### Decision
+
+- Milestone 8 compatibility removal is complete for the current Desktop and
+  Voice builds. Older token-based extension builds are no longer supported by
+  the current Desktop bridge.
+
+### Verified
+
+- `/mnt/c/Program\ Files/dotnet/dotnet.exe build CodeCompanionDesktop.sln`
+- `/mnt/c/Program\ Files/dotnet/dotnet.exe test CodeCompanionDesktop.sln --no-build`; 27 tests passed.
+- `git diff --check`
+
+### Next
+
+- Package and smoke test the updated Desktop app with Code Companion Voice
+  `0.0.50`.
+
 ## 2026-05-13 Compatibility Audit
 
 ### Current Milestone

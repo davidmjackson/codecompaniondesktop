@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using CodeCompanionDesktop.Bridge;
-using CodeCompanionDesktop.Credentials;
 using CodeCompanionDesktop.History;
 using CodeCompanionDesktop.Settings;
 using Forms = System.Windows.Forms;
@@ -18,7 +17,6 @@ public partial class App : WpfApplication
     private MainWindow? mainWindow;
     private LocalBridgeServer? bridgeServer;
     private SpeechCandidateInboxWatcher? candidateInboxWatcher;
-    private BridgeTokenStore? bridgeTokenStore;
     private BridgeRuntimeState? bridgeRuntimeState;
     private BridgeSpeechQueue? bridgeSpeechQueue;
     private SpeechCandidateProcessor? speechCandidateProcessor;
@@ -29,11 +27,8 @@ public partial class App : WpfApplication
     {
         base.OnStartup(e);
 
-        var credentialStore = new WindowsCredentialStore();
         settingsStore = new AppSettingsStore();
         var settings = settingsStore.Load();
-        bridgeTokenStore = new BridgeTokenStore(credentialStore);
-        var bridgeToken = bridgeTokenStore.EnsureToken();
         var runtimeState = new BridgeRuntimeState(new SpeechHistoryStore(), new ProjectRegistryStore());
         runtimeState.ConfigureQueue(settings.QueueBridgeSpeechRequests, settings.MaxQueuedBridgeSpeechRequests);
         bridgeSpeechQueue = new BridgeSpeechQueue(SpeakFromBridgeAsync, runtimeState);
@@ -41,9 +36,9 @@ public partial class App : WpfApplication
         clientTrustStore = new ClientTrustStore();
         bridgeRuntimeState = runtimeState;
 
-        mainWindow = new MainWindow(bridgeTokenStore, runtimeState, clientTrustStore, settingsStore, settings);
+        mainWindow = new MainWindow(runtimeState, clientTrustStore, settingsStore, settings);
         ConfigureTrayIcon();
-        StartBridgeServer(bridgeToken, runtimeState);
+        StartBridgeServer(runtimeState);
         StartCandidateInbox(runtimeState);
 
         if (settings.StartHiddenToTray)
@@ -145,7 +140,6 @@ public partial class App : WpfApplication
         menu.Items.Add("Show", null, (_, _) => ShowMainWindow());
         menu.Items.Add("Hide to Tray", null, (_, _) => mainWindow?.Hide());
         menu.Items.Add("Bridge Status", null, (_, _) => ShowBridgeStatus());
-        menu.Items.Add("Copy Legacy Bridge Token", null, (_, _) => CopyBridgeTokenToClipboard());
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Play Test Sound", null, async (_, _) =>
         {
@@ -171,7 +165,7 @@ public partial class App : WpfApplication
         return menu;
     }
 
-    private void StartBridgeServer(string bridgeToken, BridgeRuntimeState runtimeState)
+    private void StartBridgeServer(BridgeRuntimeState runtimeState)
     {
         if (mainWindow is null || bridgeSpeechQueue is null || speechCandidateProcessor is null)
         {
@@ -181,7 +175,6 @@ public partial class App : WpfApplication
         try
         {
             bridgeServer = new LocalBridgeServer(
-                bridgeToken,
                 SpeakFromBridgeAsync,
                 runtimeState,
                 bridgeSpeechQueue,
@@ -243,12 +236,6 @@ public partial class App : WpfApplication
         var speaking = bridgeRuntimeState?.IsSpeaking == true ? "speaking" : "idle";
         var lastStatus = bridgeRuntimeState?.LastStatus ?? "No bridge status available.";
         mainWindow.SetBridgeStatus($"Bridge {bridge} on {LocalBridgeServer.BaseUrl}. State: {speaking}. {lastStatus}");
-    }
-
-    private void CopyBridgeTokenToClipboard()
-    {
-        ShowMainWindow();
-        mainWindow?.CopyBridgeTokenToClipboard();
     }
 
     [DllImport("user32.dll", SetLastError = true)]

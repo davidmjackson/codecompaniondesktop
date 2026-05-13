@@ -22,15 +22,11 @@ public sealed class LocalBridgeServer : IDisposable
     private const string BridgeVersion = "0.2.0";
     private const int MaxHeaderBytes = 16 * 1024;
     private const int MaxBodyBytes = 16 * 1024;
-    private const int MaxTextLength = 1000;
     private static readonly TimeSpan SessionTokenLifetime = TimeSpan.FromHours(8);
 
     private readonly object sessionSyncRoot = new();
     private readonly Dictionary<string, BridgeSessionAuthorization> sessionAuthorizations = new(StringComparer.Ordinal);
-    private readonly string token;
-    private readonly Func<string, Task> speakAsync;
     private readonly BridgeRuntimeState runtimeState;
-    private readonly BridgeSpeechQueue speechQueue;
     private readonly SpeechCandidateProcessor speechCandidateProcessor;
     private readonly ClientTrustStore? clientTrustStore;
     private readonly int port;
@@ -39,7 +35,6 @@ public sealed class LocalBridgeServer : IDisposable
     private Task? listenTask;
 
     public LocalBridgeServer(
-        string token,
         Func<string, Task> speakAsync,
         BridgeRuntimeState runtimeState,
         BridgeSpeechQueue speechQueue,
@@ -48,16 +43,12 @@ public sealed class LocalBridgeServer : IDisposable
         ClientTrustStore? clientTrustStore = null,
         int port = Port)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(token);
         if (port < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(port), "Port must be zero or greater.");
         }
 
-        this.token = token;
-        this.speakAsync = speakAsync;
         this.runtimeState = runtimeState;
-        this.speechQueue = speechQueue;
         this.speechCandidateProcessor = speechCandidateProcessor ?? new SpeechCandidateProcessor(
             speakAsync,
             runtimeState,
@@ -156,12 +147,6 @@ public sealed class LocalBridgeServer : IDisposable
                 return;
             }
 
-            if (request.Method == "POST" && request.Path == "/speak")
-            {
-                await HandleSpeakAsync(stream, request);
-                return;
-            }
-
             await WriteJsonAsync(stream, HttpStatusCode.NotFound, new ErrorResponse("not_found"));
         }
         catch (Exception ex)
@@ -194,8 +179,8 @@ public sealed class LocalBridgeServer : IDisposable
         }
 
         runtimeState.RecordClientSeen(helloRequest.Client, helloRequest.Workspace);
-        var authorization = ClientTrustStore.Allowed;
-        var mode = "compatibility-token";
+        var authorization = ClientTrustStore.Pending;
+        var mode = "desktop-pairing";
         string? sessionToken = null;
         string? sessionExpiresAtUtc = null;
         if (clientTrustStore is not null)
@@ -208,6 +193,13 @@ public sealed class LocalBridgeServer : IDisposable
                 sessionToken = session.Token;
                 sessionExpiresAtUtc = session.ExpiresAtUtc.ToString("O");
             }
+        }
+        else
+        {
+            authorization = ClientTrustStore.Allowed;
+            var session = IssueSessionAuthorization(helloRequest.Client.ClientId);
+            sessionToken = session.Token;
+            sessionExpiresAtUtc = session.ExpiresAtUtc.ToString("O");
         }
 
         await WriteJsonAsync(
@@ -225,8 +217,7 @@ public sealed class LocalBridgeServer : IDisposable
 
     private async Task HandleSpeechCandidateAsync(Stream stream, BridgeRequest request)
     {
-        var legacyAuthorized = IsLegacyTokenAuthorized(request.Headers);
-        if (!legacyAuthorized && !HasBearerToken(request.Headers))
+        if (!HasBearerToken(request.Headers))
         {
             await WriteJsonAsync(stream, HttpStatusCode.Unauthorized, new ErrorResponse("unauthorized"));
             return;
@@ -239,7 +230,7 @@ public sealed class LocalBridgeServer : IDisposable
             return;
         }
 
-        if (!legacyAuthorized && !IsSessionAuthorized(request.Headers, candidateRequest.Client.ClientId))
+        if (!IsSessionAuthorized(request.Headers, candidateRequest.Client.ClientId))
         {
             await WriteJsonAsync(stream, HttpStatusCode.Unauthorized, new ErrorResponse("unauthorized"));
             return;
@@ -247,61 +238,6 @@ public sealed class LocalBridgeServer : IDisposable
 
         var result = await speechCandidateProcessor.ProcessAsync(candidateRequest);
         await WriteJsonAsync(stream, result.StatusCode, result.Payload);
-    }
-
-    private async Task HandleSpeakAsync(Stream stream, BridgeRequest request)
-    {
-        if (!IsLegacyTokenAuthorized(request.Headers))
-        {
-            await WriteJsonAsync(stream, HttpStatusCode.Unauthorized, new ErrorResponse("unauthorized"));
-            return;
-        }
-
-        SpeakRequest? speakRequest;
-        speakRequest = DeserializeRequest<SpeakRequest>(request.Body);
-
-        var text = speakRequest?.Text?.Trim();
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            await WriteJsonAsync(stream, HttpStatusCode.BadRequest, new ErrorResponse("missing_text"));
-            return;
-        }
-
-        if (text.Length > MaxTextLength)
-        {
-            await WriteJsonAsync(stream, HttpStatusCode.BadRequest, new ErrorResponse("text_too_long"));
-            return;
-        }
-
-        if (runtimeState.QueueBridgeSpeechRequests)
-        {
-            if (!speechQueue.TryEnqueue(text, out var position))
-            {
-                await WriteJsonAsync(stream, HttpStatusCode.Conflict, new ErrorResponse("queue_full"));
-                return;
-            }
-
-            await WriteJsonAsync(stream, HttpStatusCode.OK, new SpeakResponse("queued", position));
-            return;
-        }
-
-        if (!runtimeState.TryBeginSpeaking())
-        {
-            await WriteJsonAsync(stream, HttpStatusCode.Conflict, new ErrorResponse("busy"));
-            return;
-        }
-
-        try
-        {
-            await speakAsync(text);
-            runtimeState.CompleteSpeaking();
-            await WriteJsonAsync(stream, HttpStatusCode.OK, new SpeakResponse("spoken", 0));
-        }
-        catch (Exception ex)
-        {
-            runtimeState.FailSpeaking(ex.Message);
-            await WriteJsonAsync(stream, HttpStatusCode.InternalServerError, new ErrorResponse(ex.Message));
-        }
     }
 
     private HealthResponse CreateHealthResponse()
@@ -316,12 +252,6 @@ public sealed class LocalBridgeServer : IDisposable
             runtimeState.QueueBridgeSpeechRequests,
             runtimeState.PendingSpeechRequests,
             runtimeState.MaxQueuedSpeechRequests);
-    }
-
-    private bool IsLegacyTokenAuthorized(IReadOnlyDictionary<string, string> headers)
-    {
-        return TryGetBearerToken(headers, out var bearerToken)
-            && string.Equals(bearerToken, token, StringComparison.Ordinal);
     }
 
     private bool IsSessionAuthorized(IReadOnlyDictionary<string, string> headers, string clientId)
@@ -565,12 +495,6 @@ public sealed class LocalBridgeServer : IDisposable
         [property: JsonPropertyName("queueEnabled")] bool QueueEnabled,
         [property: JsonPropertyName("queued")] int Queued,
         [property: JsonPropertyName("queueLimit")] int QueueLimit);
-
-    private sealed record SpeakRequest([property: JsonPropertyName("text")] string Text);
-
-    private sealed record SpeakResponse(
-        [property: JsonPropertyName("status")] string Status,
-        [property: JsonPropertyName("queued")] int Queued);
 
     private sealed record BridgeSessionAuthorization(
         string Token,

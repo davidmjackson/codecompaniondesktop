@@ -201,17 +201,8 @@ Current bridge endpoints:
 
 ```text
 GET  /health
-POST /speak
-```
-
-Target bridge endpoints:
-
-```text
-GET  /health
 POST /v1/client/hello
 POST /v1/speech/candidates
-GET  /v1/projects
-GET  /v1/history/recent
 ```
 
 ### Health
@@ -389,7 +380,7 @@ Goal:
 Scope:
 
 - Add C# request/response types for client hello and speech candidates.
-- Keep `/speak` as a compatibility endpoint.
+- Keep `/speak` as a temporary compatibility endpoint.
 - Add protocol version to `/health`.
 - Add structured error responses.
 
@@ -610,7 +601,7 @@ Scope:
 - Add user-approved client pairing in the desktop app.
 - Add allowed-client registry in the desktop app.
 - Use short-lived in-memory bridge authorization for active extension sessions.
-- Keep old token command only as temporary fallback until migration completes.
+- Remove copied bridge-token setup after migration completes.
 
 Acceptance criteria:
 
@@ -631,13 +622,9 @@ Status:
   Deny actions for observed bridge clients.
 - Approved clients receive short-lived in-memory session authorization from
   `/v1/client/hello`.
-- `/v1/speech/candidates` accepts either the short-lived session token or the
-  legacy bridge token during migration.
-- The compatibility-token mode remains available for migration and existing
-  token-based speech candidate calls.
-- Code Companion Voice `0.0.46` uses Desktop pairing/session authorization for
-  normal candidate delivery. Legacy token storage remains only as a migration
-  fallback for older Desktop builds and compatibility testing.
+- `/v1/speech/candidates` accepts short-lived session authorization.
+- Code Companion Voice `0.0.50` uses Desktop pairing/session authorization for
+  normal candidate delivery and no longer stores long-lived bridge tokens.
 
 ### Milestone 7: Local Packaging And First Run
 
@@ -722,9 +709,9 @@ Acceptance criteria:
 
 Status:
 
-- In progress.
+- Complete.
 - Desktop setup documentation now uses Client Pairing as the normal path.
-- Desktop token UI has been relabelled as legacy compatibility only.
+- Desktop token UI and tray token copy actions have been removed.
 - Documentation no longer describes VS Code-owned TTS.
 - Code Companion Voice `0.0.50` removes VS Code-owned webview playback,
   provider calls, provider/key settings, desktop-audio fallback, speech queue,
@@ -732,18 +719,10 @@ Status:
 - Code Companion Voice now uses Desktop pairing with short-lived session
   authorization for HTTP candidate delivery.
 - Candidate inbox fallback remains because it is a Desktop-owned ingress path.
-
-Compatibility surface still present:
-
-- Code Companion Desktop still accepts `POST /speak` with the legacy bridge
-  token for older extension builds.
-- Code Companion Desktop still accepts the legacy bridge token on
-  `/v1/speech/candidates` during migration.
-- Code Companion Desktop still exposes `Copy Legacy Token` and
-  `Copy Legacy Bridge Token` as compatibility-only actions.
-- The final Milestone 8 Desktop cleanup is to remove `/speak` and legacy token
-  authorization after any installed older extension builds are no longer
-  supported.
+- Code Companion Desktop no longer accepts `POST /speak`.
+- Code Companion Desktop no longer accepts legacy bridge-token authorization on
+  `/v1/speech/candidates`.
+- Code Companion Desktop no longer creates or stores `CodeCompanionDesktop/BridgeToken`.
 
 ### Milestone 9: Public Release Packaging
 

@@ -9,8 +9,6 @@ namespace CodeCompanionDesktop.Tests.Bridge;
 
 public sealed class LocalBridgeServerContractTests
 {
-    private const string Token = "test-token";
-
     [Fact]
     public async Task HealthIncludesVersionAndQueueState()
     {
@@ -63,7 +61,8 @@ public sealed class LocalBridgeServerContractTests
         var root = document.RootElement;
         Assert.Equal("ok", root.GetProperty("status").GetString());
         Assert.Equal("allowed", root.GetProperty("authorization").GetString());
-        Assert.Equal("compatibility-token", root.GetProperty("mode").GetString());
+        Assert.Equal("desktop-pairing", root.GetProperty("mode").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("sessionToken").GetString()));
         Assert.Equal("0.2.0", root.GetProperty("bridgeVersion").GetString());
         Assert.Equal(1, root.GetProperty("protocolVersion").GetInt32());
         Assert.Contains("Code Companion Voice", fixture.RuntimeState.LastClient, StringComparison.Ordinal);
@@ -241,7 +240,7 @@ public sealed class LocalBridgeServerContractTests
     public async Task SpeechCandidateRejectsInvalidMetadata()
     {
         using var fixture = BridgeFixture.Start();
-        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+        await fixture.AuthorizeClientAsync();
 
         using var response = await fixture.Client.PostAsync(
             "v1/speech/candidates",
@@ -277,7 +276,7 @@ public sealed class LocalBridgeServerContractTests
     public async Task SpeechCandidateSpeaksValidPayload()
     {
         using var fixture = BridgeFixture.Start();
-        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+        await fixture.AuthorizeClientAsync();
 
         using var response = await fixture.Client.PostAsync(
             "v1/speech/candidates",
@@ -299,7 +298,7 @@ public sealed class LocalBridgeServerContractTests
     public async Task SpeechCandidateSpeaksVoiceCheckInWhenPhaseIsNotFinal()
     {
         using var fixture = BridgeFixture.Start();
-        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+        await fixture.AuthorizeClientAsync();
 
         using var response = await fixture.Client.PostAsync(
             "v1/speech/candidates",
@@ -322,7 +321,7 @@ public sealed class LocalBridgeServerContractTests
     public async Task SpeechCandidateIgnoresNonFinalPayloadWithoutSpeechHint()
     {
         using var fixture = BridgeFixture.Start();
-        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+        await fixture.AuthorizeClientAsync();
 
         using var response = await fixture.Client.PostAsync(
             "v1/speech/candidates",
@@ -344,7 +343,7 @@ public sealed class LocalBridgeServerContractTests
     public async Task SpeechCandidateIgnoresDuplicateMessageId()
     {
         using var fixture = BridgeFixture.Start();
-        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+        await fixture.AuthorizeClientAsync();
 
         using var first = await fixture.Client.PostAsync(
             "v1/speech/candidates",
@@ -367,7 +366,7 @@ public sealed class LocalBridgeServerContractTests
     public async Task SpeechCandidateIgnoresDuplicateNormalizedText()
     {
         using var fixture = BridgeFixture.Start();
-        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+        await fixture.AuthorizeClientAsync();
 
         using var first = await fixture.Client.PostAsync(
             "v1/speech/candidates",
@@ -390,7 +389,7 @@ public sealed class LocalBridgeServerContractTests
     public async Task SpeechCandidatePrivacyFiltersBeforeSpeaking()
     {
         using var fixture = BridgeFixture.Start();
-        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+        await fixture.AuthorizeClientAsync();
 
         using var response = await fixture.Client.PostAsync(
             "v1/speech/candidates",
@@ -415,7 +414,7 @@ public sealed class LocalBridgeServerContractTests
     public async Task SpeechCandidateQueuesWhenQueueIsEnabled()
     {
         using var fixture = BridgeFixture.Start(queueEnabled: true);
-        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+        await fixture.AuthorizeClientAsync();
 
         using var response = await fixture.Client.PostAsync(
             "v1/speech/candidates",
@@ -541,6 +540,17 @@ public sealed class LocalBridgeServerContractTests
 
         private string? ClientTrustDirectory { get; }
 
+        public async Task AuthorizeClientAsync(string clientId = "test-client")
+        {
+            using var helloResponse = await Client.PostAsync(
+                "v1/client/hello",
+                JsonContent(ValidClientHelloJson(clientId)));
+            using var helloDocument = await ReadJsonAsync(helloResponse);
+            var sessionToken = helloDocument.RootElement.GetProperty("sessionToken").GetString();
+            Assert.False(string.IsNullOrWhiteSpace(sessionToken));
+            Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", sessionToken);
+        }
+
         public static BridgeFixture Start(bool queueEnabled = false, Func<string, Task>? speakAsync = null)
         {
             return Start(queueEnabled, speakAsync, null, null);
@@ -569,7 +579,6 @@ public sealed class LocalBridgeServerContractTests
             });
             var queue = new BridgeSpeechQueue(captureSpeechAsync, runtimeState);
             var server = new LocalBridgeServer(
-                Token,
                 captureSpeechAsync,
                 runtimeState,
                 queue,
