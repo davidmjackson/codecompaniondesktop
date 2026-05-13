@@ -4,6 +4,35 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 UNC Log Root Architecture Correction
+
+### Current Milestone
+
+- Milestone 4A: Windows-Owned Candidate Ingress.
+
+### Changed
+
+- Updated `docs/architecture.md` to make `\\wsl.localhost` Codex log scraping a
+  prototype discovery mechanism, not the product direction.
+- Added Milestone 4A for replacing per-environment Codex log roots with a
+  Windows-owned candidate ingress through Code Companion Desktop.
+
+### Decision
+
+- Do not deepen the normal speech path around
+  `\\wsl.localhost\Ubuntu-24.04\home\davidj\.codex\sessions`.
+- The extension should remain a thin client that sends structured events to the
+  desktop bridge. It should not require direct filesystem access to another
+  environment's Codex logs.
+
+### Verified
+
+- Documentation-only change; `git diff --check` pending.
+
+### Next
+
+- Design and implement Milestone 4A before continuing more UNC watcher work.
+
 ## 2026-05-13 Extension Checkout Moved To Windows
 
 ### Current Milestone

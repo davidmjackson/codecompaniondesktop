@@ -56,6 +56,22 @@ Codex activity
 The VS Code client may run in Windows or WSL. In both cases it forwards the
 same structured event shape to the Windows app.
 
+The target architecture must not depend on `\\wsl.localhost` paths, WSL home
+directories, or per-environment Codex log root settings. Those paths are a
+prototype discovery mechanism, not a product boundary. When the active work is
+running in Linux/WSL, any speech event that needs Windows playback must cross
+into Windows through the local desktop bridge or a Windows-owned inbox owned by
+Code Companion Desktop.
+
+Practical rule:
+
+- VS Code may observe the current editor/workspace context.
+- VS Code may send structured candidate events to Code Companion Desktop.
+- VS Code should not require direct access to another environment's filesystem
+  to make speech work.
+- Code Companion Desktop owns the Windows-side ingress, policy, diagnostics,
+  and history.
+
 ## Responsibility Boundaries
 
 ### Code Companion Desktop Owns
@@ -487,6 +503,40 @@ Status:
   provider calls, or playback.
 - VS Code-owned provider/webview/desktop-audio paths still exist as migration
   fallback and need removal after manual verification.
+- Manual verification exposed that using `\\wsl.localhost` as a Codex log root
+  from a normal Windows VS Code extension host is brittle and violates the
+  target environment-agnostic boundary. Do not build more product behavior on
+  UNC log scraping.
+
+### Milestone 4A: Windows-Owned Candidate Ingress
+
+Goal:
+
+- Remove `\\wsl.localhost` and per-environment Codex log roots from the normal
+  speech path.
+
+Scope:
+
+- Add a Windows-owned candidate ingress in Code Companion Desktop. This can be
+  the existing authenticated HTTP bridge, a desktop-owned inbox under
+  `%APPDATA%\CodeCompanionDesktop`, or both during migration.
+- Make Code Companion Voice send explicit structured events to Desktop instead
+  of asking Windows VS Code to enumerate WSL Codex session logs.
+- Keep Codex log scraping only as a temporary developer fallback until a direct
+  event source exists.
+- Move all user-facing diagnostics for candidate receipt and policy decisions
+  into the Windows app.
+
+Acceptance criteria:
+
+- A Windows project can produce speech without configuring a Codex log root in
+  VS Code.
+- A WSL/Linux project can produce speech without configuring
+  `\\wsl.localhost\...` in VS Code.
+- VS Code stores no provider keys and does not read another environment's
+  Codex log directory for normal operation.
+- Code Companion Desktop diagnostics show received candidates with project ID,
+  client ID, environment, decision, and reason.
 
 ### Milestone 5: Project Identity
 
