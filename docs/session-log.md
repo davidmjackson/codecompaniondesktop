@@ -4,6 +4,38 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Spoken Update Convention
+
+### Current Milestone
+
+- Milestone 5: Project Identity.
+
+### Changed
+
+- Added `scripts/send-speech-candidate.ps1` for reliable spoken progress
+  updates through the Desktop candidate inbox.
+- Documented the spoken update convention in `AGENTS.md`, `README.md`, and
+  `docs/architecture.md`.
+
+### Decision
+
+- Longer work should include occasional spoken progress updates when Code
+  Companion Desktop is running.
+- End-of-milestone summaries should be spoken before the final written summary.
+- Spoken updates must use the Desktop-owned candidate path, not VS Code webview
+  audio.
+
+### Verified
+
+- Ran `scripts/send-speech-candidate.ps1` and wrote a valid candidate file to
+  `%APPDATA%\CodeCompanionDesktop\candidate-inbox`.
+- `git diff --check`
+
+### Next
+
+- Use the helper script for future milestone summaries and longer-running work
+  updates.
+
 ## 2026-05-13 Desktop Project Registry
 
 ### Current Milestone

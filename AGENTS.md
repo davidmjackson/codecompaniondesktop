@@ -79,6 +79,12 @@ this project unless the user explicitly asks to switch projects.
 
 - Keep updates concise and practical.
 - Explain what you are doing and why while working.
+- For longer work, send occasional spoken progress updates through Code
+  Companion Desktop when the app is running.
+- At the end of a milestone slice, send a short spoken summary through Code
+  Companion Desktop before the final text summary.
+- Use `scripts/send-speech-candidate.ps1 -Text "..."` for spoken updates. This
+  writes a valid Desktop candidate inbox file and avoids VS Code webview audio.
 - At the end, report branch, commit hash, tests run, push status, and app
   process status.
 - When giving the user manual steps to run, provide one step at a time.

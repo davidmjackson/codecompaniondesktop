@@ -74,6 +74,18 @@ Code Companion Voice reads this file when the repository is opened in VS Code
 and includes the identity in Desktop bridge candidate payloads. This avoids
 using Windows and WSL path strings as the long-term project boundary.
 
+## Spoken Work Updates
+
+During development sessions, Codex can send short progress updates and
+end-of-milestone summaries through Code Companion Desktop with:
+
+```powershell
+.\scripts\send-speech-candidate.ps1 -Text "Milestone summary text."
+```
+
+The script writes a valid speech candidate into the Desktop candidate inbox
+using the Desktop-owned audio path. It does not rely on VS Code webview audio.
+
 ## Requirements
 
 - Windows

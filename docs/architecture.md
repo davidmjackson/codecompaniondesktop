@@ -756,3 +756,19 @@ At the end of each session:
 1. Update `docs/session-log.md`.
 2. Record milestone progress.
 3. Record branch, commit, tests, push status, and app process status.
+
+## Spoken Update Convention
+
+For long-running development work, use Code Companion Desktop for short spoken
+progress updates when the app is running. At the end of each milestone slice,
+send a concise spoken summary before the final written summary.
+
+Use:
+
+```powershell
+.\scripts\send-speech-candidate.ps1 -Text "Milestone summary text."
+```
+
+The script writes an `assistant-message` candidate with `speechHint:
+manual-speak-last` into the Desktop candidate inbox. This keeps spoken updates
+on the Desktop-owned audio path and does not depend on VS Code webview audio.
