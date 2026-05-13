@@ -6,6 +6,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556F}") = "CodeCompanionDesktop", "src\CodeCompanionDesktop\CodeCompanionDesktop.csproj", "{2638F87D-87D1-8442-A333-001AFB4CE9E7}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{99D971D4-0A34-4B92-B346-4EAFC6AB6FA4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556F}") = "CodeCompanionDesktop.Tests", "tests\CodeCompanionDesktop.Tests\CodeCompanionDesktop.Tests.csproj", "{2F59A5C7-8182-465D-B77E-F385DBBC17A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -16,12 +20,17 @@ Global
 		{2638F87D-87D1-8442-A333-001AFB4CE9E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2638F87D-87D1-8442-A333-001AFB4CE9E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2638F87D-87D1-8442-A333-001AFB4CE9E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F59A5C7-8182-465D-B77E-F385DBBC17A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F59A5C7-8182-465D-B77E-F385DBBC17A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F59A5C7-8182-465D-B77E-F385DBBC17A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F59A5C7-8182-465D-B77E-F385DBBC17A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2638F87D-87D1-8442-A333-001AFB4CE9E7} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{2F59A5C7-8182-465D-B77E-F385DBBC17A1} = {99D971D4-0A34-4B92-B346-4EAFC6AB6FA4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {01E9BF97-CBC4-468C-9800-0AA498F330D1}

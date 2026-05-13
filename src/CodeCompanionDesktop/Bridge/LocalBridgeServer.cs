@@ -29,6 +29,7 @@ public sealed class LocalBridgeServer : IDisposable
     private readonly Func<string, Task> speakAsync;
     private readonly BridgeRuntimeState runtimeState;
     private readonly BridgeSpeechQueue speechQueue;
+    private readonly int port;
     private readonly CancellationTokenSource cancellation = new();
     private TcpListener? listener;
     private Task? listenTask;
@@ -37,17 +38,27 @@ public sealed class LocalBridgeServer : IDisposable
         string token,
         Func<string, Task> speakAsync,
         BridgeRuntimeState runtimeState,
-        BridgeSpeechQueue speechQueue)
+        BridgeSpeechQueue speechQueue,
+        int port = Port)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
+        if (port < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(port), "Port must be zero or greater.");
+        }
 
         this.token = token;
         this.speakAsync = speakAsync;
         this.runtimeState = runtimeState;
         this.speechQueue = speechQueue;
+        this.port = port;
     }
 
     public bool IsRunning => listener is not null;
+
+    public int ListeningPort => listener?.LocalEndpoint is IPEndPoint endpoint ? endpoint.Port : port;
+
+    public string LocalBaseUrl => $"http://127.0.0.1:{ListeningPort}/";
 
     public void Start()
     {
@@ -56,7 +67,7 @@ public sealed class LocalBridgeServer : IDisposable
             return;
         }
 
-        listener = new TcpListener(IPAddress.Any, Port);
+        listener = new TcpListener(IPAddress.Any, port);
         listener.Start();
         listenTask = Task.Run(ListenAsync);
     }

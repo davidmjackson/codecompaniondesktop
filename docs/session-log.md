@@ -100,6 +100,42 @@ options.
 - Add a focused bridge contract test project or move directly into Milestone 2
   with tests included there.
 
+## 2026-05-13 Bridge Contract Test Project
+
+### Current Milestone
+
+- Milestone 1: Desktop Bridge Contract.
+
+### Changed
+
+- Added `tests/CodeCompanionDesktop.Tests` as an xUnit test project.
+- Added the test project to `CodeCompanionDesktop.sln`.
+- Made `LocalBridgeServer` accept an optional port and expose `LocalBaseUrl` so
+  tests can run on an ephemeral port without colliding with the real bridge on
+  `47321`.
+- Added bridge contract integration tests for:
+  - `GET /health` version and queue fields.
+  - valid `POST /v1/client/hello`.
+  - unsupported schema validation.
+  - bearer-token enforcement for `POST /v1/speech/candidates`.
+  - invalid speech candidate metadata.
+  - valid speech candidate placeholder response.
+- Updated `docs/architecture.md` to mark Milestone 1 complete.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` using
+  `C:\Program Files\dotnet\dotnet.exe`.
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`; 6 tests passed.
+- `git diff --check`.
+
+### Next
+
+- Start Milestone 2: Desktop Speech Pipeline.
+- Move speech policy, privacy filtering, rewrite, duplicate detection, queueing,
+  provider calls, and playback behind `POST /v1/speech/candidates`.
+
 ## 2026-05-13 MainWindow IDE Error Triage
 
 ### Changed

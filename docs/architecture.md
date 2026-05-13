@@ -394,10 +394,7 @@ Acceptance criteria:
 
 Status:
 
-- In progress.
-- Runtime endpoints are implemented.
-- Automated bridge contract tests are still pending because the repository does
-  not yet have a test project.
+- Complete in commit `d417206` plus follow-up bridge contract test coverage.
 
 ### Milestone 2: Desktop Speech Pipeline
 
