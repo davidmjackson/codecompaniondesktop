@@ -4,6 +4,30 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Installer PR Merge
+
+### Changed
+
+- Marked PR #2, `Add Windows installer packaging`, ready for review.
+- Merged PR #2 from `feature/windows-installer` into
+  `feature/release-publish-path`.
+- Fast-forwarded the local `feature/release-publish-path` branch to merge
+  commit `3f92cc2`.
+
+### Verified
+
+- `git diff --check`
+- Windows PowerShell bridge health check:
+  `{"status":"ok","bridge":"listening","speaking":false,"queueEnabled":false,"queued":0,"queueLimit":3}`
+- Confirmed the running desktop process is the debug build at
+  `D:\Development\CodeCompanionDesktop\src\CodeCompanionDesktop\bin\Debug\net8.0-windows\CodeCompanionDesktop.exe`.
+
+### Next
+
+- Decide whether to continue desktop-app work in this repository or switch to
+  `/var/www/CodeCompanion` for VS Code extension first-run desktop bridge
+  detection and installer-link guidance.
+
 ## 2026-05-12 Stop Point
 
 ### Current State
