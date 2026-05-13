@@ -621,7 +621,7 @@ Acceptance criteria:
 
 Status:
 
-- In progress.
+- Complete.
 - Desktop now stores bridge client trust state in
   `%APPDATA%\CodeCompanionDesktop\client-trust.json`.
 - `/v1/client/hello` records unknown clients as `pending` when Desktop-owned
@@ -635,7 +635,9 @@ Status:
   legacy bridge token during migration.
 - The compatibility-token mode remains available for migration and existing
   token-based speech candidate calls.
-- Remaining work: Voice extension migration away from persistent token storage.
+- Code Companion Voice `0.0.46` uses Desktop pairing/session authorization for
+  normal candidate delivery. Legacy token storage remains only as a migration
+  fallback for older Desktop builds and compatibility testing.
 
 ### Milestone 7: Local Packaging And First Run
 

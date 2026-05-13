@@ -4,6 +4,40 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Voice Pairing Migration
+
+### Current Milestone
+
+- Milestone 6: Pairing Without Persistent VS Code Secrets.
+
+### Changed
+
+- Updated Code Companion Voice on branch `feature/desktop-bridge-client` to use
+  `/v1/client/hello` and short-lived Desktop session authorization for normal
+  speech candidate delivery.
+- Voice now blocks delivery when Desktop pairing is pending or denied instead
+  of bypassing approval through the candidate inbox.
+- The legacy bridge token command remains only as a migration fallback.
+- Bumped Code Companion Voice to `0.0.46` and packaged
+  `code-companion-voice-0.0.46.vsix`.
+- Updated the architecture status to mark Milestone 6 complete.
+
+### Verified
+
+- In the Voice repository:
+  - `npm run compile`
+  - `npm test -- test/desktopBridge.test.ts`; 11 tests passed.
+  - `npm test`; 57 tests passed.
+  - `git diff --check`
+  - `find dist -name '*.js' -print0 | xargs -0 -n1 node --check`
+  - `npm audit --omit=dev`; 0 vulnerabilities.
+  - `npm run package:vsix`
+
+### Next
+
+- Install the updated Desktop build and Code Companion Voice `0.0.46`, then
+  smoke test the pending-client approval flow.
+
 ## 2026-05-13 Short-Lived Session Authorization
 
 ### Current Milestone
