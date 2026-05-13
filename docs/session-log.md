@@ -33,12 +33,15 @@ options.
 - Voice extension automated checks and packaging were run in
   `/mnt/d/Development/CodeCompanionVoice`; see that repository session log for
   exact commands.
-- Desktop documentation-only change; `git diff --check` pending.
+- User reloaded the Windows Voice project window and confirmed Output showed
+  `[startup-unlock] skipped: desktop-bridge-enabled` and
+  `[desktop-bridge] startup-health: reachable http://127.0.0.1:47321`.
+- Desktop documentation-only change; `git diff --check`.
 
 ### Next
 
-- Reload the Windows Voice project window and verify extension `0.0.40` starts
-  in Desktop bridge mode without the unlock prompt.
+- Check a real matching Codex assistant candidate from the active workspace and
+  confirm Desktop receives it through the normal candidate path.
 
 ## 2026-05-13 UNC Log Root Architecture Correction
 
