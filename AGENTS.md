@@ -28,8 +28,9 @@ this project unless the user explicitly asks to switch projects.
   and the local authenticated bridge.
 - `docs/architecture.md` is the source of truth for the environment-agnostic
   speech architecture and milestone plan.
-- The related VS Code extension remains in `/var/www/CodeCompanion` and should
-  only be edited when the user explicitly asks for extension work.
+- The related VS Code extension now lives in
+  `/mnt/d/Development/CodeCompanionVoice` and should only be edited when the
+  user explicitly asks for extension work.
 - Keep the desktop app and extension repositories separate unless the user
   explicitly asks to coordinate changes across both.
 

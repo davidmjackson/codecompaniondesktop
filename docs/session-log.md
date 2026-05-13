@@ -4,6 +4,36 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Extension Checkout Moved To Windows
+
+### Current Milestone
+
+- Milestone 4: Thin VS Code Client.
+
+### Changed
+
+- Moved the Code Companion Voice extension working copy from
+  `/var/www/CodeCompanion` to `D:\Development\CodeCompanionVoice`.
+- Preserved git history, branch `feature/desktop-bridge-client`, origin remote,
+  the untracked workspace file, and the current `/v1/speech/candidates`
+  Milestone 4 work-in-progress edit.
+- Installed extension dependencies in the Windows checkout.
+- Updated desktop repository docs and instructions to point future extension
+  work at `/mnt/d/Development/CodeCompanionVoice`.
+
+### Verified
+
+- In `/mnt/d/Development/CodeCompanionVoice`: `npm install`.
+- In `/mnt/d/Development/CodeCompanionVoice`: `npm run compile`.
+- Extension relocation commit `57fb928` was pushed to
+  `feature/desktop-bridge-client`.
+
+### Next
+
+- Continue Milestone 4 in `/mnt/d/Development/CodeCompanionVoice`.
+- Finish forwarding structured candidates to desktop
+  `/v1/speech/candidates`.
+
 ## 2026-05-13 Environment-Agnostic Speech Architecture
 
 ### Current Milestone

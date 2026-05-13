@@ -327,24 +327,18 @@ Reasons:
 - The target thin client can be reached by deleting responsibilities, not by
   rebuilding all extension mechanics.
 
-The extension repository currently lives in WSL:
+The extension repository now lives in the Windows checkout:
 
 ```text
-/var/www/CodeCompanion
+D:\Development\CodeCompanionVoice
+/mnt/d/Development/CodeCompanionVoice
 ```
 
 Recommendation:
 
 1. Keep the current repository and git history.
 2. Refactor the extension into a thin client on its current branch.
-3. After the thin client no longer relies on WSL-specific audio/provider
-   behavior, move or clone the repository into a Windows checkout, for example:
-
-   ```text
-   D:\Development\CodeCompanionVoice
-   ```
-
-4. Preserve git history. Do not start a new repository unless the existing
+3. Preserve git history. Do not start a new repository unless the existing
    repository becomes unrecoverable.
 
 The extension can still run in WSL or Windows. Moving the checkout to Windows is

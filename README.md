@@ -35,10 +35,11 @@ opened through WSL, `MainWindow.xaml.cs` may show false red underscores for
 XAML-generated members such as `InitializeComponent`, `PlayButton`,
 `StatusText`, and `AudioPathText`.
 
-The existing VS Code extension remains in WSL:
+The VS Code extension source now lives in the Windows checkout:
 
 ```text
-/var/www/CodeCompanion
+D:\Development\CodeCompanionVoice
+/mnt/d/Development/CodeCompanionVoice
 ```
 
 The architecture is moving away from WSL-hosted audio playback. The Windows
