@@ -4,6 +4,33 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Desktop 0.1.1 Installer Build
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### Changed
+
+- Built local Desktop installer `CodeCompanionDesktopSetup-0.1.1.exe` from
+  commit `6d92c93`.
+
+### Verified
+
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'D:\Development\CodeCompanionDesktop\scripts\build-installer.ps1' -AppVersion 0.1.1`
+- Installer output:
+  `D:\Development\CodeCompanionDesktop\artifacts\installer\CodeCompanionDesktopSetup-0.1.1.exe`
+- Installed app health check returned `appVersion: 0.1.1`.
+- Installed executable product version includes commit `6d92c93`.
+- Code Companion Voice `0.0.50` Desktop Test produced audible speech through
+  the installed Desktop app.
+
+### Next
+
+- Continue Milestone 9 release hardening: decide whether the public release
+  package needs signing, GitHub Release automation, or Marketplace packaging
+  before publishing.
+
 ## 2026-05-13 Remove Desktop Legacy Bridge Token
 
 ### Current Milestone
