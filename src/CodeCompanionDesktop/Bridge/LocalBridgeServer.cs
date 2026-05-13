@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -22,7 +23,10 @@ public sealed class LocalBridgeServer : IDisposable
     private const int MaxHeaderBytes = 16 * 1024;
     private const int MaxBodyBytes = 16 * 1024;
     private const int MaxTextLength = 1000;
+    private static readonly TimeSpan SessionTokenLifetime = TimeSpan.FromHours(8);
 
+    private readonly object sessionSyncRoot = new();
+    private readonly Dictionary<string, BridgeSessionAuthorization> sessionAuthorizations = new(StringComparer.Ordinal);
     private readonly string token;
     private readonly Func<string, Task> speakAsync;
     private readonly BridgeRuntimeState runtimeState;
@@ -192,10 +196,18 @@ public sealed class LocalBridgeServer : IDisposable
         runtimeState.RecordClientSeen(helloRequest.Client, helloRequest.Workspace);
         var authorization = ClientTrustStore.Allowed;
         var mode = "compatibility-token";
+        string? sessionToken = null;
+        string? sessionExpiresAtUtc = null;
         if (clientTrustStore is not null)
         {
             authorization = clientTrustStore.RecordHello(helloRequest.Client, helloRequest.Workspace).Authorization;
             mode = "desktop-pairing";
+            if (authorization == ClientTrustStore.Allowed)
+            {
+                var session = IssueSessionAuthorization(helloRequest.Client.ClientId);
+                sessionToken = session.Token;
+                sessionExpiresAtUtc = session.ExpiresAtUtc.ToString("O");
+            }
         }
 
         await WriteJsonAsync(
@@ -206,12 +218,15 @@ public sealed class LocalBridgeServer : IDisposable
                 authorization,
                 mode,
                 BridgeVersion,
-                ProtocolVersion));
+                ProtocolVersion,
+                sessionToken,
+                sessionExpiresAtUtc));
     }
 
     private async Task HandleSpeechCandidateAsync(Stream stream, BridgeRequest request)
     {
-        if (!IsAuthorized(request.Headers))
+        var legacyAuthorized = IsLegacyTokenAuthorized(request.Headers);
+        if (!legacyAuthorized && !HasBearerToken(request.Headers))
         {
             await WriteJsonAsync(stream, HttpStatusCode.Unauthorized, new ErrorResponse("unauthorized"));
             return;
@@ -224,13 +239,19 @@ public sealed class LocalBridgeServer : IDisposable
             return;
         }
 
+        if (!legacyAuthorized && !IsSessionAuthorized(request.Headers, candidateRequest.Client.ClientId))
+        {
+            await WriteJsonAsync(stream, HttpStatusCode.Unauthorized, new ErrorResponse("unauthorized"));
+            return;
+        }
+
         var result = await speechCandidateProcessor.ProcessAsync(candidateRequest);
         await WriteJsonAsync(stream, result.StatusCode, result.Payload);
     }
 
     private async Task HandleSpeakAsync(Stream stream, BridgeRequest request)
     {
-        if (!IsAuthorized(request.Headers))
+        if (!IsLegacyTokenAuthorized(request.Headers))
         {
             await WriteJsonAsync(stream, HttpStatusCode.Unauthorized, new ErrorResponse("unauthorized"));
             return;
@@ -297,10 +318,83 @@ public sealed class LocalBridgeServer : IDisposable
             runtimeState.MaxQueuedSpeechRequests);
     }
 
-    private bool IsAuthorized(IReadOnlyDictionary<string, string> headers)
+    private bool IsLegacyTokenAuthorized(IReadOnlyDictionary<string, string> headers)
     {
-        return headers.TryGetValue("authorization", out var authorization)
-            && string.Equals(authorization, $"Bearer {token}", StringComparison.Ordinal);
+        return TryGetBearerToken(headers, out var bearerToken)
+            && string.Equals(bearerToken, token, StringComparison.Ordinal);
+    }
+
+    private bool IsSessionAuthorized(IReadOnlyDictionary<string, string> headers, string clientId)
+    {
+        if (!TryGetBearerToken(headers, out var bearerToken))
+        {
+            return false;
+        }
+
+        lock (sessionSyncRoot)
+        {
+            if (!sessionAuthorizations.TryGetValue(bearerToken, out var session))
+            {
+                return false;
+            }
+
+            if (session.ExpiresAtUtc <= DateTimeOffset.UtcNow)
+            {
+                sessionAuthorizations.Remove(bearerToken);
+                return false;
+            }
+
+            return string.Equals(session.ClientId, clientId, StringComparison.Ordinal);
+        }
+    }
+
+    private bool HasBearerToken(IReadOnlyDictionary<string, string> headers)
+    {
+        return TryGetBearerToken(headers, out _);
+    }
+
+    private BridgeSessionAuthorization IssueSessionAuthorization(string clientId)
+    {
+        var session = new BridgeSessionAuthorization(
+            GenerateToken(),
+            clientId,
+            DateTimeOffset.UtcNow.Add(SessionTokenLifetime));
+
+        lock (sessionSyncRoot)
+        {
+            sessionAuthorizations[session.Token] = session;
+        }
+
+        return session;
+    }
+
+    private static bool TryGetBearerToken(IReadOnlyDictionary<string, string> headers, out string bearerToken)
+    {
+        bearerToken = string.Empty;
+        if (!headers.TryGetValue("authorization", out var authorization))
+        {
+            return false;
+        }
+
+        const string prefix = "Bearer ";
+        if (!authorization.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        bearerToken = authorization[prefix.Length..].Trim();
+        return !string.IsNullOrWhiteSpace(bearerToken);
+    }
+
+    private static string GenerateToken()
+    {
+        Span<byte> bytes = stackalloc byte[32];
+        RandomNumberGenerator.Fill(bytes);
+
+        return Convert.ToBase64String(bytes)
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .TrimEnd('=');
     }
 
     private static T? DeserializeRequest<T>(byte[] body)
@@ -478,4 +572,8 @@ public sealed class LocalBridgeServer : IDisposable
         [property: JsonPropertyName("status")] string Status,
         [property: JsonPropertyName("queued")] int Queued);
 
+    private sealed record BridgeSessionAuthorization(
+        string Token,
+        string ClientId,
+        DateTimeOffset ExpiresAtUtc);
 }

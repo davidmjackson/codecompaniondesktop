@@ -84,6 +84,7 @@ public sealed class LocalBridgeServerContractTests
         var root = document.RootElement;
         Assert.Equal("pending", root.GetProperty("authorization").GetString());
         Assert.Equal("desktop-pairing", root.GetProperty("mode").GetString());
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("sessionToken").ValueKind);
 
         var client = Assert.Single(fixture.ClientTrustStore!.Load().Clients);
         Assert.Equal("test-client", client.ClientId);
@@ -119,6 +120,79 @@ public sealed class LocalBridgeServerContractTests
         var root = document.RootElement;
         Assert.Equal("allowed", root.GetProperty("authorization").GetString());
         Assert.Equal("desktop-pairing", root.GetProperty("mode").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("sessionToken").GetString()));
+        Assert.True(DateTimeOffset.TryParse(root.GetProperty("sessionExpiresAtUtc").GetString(), out _));
+    }
+
+    [Fact]
+    public async Task SpeechCandidateAcceptsApprovedClientSessionToken()
+    {
+        using var fixture = BridgeFixture.StartWithClientTrust();
+        fixture.ClientTrustStore!.Save(new ClientTrustSnapshot
+        {
+            Clients =
+            [
+                new ClientTrustRecord
+                {
+                    ClientId = "test-client",
+                    Authorization = ClientTrustStore.Allowed,
+                    FirstSeenUtc = DateTimeOffset.UtcNow,
+                    LastSeenUtc = DateTimeOffset.UtcNow
+                }
+            ]
+        });
+
+        using var helloResponse = await fixture.Client.PostAsync(
+            "v1/client/hello",
+            JsonContent(ValidClientHelloJson()));
+        using var helloDocument = await ReadJsonAsync(helloResponse);
+        var sessionToken = helloDocument.RootElement.GetProperty("sessionToken").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(sessionToken));
+
+        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", sessionToken);
+        using var response = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson()));
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        using var document = await ReadJsonAsync(response);
+        Assert.Equal("spoken", document.RootElement.GetProperty("decision").GetString());
+        Assert.Equal(["The bridge contract test candidate is ready."], fixture.SpokenTexts);
+    }
+
+    [Fact]
+    public async Task SpeechCandidateRejectsSessionTokenForDifferentClient()
+    {
+        using var fixture = BridgeFixture.StartWithClientTrust();
+        fixture.ClientTrustStore!.Save(new ClientTrustSnapshot
+        {
+            Clients =
+            [
+                new ClientTrustRecord
+                {
+                    ClientId = "trusted-client",
+                    Authorization = ClientTrustStore.Allowed,
+                    FirstSeenUtc = DateTimeOffset.UtcNow,
+                    LastSeenUtc = DateTimeOffset.UtcNow
+                }
+            ]
+        });
+
+        using var helloResponse = await fixture.Client.PostAsync(
+            "v1/client/hello",
+            JsonContent(ValidClientHelloJson("trusted-client")));
+        using var helloDocument = await ReadJsonAsync(helloResponse);
+        var sessionToken = helloDocument.RootElement.GetProperty("sessionToken").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(sessionToken));
+
+        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", sessionToken);
+        using var response = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson(clientId: "different-client")));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        await AssertErrorAsync(response, "unauthorized");
+        Assert.Empty(fixture.SpokenTexts);
     }
 
     [Fact]
@@ -359,7 +433,8 @@ public sealed class LocalBridgeServerContractTests
         string messageId = "message-1",
         string text = "The bridge contract test candidate is ready.",
         string phase = "final",
-        string? speechHint = null)
+        string? speechHint = null,
+        string clientId = "test-client")
     {
         var speechHintJson = speechHint is null
             ? ""
@@ -369,7 +444,7 @@ public sealed class LocalBridgeServerContractTests
             {
               "schemaVersion": 1,
               "client": {
-                "clientId": "test-client",
+                "clientId": "{{JsonEncodedText.Encode(clientId)}}",
                 "name": "Code Companion Voice",
                 "version": "0.0.0",
                 "host": "windows",
@@ -396,13 +471,13 @@ public sealed class LocalBridgeServerContractTests
             """;
     }
 
-    private static string ValidClientHelloJson()
+    private static string ValidClientHelloJson(string clientId = "test-client")
     {
-        return """
+        return $$"""
             {
               "schemaVersion": 1,
               "client": {
-                "clientId": "test-client",
+                "clientId": "{{JsonEncodedText.Encode(clientId)}}",
                 "name": "Code Companion Voice",
                 "version": "0.0.0",
                 "host": "windows",

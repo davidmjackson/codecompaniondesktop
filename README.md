@@ -328,9 +328,10 @@ Desktop-owned bridge client trust state is stored in:
 When the desktop app receives `/v1/client/hello`, unknown clients are recorded
 as `pending`. Previously approved clients return `allowed`. The main Desktop
 window includes a Client Pairing panel with Refresh, Copy, Approve, and Deny
-actions. The copied bridge token remains as a temporary compatibility path until
-Milestone 6 fully replaces long-lived VS Code token storage with Desktop-owned
-pairing.
+actions. Approved clients receive a short-lived in-memory session token from
+`/v1/client/hello`, and `/v1/speech/candidates` accepts that session token. The
+copied bridge token remains as a temporary compatibility path until the VS Code
+extension migration fully removes long-lived token storage.
 
 ## Local Bridge
 

@@ -629,10 +629,13 @@ Status:
 - Previously approved clients return `allowed` from `/v1/client/hello`.
 - The main window has a Client Pairing panel with Refresh, Copy, Approve, and
   Deny actions for observed bridge clients.
+- Approved clients receive short-lived in-memory session authorization from
+  `/v1/client/hello`.
+- `/v1/speech/candidates` accepts either the short-lived session token or the
+  legacy bridge token during migration.
 - The compatibility-token mode remains available for migration and existing
   token-based speech candidate calls.
-- Remaining work: short-lived session authorization and Voice extension
-  migration away from persistent token storage.
+- Remaining work: Voice extension migration away from persistent token storage.
 
 ### Milestone 7: Local Packaging And First Run
 

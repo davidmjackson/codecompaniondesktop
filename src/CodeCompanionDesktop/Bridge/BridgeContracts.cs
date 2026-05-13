@@ -31,7 +31,9 @@ public sealed record ClientHelloResponse(
     [property: JsonPropertyName("authorization")] string Authorization,
     [property: JsonPropertyName("mode")] string Mode,
     [property: JsonPropertyName("bridgeVersion")] string BridgeVersion,
-    [property: JsonPropertyName("protocolVersion")] int ProtocolVersion);
+    [property: JsonPropertyName("protocolVersion")] int ProtocolVersion,
+    [property: JsonPropertyName("sessionToken")] string? SessionToken,
+    [property: JsonPropertyName("sessionExpiresAtUtc")] string? SessionExpiresAtUtc);
 
 public sealed record SpeechCandidateRequest(
     [property: JsonPropertyName("schemaVersion")] int SchemaVersion,

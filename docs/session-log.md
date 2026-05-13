@@ -4,6 +4,40 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Short-Lived Session Authorization
+
+### Current Milestone
+
+- Milestone 6: Pairing Without Persistent VS Code Secrets.
+
+### Changed
+
+- Approved clients now receive an 8-hour in-memory session token from
+  `/v1/client/hello`.
+- `/v1/speech/candidates` accepts approved-client session tokens bound to the
+  candidate `clientId`.
+- Session tokens are rejected when used by a different client.
+- The legacy bridge token remains accepted for speech candidates during
+  migration.
+- Added protocol fields `sessionToken` and `sessionExpiresAtUtc` to
+  `ClientHelloResponse`.
+
+### Decision
+
+- `/speak` remains legacy-token only because it has no client identity payload
+  to bind to a Desktop-approved client.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- `dotnet test CodeCompanionDesktop.sln --no-build`; 27 tests passed.
+- `git diff --check`
+
+### Next
+
+- Migrate the Code Companion Voice extension to use Desktop pairing/session
+  authorization instead of persistent bridge token storage.
+
 ## 2026-05-13 Client Pairing UI
 
 ### Current Milestone
