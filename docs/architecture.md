@@ -584,6 +584,16 @@ Acceptance criteria:
 - Speech history can be grouped by project ID.
 - The desktop app can display observed roots and aliases for troubleshooting.
 
+Status:
+
+- In progress.
+- Code Companion Desktop now has `.code-companion/project.json` with project ID
+  `codecompaniondesktop`.
+- Code Companion Voice already reads `.code-companion/project.json` when present
+  and sends that identity in Desktop bridge speech candidate payloads.
+- Remaining work: Desktop-owned project registry, alias merging, history
+  grouping, and diagnostics for observed roots.
+
 ### Milestone 6: Pairing Without Persistent VS Code Secrets
 
 Goal:

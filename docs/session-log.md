@@ -4,6 +4,34 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Project Identity Baseline
+
+### Current Milestone
+
+- Milestone 5: Project Identity.
+
+### Changed
+
+- Added `.code-companion/project.json` for Code Companion Desktop with stable
+  project ID `codecompaniondesktop`.
+- Documented the Desktop project identity in the README.
+- Updated the architecture Milestone 5 status to record that project identity
+  is now in progress.
+
+### Decision
+
+- Stable project IDs are the product boundary. Windows and WSL path strings are
+  diagnostic aliases, not the long-term identity.
+
+### Verified
+
+- Parsed `.code-companion/project.json` as valid JSON.
+- `git diff --check`
+
+### Next
+
+- Add Desktop-owned project registry and alias/history grouping.
+
 ## 2026-05-13 Public Release Deferred To Final Milestone
 
 ### Current Milestone

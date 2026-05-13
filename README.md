@@ -52,6 +52,28 @@ Keep the two repositories separate for now. They have different runtimes,
 toolchains, packaging, and release lifecycle. Shared protocol details should be
 documented clearly before extracting any shared package.
 
+## Project Identity
+
+This repository has a stable Code Companion project identity at:
+
+```text
+.code-companion\project.json
+```
+
+The identity is:
+
+```json
+{
+  "schemaVersion": 1,
+  "projectId": "codecompaniondesktop",
+  "displayName": "Code Companion Desktop"
+}
+```
+
+Code Companion Voice reads this file when the repository is opened in VS Code
+and includes the identity in Desktop bridge candidate payloads. This avoids
+using Windows and WSL path strings as the long-term project boundary.
+
 ## Requirements
 
 - Windows
