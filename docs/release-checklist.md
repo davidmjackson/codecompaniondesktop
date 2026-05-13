@@ -162,15 +162,14 @@ artifacts:
 4. Confirm bridge health with:
    `Invoke-RestMethod http://127.0.0.1:47321/health`.
 5. Save or confirm the ElevenLabs API key in Code Companion Desktop.
-6. Click `Copy Token` in Code Companion Desktop.
-7. Install Code Companion Voice into the active VS Code extension host.
-8. In VS Code, run `Code Companion Voice: Set Desktop Bridge Token` and paste
-   the copied token.
-9. Open a new VS Code window if reloading the current window would lose chat
+6. Install Code Companion Voice into the active VS Code extension host.
+7. Open a new VS Code window if reloading the current window would lose chat
    context.
-10. Run `Code Companion Voice: Open Panel`.
-11. Confirm the panel shows `Enable Voice`, `Mute`, and `Desktop Test`.
-12. Click `Desktop Test`.
+8. Run `Code Companion Voice: Open Panel`.
+9. Confirm the panel shows `Enable Voice`, `Mute`, and `Desktop Test`.
+10. Click `Desktop Test`.
+11. Approve the pending VS Code client in the Desktop Client Pairing panel.
+12. Click `Desktop Test` again.
 13. Confirm speech is heard through Code Companion Desktop.
 14. Confirm Code Companion Voice output includes `candidate spoken`.
 

@@ -145,7 +145,7 @@ public partial class App : WpfApplication
         menu.Items.Add("Show", null, (_, _) => ShowMainWindow());
         menu.Items.Add("Hide to Tray", null, (_, _) => mainWindow?.Hide());
         menu.Items.Add("Bridge Status", null, (_, _) => ShowBridgeStatus());
-        menu.Items.Add("Copy Bridge Token", null, (_, _) => CopyBridgeTokenToClipboard());
+        menu.Items.Add("Copy Legacy Bridge Token", null, (_, _) => CopyBridgeTokenToClipboard());
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Play Test Sound", null, async (_, _) =>
         {

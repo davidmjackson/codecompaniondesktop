@@ -4,6 +4,37 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Legacy Token Wording Cleanup
+
+### Current Milestone
+
+- Milestone 8: Cleanup And Compatibility Removal.
+
+### Changed
+
+- Relabelled Desktop `Copy Token` UI as `Copy Legacy Token`.
+- Relabelled the tray token action as `Copy Legacy Bridge Token`.
+- Updated Desktop install and release-checklist steps to use Client Pairing as
+  the normal setup path.
+- Updated bridge-token documentation to describe token use as older-build and
+  compatibility fallback only.
+
+### Decision
+
+- The legacy token code remains for compatibility, but the normal UX and docs no
+  longer present copied tokens as the recommended pairing path.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- `dotnet test CodeCompanionDesktop.sln --no-build`; 27 tests passed.
+- `git diff --check`
+
+### Next
+
+- Continue Milestone 8 cleanup in Code Companion Voice by removing or hiding
+  remaining VS Code-owned provider/audio/webview paths.
+
 ## 2026-05-13 Pairing Smoke Test
 
 ### Current Milestone

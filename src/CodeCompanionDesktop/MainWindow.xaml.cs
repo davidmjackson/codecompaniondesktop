@@ -493,11 +493,11 @@ public partial class MainWindow : Window
         try
         {
             System.Windows.Clipboard.SetText(bridgeTokenStore.EnsureToken());
-            BridgeStatusText.Text = $"Copied bridge token. Endpoint: {LocalBridgeServer.BaseUrl}";
+            BridgeStatusText.Text = $"Copied legacy bridge token. Endpoint: {LocalBridgeServer.BaseUrl}";
         }
         catch (Exception ex)
         {
-            BridgeStatusText.Text = $"Copy token failed: {ex.Message}";
+            BridgeStatusText.Text = $"Copy legacy token failed: {ex.Message}";
         }
     }
 

@@ -675,9 +675,7 @@ Acceptance criteria:
 - Install Windows app.
 - Install VS Code extension.
 - Configure provider in Windows app.
-- Pair the extension with the desktop app. During migration this can still use
-  `Code Companion Voice: Set Desktop Bridge Token`; after Milestone 6 it should
-  use Desktop-owned approval.
+- Pair the extension with the desktop app through Desktop-owned client approval.
 - Reload VS Code.
 - Open the Code Companion Voice panel.
 - Confirm the normal Desktop bridge panel shows only `Enable Voice`, `Mute`,
@@ -714,6 +712,12 @@ Acceptance criteria:
 - The only normal speech path is VS Code candidate forwarding to the Windows
   desktop app.
 - Tests reflect the new responsibility boundaries.
+
+Status:
+
+- In progress.
+- Desktop setup documentation now uses Client Pairing as the normal path.
+- Desktop token UI has been relabelled as legacy compatibility only.
 - Documentation no longer describes VS Code-owned TTS.
 
 ### Milestone 9: Public Release Packaging

@@ -112,9 +112,9 @@ The VS Code extension owns VS Code commands, workspace context, Codex log
 watching, and calls to the local desktop bridge. The Windows app owns
 credentials, ElevenLabs calls, queueing, and native Windows audio playback.
 
-They are paired by launching Code Companion Desktop, copying the bridge token,
-and saving it in the VS Code extension with
-`Code Companion Voice: Set Desktop Bridge Token`.
+They are paired by launching Code Companion Desktop, opening Code Companion
+Voice in VS Code, and approving the pending VS Code client in the Desktop
+Client Pairing panel.
 
 Target production download locations:
 
@@ -210,13 +210,12 @@ Preferred path after building an installer:
    shortcut.
 3. Confirm the app opens with the Code Companion icon and the tray icon appears.
 4. Save or confirm the ElevenLabs API key in the desktop app.
-5. Use `Copy Token` in the Local Bridge section.
-6. In VS Code, run `Code Companion Voice: Set Desktop Bridge Token` and paste the
-   token.
-7. Reload the VS Code window, run `Code Companion Voice: Open Panel`, and confirm
+5. Install or reload Code Companion Voice in the active VS Code extension host.
+6. Run `Code Companion Voice: Open Panel`, click `Desktop Test`, then approve
+   the pending VS Code client in the Desktop Client Pairing panel.
+7. Click `Desktop Test` again and confirm Code Companion Desktop speaks.
+8. Run `Code Companion Voice: Open Panel` and confirm
    the panel shows `Enable Voice`, `Mute`, and `Desktop Test`.
-8. Click `Desktop Test` and confirm Code Companion Desktop speaks the test
-   phrase.
 9. In the Startup section, enable `Start hidden to tray` if you want the app to
    stay out of the way after launch.
 10. Enable `Start with Windows sign-in` from the installed app.
@@ -483,17 +482,20 @@ set to 1, 3, 5, or 10 pending requests. When the queue is full, `/speak` returns
 `409 Conflict` with `{"error":"queue_full"}` and speech candidates return a
 structured rejected decision with reason `queue_full`.
 
-The bridge token is generated once and stored in Windows Credential Manager:
+The legacy bridge token is generated once and stored in Windows Credential
+Manager:
 
 ```text
 Target: CodeCompanionDesktop/BridgeToken
 User name: CodeCompanionDesktop Bridge
 ```
 
-Use the app's `Copy Token` button to paste the token into the VS Code extension
-with `Code Companion Voice: Set Desktop Bridge Token`.
+Use `Copy Legacy Token` only for older extension builds and compatibility
+testing. Normal pairing uses the Client Pairing panel and short-lived session
+authorization.
 
-The tray menu also includes `Bridge Status` and `Copy Bridge Token` actions.
+The tray menu also includes `Bridge Status` and `Copy Legacy Bridge Token`
+actions.
 
 The bridge listens on Windows port `47321`. From WSL, the extension discovers the
 Windows host IP and calls that address rather than `127.0.0.1`.
