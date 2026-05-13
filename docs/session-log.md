@@ -8,7 +8,10 @@ options.
 
 ### Changed
 
-- No application code changed.
+- Updated `CodeCompanionDesktop.sln` to use the SDK-style C# project type GUID
+  for `CodeCompanionDesktop.csproj`.
+- Normalized `CodeCompanionDesktop.sln` line endings to LF so future solution
+  edits pass the repository's standard `git diff --check` workflow.
 - Reproduced the desktop build after a VS Code restart and checked the
   `MainWindow.xaml.cs` diagnostics context.
 - Stopped the running debug `CodeCompanionDesktop.exe` process because it was
@@ -20,17 +23,22 @@ options.
   `C:\Program Files\dotnet\dotnet.exe` completed with `0 Error(s)`.
 - Confirmed the XAML generated members used by `MainWindow.xaml.cs` exist in
   `src/CodeCompanionDesktop/obj/Debug/net8.0-windows/MainWindow.g.cs`.
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`.
+- `git diff --check`.
 
 ### Decision
 
 - The reported `MainWindow.xaml.cs` errors are design-time IDE diagnostics, not
-  compiler errors. This matches the README warning that opening the WPF project
-  through WSL can show false errors for XAML-generated members.
+  compiler errors. Since the errors persisted in a normal Windows VS Code
+  window, prefer forcing a clean C# Dev Kit solution reload after the solution
+  GUID update.
 
 ### Next
 
-- Open this repository in a normal Windows VS Code window, not WSL Remote, for
-  WPF editing and C# Dev Kit diagnostics.
+- In Windows VS Code, reload the window or reopen
+  `CodeCompanionDesktop.code-workspace` so C# Dev Kit reloads
+  `CodeCompanionDesktop.sln`.
 - Continue with VS Code extension first-run desktop bridge detection and
   installer-link guidance if that is still the priority.
 
