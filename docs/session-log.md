@@ -21,13 +21,13 @@ options.
 ### Verified
 
 - `C:\Program Files\GitHub CLI\gh.exe --version` reports `2.92.0`.
-- Windows GitHub CLI is not authenticated yet; `gh auth login` is still needed
-  before using `scripts\draft-github-release.ps1 -Create` from PowerShell.
+- Windows GitHub CLI is authenticated as `davidmjackson` with `repo` and
+  `workflow` scopes.
 
 ### Next
 
-- Authenticate Windows GitHub CLI when ready, or create the draft release from
-  the already authenticated WSL `gh` session.
+- Use `scripts\draft-github-release.ps1 -AppVersion <version> -Create` when
+  ready to create the draft Desktop GitHub Release.
 
 ## 2026-05-13 Desktop Release Package Script
 
