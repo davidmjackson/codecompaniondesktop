@@ -4,6 +4,34 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Paired Release Checklist
+
+### Current Milestone
+
+- Milestone 7: Packaging And First Run.
+
+### Changed
+
+- Added `docs/release-checklist.md` covering the paired Desktop and Voice
+  release process.
+- Linked the release checklist from the Desktop README and Milestone 7
+  architecture status.
+
+### Decision
+
+- The Desktop repository owns the cross-component release checklist because it
+  already owns the architecture source of truth.
+- Voice release sessions should reference the shared checklist rather than
+  duplicating release rules.
+
+### Verified
+
+- `git diff --check`
+
+### Next
+
+- Use the checklist to close version metadata gaps before public release work.
+
 ## 2026-05-13 Inno Setup Architecture Identifier Cleanup
 
 ### Current Milestone

@@ -620,6 +620,8 @@ Scope:
 - README documents current development install sources and target production
   download sources.
 - Fresh-install verification is documented as a required release check.
+- `docs/release-checklist.md` documents the paired Desktop and Voice release
+  gates.
 
 Download model:
 
@@ -663,6 +665,7 @@ Status:
 
 - In progress.
 - Fresh-install verification is documented in both repository READMEs.
+- Paired release checklist is documented in `docs/release-checklist.md`.
 - Current development installs are local artifacts. Marketplace and GitHub
   Releases publication are still release milestones, not completed distribution
   channels.

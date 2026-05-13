@@ -100,6 +100,9 @@ Marketplace and release publication are tracked under Milestone 7 in
 `docs/architecture.md`. Until that milestone is complete, use the local
 development artifacts.
 
+The paired Desktop and Voice release checklist is maintained in
+`docs/release-checklist.md`.
+
 ## Run
 
 From PowerShell in this folder:
