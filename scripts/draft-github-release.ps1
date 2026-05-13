@@ -33,6 +33,19 @@ function Resolve-GitHubCliPath {
     return $candidatePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
 
+function ConvertTo-ProcessArgument {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Argument
+    )
+
+    if ($Argument -notmatch '[\s"]') {
+        return $Argument
+    }
+
+    return '"' + $Argument.Replace('"', '\"') + '"'
+}
+
 if ([string]::IsNullOrWhiteSpace($InstallerOutputPath)) {
     $InstallerOutputPath = Join-Path $repoRoot "artifacts\installer"
 }
@@ -83,6 +96,7 @@ $releaseArgs = @(
 )
 
 if (-not $Create.IsPresent) {
+    $releaseCommandLine = ($releaseArgs | ForEach-Object { ConvertTo-ProcessArgument $_ }) -join ' '
     Write-Host "Dry run. Add -Create to create the draft GitHub Release."
     Write-Host "Repository:    $Repository"
     Write-Host "Tag:           $tagName"
@@ -91,7 +105,7 @@ if (-not $Create.IsPresent) {
     Write-Host "Release notes: $releaseNotesPath"
     Write-Host ""
     Write-Host "Command:"
-    Write-Host "gh $($releaseArgs -join ' ')"
+    Write-Host "gh $releaseCommandLine"
     return
 }
 
@@ -100,7 +114,8 @@ if ([string]::IsNullOrWhiteSpace($ghPath) -or -not (Test-Path $ghPath)) {
     throw "Unable to find gh. Install GitHub CLI or add gh to PATH."
 }
 
-$process = Start-Process -FilePath $ghPath -ArgumentList $releaseArgs -NoNewWindow -Wait -PassThru
+$releaseCommandLine = ($releaseArgs | ForEach-Object { ConvertTo-ProcessArgument $_ }) -join ' '
+$process = Start-Process -FilePath $ghPath -ArgumentList $releaseCommandLine -NoNewWindow -Wait -PassThru
 if ($process.ExitCode -ne 0) {
     throw "gh release create failed with exit code $($process.ExitCode)."
 }

@@ -4,6 +4,34 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Desktop Draft GitHub Release Created
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### Changed
+
+- Created a draft GitHub Release for Code Companion Desktop `v0.1.1`.
+- Uploaded release assets:
+  - `CodeCompanionDesktopSetup-0.1.1.exe`
+  - `CodeCompanionDesktopSetup-0.1.1.exe.sha256`
+- Fixed `scripts/draft-github-release.ps1` argument quoting so release titles
+  containing spaces are passed correctly to `gh`.
+
+### Verified
+
+- `gh release view v0.1.1 --repo davidmjackson/codecompaniondesktop` reports
+  `isDraft: true` and `tagName: v0.1.1`.
+- The installer asset digest reported by GitHub matches the generated SHA256:
+  `38f09b026fa40907b2d79e8840be7b40a5e80c420f08feb304846dea1d1530d7`.
+
+### Next
+
+- Do not publish the draft release yet.
+- Continue Milestone 9 with Voice Marketplace/package hardening and fresh
+  install verification from the draft Desktop release asset.
+
 ## 2026-05-13 Windows GitHub CLI Path
 
 ### Current Milestone
