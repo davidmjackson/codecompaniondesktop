@@ -4,6 +4,29 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Inno Setup Architecture Identifier Cleanup
+
+### Current Milestone
+
+- Milestone 7: Packaging And First Run.
+
+### Changed
+
+- Updated the Inno Setup installer script to use `x64compatible` instead of the
+  deprecated `x64` architecture identifier.
+
+### Verified
+
+- Rebuilt with
+  `powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'D:\Development\CodeCompanionDesktop\scripts\build-installer.ps1' -AppVersion 0.1.0`.
+- Installer output was created at
+  `artifacts\installer\CodeCompanionDesktopSetup-0.1.0.exe`.
+- The deprecated `x64` architecture identifier warning no longer appeared.
+
+### Next
+
+- Continue Milestone 7 release publishing work.
+
 ## 2026-05-13 Local Fresh Install Smoke Test
 
 ### Current Milestone
