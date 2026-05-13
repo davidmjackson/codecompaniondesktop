@@ -4,6 +4,72 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 End Of Day Handover
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### Current State
+
+- Branch: `feature/environment-agnostic-speech-architecture`.
+- Current commit before this handover entry: `04747fb`.
+- Working tree was clean before this handover entry.
+- Code Companion Desktop `0.1.1` is installed and running from:
+  `C:\Users\User\AppData\Local\Programs\Code Companion Desktop\CodeCompanionDesktop.exe`.
+- Running Desktop process observed as PID `17900`.
+- Windows GitHub CLI is installed, authenticated as `davidmjackson`, and has
+  the required `repo` and `workflow` scopes.
+
+### Release State
+
+- Desktop draft GitHub Release exists for `v0.1.1`.
+- Release is still a draft. Do not publish it yet.
+- Uploaded draft release assets:
+  - `CodeCompanionDesktopSetup-0.1.1.exe`
+  - `CodeCompanionDesktopSetup-0.1.1.exe.sha256`
+- Installer SHA256:
+  `38f09b026fa40907b2d79e8840be7b40a5e80c420f08feb304846dea1d1530d7`.
+- Local release package artifacts are under:
+  - `D:\Development\CodeCompanionDesktop\artifacts\installer`
+  - `D:\Development\CodeCompanionDesktop\artifacts\checksums`
+  - `D:\Development\CodeCompanionDesktop\artifacts\release-notes`
+
+### Verified Today
+
+- Desktop `0.1.1` installer was built, installed, and health-checked.
+- `GET /health` reported `appVersion: 0.1.1`.
+- Code Companion Voice `0.0.50` Desktop Test produced audible speech through
+  the installed Desktop app.
+- `scripts/build-release-package.ps1` ran `dotnet build`, `dotnet test`, built
+  the installer, generated checksum, and generated draft release notes.
+- `dotnet test` passed 27 tests.
+- `scripts/draft-github-release.ps1` created the Desktop draft release after
+  its argument quoting was fixed.
+
+### Important Decisions
+
+- Desktop owns provider configuration, ElevenLabs calls, policy, queueing,
+  native Windows audio, pairing, and release packaging.
+- Code Companion Voice remains a thin VS Code client and should not own API
+  keys, WebView audio unlock, provider calls, or long-lived bridge tokens.
+- The legacy Desktop `/speak` endpoint and bridge-token compatibility have
+  been removed.
+- Do not publish the Desktop GitHub Release until Voice Marketplace/package
+  hardening and fresh-install verification are complete.
+
+### Tomorrow Starting Point
+
+- Continue Milestone 9 with Code Companion Voice Marketplace/package hardening.
+- Work in the Voice repository only when explicitly switching to
+  `D:\Development\CodeCompanionVoice` / `/mnt/d/Development/CodeCompanionVoice`.
+- Check Voice package metadata, publisher/private flags, Marketplace readiness,
+  install URL defaults, and VSIX packaging.
+- After Voice hardening, perform fresh-install verification from the draft
+  Desktop release asset and the intended Voice package source in both:
+  - normal Windows VS Code
+  - WSL Remote VS Code
+
 ## 2026-05-13 Desktop Draft GitHub Release Created
 
 ### Current Milestone
