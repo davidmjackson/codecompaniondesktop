@@ -95,11 +95,19 @@ public sealed class ProjectRegistryStore
 
     public IReadOnlyList<string> LoadRecentSummaries(int maxCount)
     {
+        return LoadRecentRecords(maxCount)
+            .Take(maxCount)
+            .Select(FormatSummary)
+            .ToList();
+    }
+
+    public IReadOnlyList<ProjectRegistryRecord> LoadRecentRecords(int maxCount)
+    {
         return Load()
             .Projects
             .OrderByDescending(project => project.LastSeenUtc)
+            .ThenBy(project => project.ProjectId, StringComparer.OrdinalIgnoreCase)
             .Take(maxCount)
-            .Select(FormatSummary)
             .ToList();
     }
 
@@ -130,6 +138,31 @@ public sealed class ProjectRegistryStore
         return $"{record.DisplayName} ({record.ProjectId}) via {environments}; roots: {roots}";
     }
 
+    public static string FormatDetails(ProjectRegistryRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+
+        var environments = record.Environments.Count == 0
+            ? "unknown"
+            : string.Join(", ", record.Environments);
+        var clients = record.ClientNames.Count == 0
+            ? "unknown"
+            : string.Join(", ", record.ClientNames);
+        var roots = record.ObservedRoots.Count == 0
+            ? "  - none"
+            : string.Join(Environment.NewLine, record.ObservedRoots.Select(root => $"  - {root}"));
+
+        return string.Join(
+            Environment.NewLine,
+            $"{record.DisplayName} ({record.ProjectId})",
+            $"Environments: {environments}",
+            $"Clients: {clients}",
+            $"First seen UTC: {FormatTimestamp(record.FirstSeenUtc)}",
+            $"Last seen UTC: {FormatTimestamp(record.LastSeenUtc)}",
+            "Observed roots:",
+            roots);
+    }
+
     private static void AddDistinct(List<string> target, IEnumerable<string> values)
     {
         foreach (var value in values)
@@ -153,6 +186,13 @@ public sealed class ProjectRegistryStore
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "CodeCompanionDesktop");
         return Path.Combine(directory, "project-registry.json");
+    }
+
+    private static string FormatTimestamp(DateTimeOffset value)
+    {
+        return value == default
+            ? "unknown"
+            : value.ToString("yyyy-MM-dd HH:mm:ss");
     }
 }
 

@@ -66,6 +66,12 @@ public sealed class BridgeRuntimeStateTests
             Assert.Contains("D:\\Development\\CodeCompanionDesktop", project.ObservedRoots);
             Assert.Contains("/mnt/d/Development/CodeCompanionDesktop", project.ObservedRoots);
             Assert.Contains("wsl", project.Environments);
+
+            var details = Assert.Single(state.LoadProjectRegistryDetails(8));
+            Assert.Contains("Code Companion Desktop (codecompaniondesktop)", details, StringComparison.Ordinal);
+            Assert.Contains("Observed roots:", details, StringComparison.Ordinal);
+            Assert.Contains("D:\\Development\\CodeCompanionDesktop", details, StringComparison.Ordinal);
+            Assert.Contains("/mnt/d/Development/CodeCompanionDesktop", details, StringComparison.Ordinal);
         }
         finally
         {

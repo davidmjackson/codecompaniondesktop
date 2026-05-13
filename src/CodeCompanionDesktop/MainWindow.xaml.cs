@@ -94,6 +94,7 @@ public partial class MainWindow : Window
     {
         BridgeStatusText.Text = status;
         RefreshSpeechDiagnostics();
+        RefreshProjectRegistry();
     }
 
     private async Task PlayElevenLabsSpeechAsync(string text, string source)
@@ -361,6 +362,26 @@ public partial class MainWindow : Window
         }
     }
 
+    private void RefreshProjectRegistryButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshProjectRegistry();
+    }
+
+    private void CopyProjectRegistryButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshProjectRegistry();
+
+        try
+        {
+            System.Windows.Clipboard.SetText(ProjectRegistryTextBox.Text);
+            BridgeStatusText.Text = "Copied project registry.";
+        }
+        catch (Exception ex)
+        {
+            BridgeStatusText.Text = $"Copying project registry failed: {ex.Message}";
+        }
+    }
+
     private void QueueBridgeSpeechCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         if (isInitializing)
@@ -423,6 +444,7 @@ public partial class MainWindow : Window
             : "Queue disabled.";
         BridgeStatusText.Text = $"Bridge listening on {LocalBridgeServer.BaseUrl}. State: {speaking}. {queue} {bridgeRuntimeState.LastStatus}";
         RefreshSpeechDiagnostics();
+        RefreshProjectRegistry();
     }
 
     private void RefreshSpeechDiagnostics()
@@ -469,6 +491,16 @@ public partial class MainWindow : Window
             recent);
     }
 
+    private void RefreshProjectRegistry()
+    {
+        var projectDetails = bridgeRuntimeState.LoadProjectRegistryDetails(20);
+        ProjectRegistryTextBox.Text = projectDetails.Count == 0
+            ? "No projects observed yet."
+            : string.Join(
+                $"{Environment.NewLine}{Environment.NewLine}",
+                projectDetails);
+    }
+
     private string GetProviderKeyStatus()
     {
         try
@@ -512,6 +544,7 @@ public partial class MainWindow : Window
             RefreshStartupDiagnostics();
             RefreshBridgeStatus();
             RefreshSpeechDiagnostics();
+            RefreshProjectRegistry();
         }
         finally
         {

@@ -593,9 +593,11 @@ Status:
   and sends that identity in Desktop bridge speech candidate payloads.
 - Desktop now persists observed project identities and path aliases in
   `%APPDATA%\CodeCompanionDesktop\project-registry.json`.
-- Desktop diagnostics show recent observed projects and roots.
-- Remaining work: richer project registry UI, explicit alias management, and
-  history views grouped by project ID.
+- Desktop diagnostics show recent observed projects and roots, and the main
+  window has a dedicated read-only Project Registry panel with Refresh and Copy
+  actions.
+- Remaining work: explicit alias management and history views grouped by
+  project ID.
 
 ### Milestone 6: Pairing Without Persistent VS Code Secrets
 

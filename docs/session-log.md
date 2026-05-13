@@ -4,6 +4,36 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Project Registry UI
+
+### Current Milestone
+
+- Milestone 5: Project Identity.
+
+### Changed
+
+- Added a dedicated Project Registry panel to the Desktop window.
+- Added Refresh and Copy actions for project registry diagnostics.
+- Added detailed project registry formatting with project ID, display name,
+  environments, client names, first/last seen timestamps, and observed roots.
+- Added coverage that registry details include merged Windows and WSL roots for
+  the same stable project ID.
+
+### Decision
+
+- The Project Registry panel is read-only for this slice. Explicit alias
+  editing remains a later Milestone 5 step.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- `dotnet test CodeCompanionDesktop.sln --no-build`; 20 tests passed.
+- `git diff --check`
+
+### Next
+
+- Add explicit alias management and history views grouped by project ID.
+
 ## 2026-05-13 Spoken Update Convention
 
 ### Current Milestone

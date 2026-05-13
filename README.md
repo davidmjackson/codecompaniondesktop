@@ -312,7 +312,8 @@ in:
 The project registry is keyed by stable `projectId` and records display names,
 observed roots, client names, environments, and last-seen times. It lets Desktop
 treat Windows and WSL paths as aliases of one project instead of as separate
-project identities.
+project identities. The main Desktop window includes a read-only Project
+Registry panel with Refresh and Copy actions for troubleshooting.
 
 ## Local Bridge
 

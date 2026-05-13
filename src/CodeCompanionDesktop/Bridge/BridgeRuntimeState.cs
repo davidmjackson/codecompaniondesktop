@@ -116,6 +116,22 @@ public sealed class BridgeRuntimeState
         }
     }
 
+    public IReadOnlyList<string> LoadProjectRegistryDetails(int maxCount)
+    {
+        lock (syncRoot)
+        {
+            if (projectRegistryStore is null)
+            {
+                return recentProjects.ToArray();
+            }
+
+            return projectRegistryStore
+                .LoadRecentRecords(maxCount)
+                .Select(ProjectRegistryStore.FormatDetails)
+                .ToList();
+        }
+    }
+
     public void ConfigureQueue(bool isEnabled, int maxQueuedRequests)
     {
         lock (syncRoot)
