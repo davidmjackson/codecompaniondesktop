@@ -32,11 +32,13 @@ options.
 - `git diff --check`
 - Desktop debug app restarted from
   `src\CodeCompanionDesktop\bin\Debug\net8.0-windows\CodeCompanionDesktop.exe`.
+- User reloaded the WSL VS Code window, repeated the real voice check-in, and
+  heard voice through Code Companion Desktop.
 
 ### Next
 
-- Reload the WSL VS Code window and repeat the real voice check-in. Expected
-  Desktop response is `candidate spoken/voice-check-in`.
+- Continue cleanup toward the final thin-client shape by removing or hiding
+  legacy VS Code-owned provider/audio controls from the normal UX.
 
 ## 2026-05-13 Thin Client Normal Candidate Source
 
