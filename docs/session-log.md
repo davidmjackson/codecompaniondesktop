@@ -4,6 +4,37 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Client Pairing UI
+
+### Current Milestone
+
+- Milestone 6: Pairing Without Persistent VS Code Secrets.
+
+### Changed
+
+- Added a Client Pairing panel to the Desktop window.
+- The panel displays observed bridge clients from `client-trust.json`.
+- Added Refresh, Copy, Approve, and Deny actions for bridge client trust.
+- Added formatted client trust diagnostics to `ClientTrustStore`.
+- Added tests for client trust authorization changes and diagnostic formatting.
+
+### Decision
+
+- Approval/deny changes are Desktop-owned registry decisions. Speech candidate
+  authorization still uses the compatibility token until the short-lived session
+  authorization slice is implemented.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- `dotnet test CodeCompanionDesktop.sln --no-build`; 25 tests passed.
+- `git diff --check`
+
+### Next
+
+- Add short-lived session authorization so trusted clients can speak without
+  storing a long-lived token in VS Code.
+
 ## 2026-05-13 Client Trust Registry
 
 ### Current Milestone

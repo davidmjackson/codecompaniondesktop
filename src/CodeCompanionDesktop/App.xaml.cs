@@ -41,7 +41,7 @@ public partial class App : WpfApplication
         clientTrustStore = new ClientTrustStore();
         bridgeRuntimeState = runtimeState;
 
-        mainWindow = new MainWindow(bridgeTokenStore, runtimeState, settingsStore, settings);
+        mainWindow = new MainWindow(bridgeTokenStore, runtimeState, clientTrustStore, settingsStore, settings);
         ConfigureTrayIcon();
         StartBridgeServer(bridgeToken, runtimeState);
         StartCandidateInbox(runtimeState);

@@ -627,11 +627,12 @@ Status:
 - `/v1/client/hello` records unknown clients as `pending` when Desktop-owned
   pairing is enabled.
 - Previously approved clients return `allowed` from `/v1/client/hello`.
+- The main window has a Client Pairing panel with Refresh, Copy, Approve, and
+  Deny actions for observed bridge clients.
 - The compatibility-token mode remains available for migration and existing
   token-based speech candidate calls.
-- Remaining work: approval/deny UI, allowed-client management UI, short-lived
-  session authorization, and Voice extension migration away from persistent
-  token storage.
+- Remaining work: short-lived session authorization and Voice extension
+  migration away from persistent token storage.
 
 ### Milestone 7: Local Packaging And First Run
 

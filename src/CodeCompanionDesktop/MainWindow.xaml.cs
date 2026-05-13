@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     private readonly WindowsCredentialStore credentialStore = new();
     private readonly BridgeTokenStore bridgeTokenStore;
     private readonly BridgeRuntimeState bridgeRuntimeState;
+    private readonly ClientTrustStore clientTrustStore;
     private readonly AppSettingsStore settingsStore;
     private readonly AppSettings settings;
     private readonly WindowsStartupRegistration startupRegistration = new();
@@ -28,11 +29,13 @@ public partial class MainWindow : Window
     public MainWindow(
         BridgeTokenStore bridgeTokenStore,
         BridgeRuntimeState bridgeRuntimeState,
+        ClientTrustStore clientTrustStore,
         AppSettingsStore settingsStore,
         AppSettings settings)
     {
         this.bridgeTokenStore = bridgeTokenStore;
         this.bridgeRuntimeState = bridgeRuntimeState;
+        this.clientTrustStore = clientTrustStore;
         this.settingsStore = settingsStore;
         this.settings = settings;
         this.settings.Normalize();
@@ -96,6 +99,7 @@ public partial class MainWindow : Window
         RefreshSpeechDiagnostics();
         RefreshProjectRegistry();
         RefreshProjectSpeechHistory();
+        RefreshClientPairing();
     }
 
     private async Task PlayElevenLabsSpeechAsync(string text, string source)
@@ -413,6 +417,36 @@ public partial class MainWindow : Window
         }
     }
 
+    private void RefreshClientPairingButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshClientPairing();
+    }
+
+    private void CopyClientPairingButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshClientPairing();
+
+        try
+        {
+            System.Windows.Clipboard.SetText(ClientPairingTextBox.Text);
+            ClientPairingStatusText.Text = "Copied client pairing diagnostics.";
+        }
+        catch (Exception ex)
+        {
+            ClientPairingStatusText.Text = $"Copying client pairing diagnostics failed: {ex.Message}";
+        }
+    }
+
+    private void ApproveClientPairingButton_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateClientPairing(ClientTrustStore.Allowed);
+    }
+
+    private void DenyClientPairingButton_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateClientPairing(ClientTrustStore.Denied);
+    }
+
     private void QueueBridgeSpeechCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         if (isInitializing)
@@ -477,6 +511,7 @@ public partial class MainWindow : Window
         RefreshSpeechDiagnostics();
         RefreshProjectRegistry();
         RefreshProjectSpeechHistory();
+        RefreshClientPairing();
     }
 
     private void RefreshSpeechDiagnostics()
@@ -543,6 +578,16 @@ public partial class MainWindow : Window
                 projectHistory);
     }
 
+    private void RefreshClientPairing()
+    {
+        var clientDetails = clientTrustStore.LoadClientDetails(30);
+        ClientPairingTextBox.Text = clientDetails.Count == 0
+            ? "No bridge clients observed yet."
+            : string.Join(
+                $"{Environment.NewLine}{Environment.NewLine}",
+                clientDetails);
+    }
+
     private void UpdateProjectAlias(bool isAdd)
     {
         var projectId = ProjectAliasProjectIdTextBox.Text.Trim();
@@ -570,6 +615,26 @@ public partial class MainWindow : Window
             : $"Removed root alias for {projectId}.";
         RefreshSpeechDiagnostics();
         RefreshProjectRegistry();
+    }
+
+    private void UpdateClientPairing(string authorization)
+    {
+        var clientId = ClientPairingClientIdTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            ClientPairingStatusText.Text = "Enter a client ID.";
+            return;
+        }
+
+        if (!clientTrustStore.TrySetAuthorization(clientId, authorization))
+        {
+            ClientPairingStatusText.Text = $"Client not found: {clientId}.";
+            RefreshClientPairing();
+            return;
+        }
+
+        ClientPairingStatusText.Text = $"{authorization} client {clientId}.";
+        RefreshClientPairing();
     }
 
     private string GetProviderKeyStatus()
@@ -617,6 +682,7 @@ public partial class MainWindow : Window
             RefreshSpeechDiagnostics();
             RefreshProjectRegistry();
             RefreshProjectSpeechHistory();
+            RefreshClientPairing();
         }
         finally
         {

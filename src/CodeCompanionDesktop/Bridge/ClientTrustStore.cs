@@ -109,12 +109,40 @@ public sealed class ClientTrustStore
         return true;
     }
 
+    public IReadOnlyList<string> LoadClientDetails(int maxCount)
+    {
+        return Load()
+            .Clients
+            .OrderBy(client => AuthorizationRank(client.Authorization))
+            .ThenByDescending(client => client.LastSeenUtc)
+            .ThenBy(client => client.ClientId, StringComparer.OrdinalIgnoreCase)
+            .Take(maxCount)
+            .Select(FormatDetails)
+            .ToList();
+    }
+
     public void Save(ClientTrustSnapshot snapshot)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
         var json = JsonSerializer.Serialize(snapshot, JsonOptions);
         File.WriteAllText(path, json);
+    }
+
+    public static string FormatDetails(ClientTrustRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+
+        return string.Join(
+            Environment.NewLine,
+            $"{record.Name} ({record.ClientId})",
+            $"Authorization: {record.Authorization}",
+            $"Version: {record.Version}",
+            $"Host: {record.Host}",
+            $"Environment: {record.Environment}",
+            $"Project: {record.ProjectDisplayName} ({record.ProjectId})",
+            $"First seen UTC: {FormatTimestamp(record.FirstSeenUtc)}",
+            $"Last seen UTC: {FormatTimestamp(record.LastSeenUtc)}");
     }
 
     private static ClientTrustRecord? FindClient(ClientTrustSnapshot snapshot, string clientId)
@@ -132,12 +160,30 @@ public sealed class ClientTrustStore
             .ToList();
     }
 
+    private static int AuthorizationRank(string authorization)
+    {
+        return authorization.Trim().ToLowerInvariant() switch
+        {
+            Pending => 0,
+            Allowed => 1,
+            Denied => 2,
+            _ => 3
+        };
+    }
+
     private static string CreateDefaultPath()
     {
         var directory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "CodeCompanionDesktop");
         return Path.Combine(directory, "client-trust.json");
+    }
+
+    private static string FormatTimestamp(DateTimeOffset value)
+    {
+        return value == default
+            ? "unknown"
+            : value.ToString("yyyy-MM-dd HH:mm:ss");
     }
 }
 
