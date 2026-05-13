@@ -4,6 +4,35 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Public Release Deferred To Final Milestone
+
+### Current Milestone
+
+- Milestone 7: Local Packaging And First Run.
+
+### Changed
+
+- Updated `docs/architecture.md` so Milestone 7 covers local installer, local
+  VSIX, and first-run verification only.
+- Added Milestone 9 for public release packaging through GitHub Releases and the
+  VS Code Marketplace.
+- Updated README and release checklist references to point public release work
+  at Milestone 9.
+
+### Decision
+
+- Public release packaging happens at the end, after project identity, desktop
+  owned pairing, and legacy compatibility cleanup.
+
+### Verified
+
+- `git diff --check`
+
+### Next
+
+- Continue with Milestone 5: Project Identity, unless a packaging blocker needs
+  to be resolved first.
+
 ## 2026-05-13 Desktop Version Metadata Alignment
 
 ### Current Milestone

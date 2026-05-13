@@ -604,12 +604,13 @@ Acceptance criteria:
 - Durable trust lives in the Windows app.
 - VS Code stores no long-lived secret token.
 
-### Milestone 7: Packaging And First Run
+### Milestone 7: Local Packaging And First Run
 
 Goal:
 
 - Make installation and first-run behavior predictable.
-- Make the download locations and fresh-install verification path explicit.
+- Make the local installer, local VSIX, and fresh-install verification path
+  explicit.
 
 Scope:
 
@@ -617,31 +618,22 @@ Scope:
 - VS Code extension detects whether the desktop app is reachable.
 - VS Code extension shows only setup guidance and bridge status.
 - README documents the two-install flow.
-- README documents current development install sources and target production
-  download sources.
-- Fresh-install verification is documented as a required release check.
-- `docs/release-checklist.md` documents the paired Desktop and Voice release
-  gates.
+- README documents current development install sources.
+- Fresh-install verification is documented as a required local packaging check.
 
-Download model:
+Local install model:
 
-- Target production source for Code Companion Desktop:
-  - GitHub Releases for the Code Companion Desktop repository.
-  - Primary asset: signed or checksummed Windows installer,
-    `CodeCompanionDesktopSetup-<version>.exe`.
 - Current development source for Code Companion Desktop:
   - Local installer artifact created by
     `.\scripts\build-installer.ps1 -AppVersion <version>`.
   - Local portable publish artifact created by `.\scripts\publish-release.ps1`.
-- Target production source for Code Companion Voice:
-  - VS Code Marketplace.
-  - The same extension must be installable in both Windows and WSL extension
-    hosts when a workspace requires the WSL host.
 - Current development source for Code Companion Voice:
   - Local VSIX artifact created by `npm run package:vsix`.
   - Installed into the Windows VS Code profile with Windows `code.cmd`.
   - Installed into the WSL VS Code server with WSL `code` when testing WSL
     workspaces.
+- Public GitHub Release and VS Code Marketplace publication are explicitly
+  deferred to Milestone 9.
 
 Acceptance criteria:
 
@@ -663,12 +655,10 @@ Acceptance criteria:
 
 Status:
 
-- In progress.
+- Complete for the local development install path.
 - Fresh-install verification is documented in both repository READMEs.
-- Paired release checklist is documented in `docs/release-checklist.md`.
-- Current development installs are local artifacts. Marketplace and GitHub
-  Releases publication are still release milestones, not completed distribution
-  channels.
+- Local installer plus local VSIX fresh-install smoke testing passed.
+- Public release publication is deferred to Milestone 9.
 
 ### Milestone 8: Cleanup And Compatibility Removal
 
@@ -690,6 +680,51 @@ Acceptance criteria:
   desktop app.
 - Tests reflect the new responsibility boundaries.
 - Documentation no longer describes VS Code-owned TTS.
+
+### Milestone 9: Public Release Packaging
+
+Goal:
+
+- Publish the finished product through public distribution channels only after
+  the architecture cleanup is complete.
+
+Scope:
+
+- Build the final Code Companion Desktop installer.
+- Generate checksum and release notes.
+- Publish Code Companion Desktop through GitHub Releases.
+- Prepare Code Companion Voice Marketplace metadata.
+- Remove development-only extension package metadata.
+- Publish Code Companion Voice through the VS Code Marketplace.
+- Run fresh-install verification from the published sources, not local
+  development artifacts.
+
+Download model:
+
+- Code Companion Desktop:
+  - GitHub Releases for the Code Companion Desktop repository.
+  - Primary asset: signed or checksummed Windows installer,
+    `CodeCompanionDesktopSetup-<version>.exe`.
+- Code Companion Voice:
+  - VS Code Marketplace.
+  - The same extension must be installable in both Windows and WSL extension
+    hosts when a workspace requires the WSL host.
+
+Acceptance criteria:
+
+- Desktop installer is attached to a GitHub Release with release notes and a
+  SHA256 checksum.
+- Voice extension is published under the real Marketplace publisher.
+- Fresh install from the GitHub Release and Marketplace passes in a normal
+  Windows VS Code window.
+- Fresh install from the GitHub Release and Marketplace passes in a WSL Remote
+  VS Code window.
+- No release instructions require local repository artifacts.
+
+Status:
+
+- Deferred until after Milestone 8.
+- `docs/release-checklist.md` documents the release gates for this milestone.
 
 ## Session Checklist
 

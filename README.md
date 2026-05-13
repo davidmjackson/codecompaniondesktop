@@ -96,7 +96,7 @@ Current development install locations:
 - Code Companion Voice: local VSIX from the Voice repository after running
   `npm run package:vsix`.
 
-Marketplace and release publication are tracked under Milestone 7 in
+Marketplace and release publication are deferred to Milestone 9 in
 `docs/architecture.md`. Until that milestone is complete, use the local
 development artifacts.
 

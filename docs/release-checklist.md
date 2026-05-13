@@ -1,6 +1,6 @@
 # Code Companion Release Checklist
 
-Use this checklist for Milestone 7 release preparation. It covers the paired
+Use this checklist for Milestone 9 release preparation. It covers the paired
 release of Code Companion Desktop and Code Companion Voice.
 
 ## Release Sources
