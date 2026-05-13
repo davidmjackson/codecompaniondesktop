@@ -194,6 +194,9 @@ off and on again so Windows starts the correct executable.
 - ElevenLabs API key storage in Windows Credential Manager
 - ElevenLabs test speech generation from a hardcoded phrase
 - Local authenticated bridge endpoint for VS Code extension requests
+- Desktop speech diagnostics for bridge clients, candidates, policy decisions,
+  queue state, provider key state, provider errors, playback errors, and recent
+  speech results
 
 ## Credential Storage
 

@@ -450,6 +450,14 @@ Acceptance criteria:
   app.
 - VS Code webview audio controls are no longer needed for normal operation.
 
+Status:
+
+- In progress.
+- Initial desktop speech diagnostics panel added for bridge state, provider key
+  state, last client, last speech candidate, last policy decision, provider and
+  playback errors, and recent speech results.
+- Provider selection and voice/model configuration remain pending.
+
 ### Milestone 4: Thin VS Code Client
 
 Goal:

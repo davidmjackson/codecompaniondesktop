@@ -93,6 +93,7 @@ public partial class MainWindow : Window
     public void SetBridgeStatus(string status)
     {
         BridgeStatusText.Text = status;
+        RefreshSpeechDiagnostics();
     }
 
     private async Task PlayElevenLabsSpeechAsync(string text, string source)
@@ -121,6 +122,8 @@ public partial class MainWindow : Window
         {
             StatusText.Text = "Unable to read ElevenLabs API key.";
             AudioPathText.Text = ex.Message;
+            bridgeRuntimeState.RecordProviderError(ex.Message);
+            RefreshSpeechDiagnostics();
             throw new InvalidOperationException("Unable to read ElevenLabs API key.", ex);
         }
 
@@ -128,6 +131,8 @@ public partial class MainWindow : Window
         {
             StatusText.Text = "Save an ElevenLabs API key first.";
             AudioPathText.Text = string.Empty;
+            bridgeRuntimeState.RecordProviderError("No saved ElevenLabs API key.");
+            RefreshSpeechDiagnostics();
             throw new InvalidOperationException("Save an ElevenLabs API key first.");
         }
 
@@ -138,10 +143,31 @@ public partial class MainWindow : Window
 
         try
         {
-            var path = await textToSpeechClient.CreateSpeechAsync(apiKey, text);
+            string path;
+            try
+            {
+                path = await textToSpeechClient.CreateSpeechAsync(apiKey, text);
+                bridgeRuntimeState.ClearProviderError();
+            }
+            catch (Exception ex)
+            {
+                bridgeRuntimeState.RecordProviderError(ex.Message);
+                throw;
+            }
+
             StatusText.Text = $"Playing ElevenLabs speech from {source}...";
             AudioPathText.Text = path;
-            await audioFilePlayer.PlayAsync(path);
+            try
+            {
+                await audioFilePlayer.PlayAsync(path);
+                bridgeRuntimeState.RecordPlaybackCompleted(source);
+            }
+            catch (Exception ex)
+            {
+                bridgeRuntimeState.RecordPlaybackError(ex.Message);
+                throw;
+            }
+
             StatusText.Text = $"ElevenLabs playback completed from {source}.";
         }
         catch (Exception ex)
@@ -154,6 +180,7 @@ public partial class MainWindow : Window
         {
             isPlaying = false;
             SetPlaybackButtonsEnabled(true);
+            RefreshSpeechDiagnostics();
         }
     }
 
@@ -283,6 +310,26 @@ public partial class MainWindow : Window
         RefreshBridgeStatus();
     }
 
+    private void RefreshSpeechDiagnosticsButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshSpeechDiagnostics();
+    }
+
+    private void CopySpeechDiagnosticsButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshSpeechDiagnostics();
+
+        try
+        {
+            System.Windows.Clipboard.SetText(SpeechDiagnosticsTextBox.Text);
+            BridgeStatusText.Text = "Copied speech diagnostics.";
+        }
+        catch (Exception ex)
+        {
+            BridgeStatusText.Text = $"Copying speech diagnostics failed: {ex.Message}";
+        }
+    }
+
     private void QueueBridgeSpeechCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         if (isInitializing)
@@ -344,6 +391,50 @@ public partial class MainWindow : Window
             ? $"Queue: {bridgeRuntimeState.PendingSpeechRequests}/{bridgeRuntimeState.MaxQueuedSpeechRequests}."
             : "Queue disabled.";
         BridgeStatusText.Text = $"Bridge listening on {LocalBridgeServer.BaseUrl}. State: {speaking}. {queue} {bridgeRuntimeState.LastStatus}";
+        RefreshSpeechDiagnostics();
+    }
+
+    private void RefreshSpeechDiagnostics()
+    {
+        var snapshot = bridgeRuntimeState.GetDiagnosticsSnapshot();
+        var queue = snapshot.QueueBridgeSpeechRequests
+            ? $"{snapshot.PendingSpeechRequests}/{snapshot.MaxQueuedSpeechRequests}"
+            : "disabled";
+        var providerKeyStatus = GetProviderKeyStatus();
+        var recent = snapshot.RecentSpeechResults.Count == 0
+            ? "Recent speech results: none"
+            : string.Join(
+                Environment.NewLine,
+                snapshot.RecentSpeechResults.Select(result => $"Recent: {result}"));
+
+        SpeechDiagnosticsTextBox.Text = string.Join(
+            Environment.NewLine,
+            $"Bridge endpoint: {LocalBridgeServer.BaseUrl}",
+            $"Bridge state: {(snapshot.IsSpeaking ? "speaking" : "idle")}",
+            $"Queue: {queue}",
+            $"Provider key: {providerKeyStatus}",
+            $"Last client: {snapshot.LastClient}",
+            $"Last candidate: {snapshot.LastSpeechCandidate}",
+            $"Last decision: {snapshot.LastSpeechDecision}",
+            $"Last provider error: {snapshot.LastProviderError}",
+            $"Last playback error: {snapshot.LastPlaybackError}",
+            $"Last bridge status: {snapshot.LastStatus}",
+            recent);
+    }
+
+    private string GetProviderKeyStatus()
+    {
+        try
+        {
+            var apiKey = credentialStore.ReadSecret(WindowsCredentialStore.ElevenLabsApiKeyTarget);
+            return string.IsNullOrWhiteSpace(apiKey)
+                ? "missing"
+                : $"saved ({DescribeSecret(apiKey)})";
+        }
+        catch (Exception ex)
+        {
+            return $"unavailable: {ex.Message}";
+        }
     }
 
     private static string DescribeSecret(string secret)
@@ -372,6 +463,7 @@ public partial class MainWindow : Window
             SettingsStatusText.Text = DescribeStartupPreferences("Startup preferences loaded.");
             RefreshStartupDiagnostics();
             RefreshBridgeStatus();
+            RefreshSpeechDiagnostics();
         }
         finally
         {

@@ -183,6 +183,48 @@ options.
 - The request used the bridge token from Windows Credential Manager and did not
   require any provider key in VS Code.
 
+## 2026-05-13 Desktop Speech Diagnostics
+
+### Current Milestone
+
+- Milestone 3: Desktop Configuration And Diagnostics.
+
+### Changed
+
+- Added a Speech Diagnostics panel to the Windows app.
+- Added a bridge diagnostics snapshot with:
+  - speaking state,
+  - queue state,
+  - last bridge status,
+  - last client,
+  - last speech candidate,
+  - last speech decision,
+  - last provider error,
+  - last playback error,
+  - recent speech results.
+- Added Refresh and Copy actions for speech diagnostics.
+- Updated bridge/provider/playback paths so diagnostics are refreshed after
+  candidate decisions and provider/playback outcomes.
+- Added runtime-state test coverage for diagnostics snapshots.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` using
+  `C:\Program Files\dotnet\dotnet.exe`.
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`; 11 tests passed.
+
+### Remaining Gap
+
+- Provider selection and ElevenLabs voice/model configuration are still pending
+  for Milestone 3.
+
+### Next
+
+- Add desktop configuration fields for provider, ElevenLabs voice ID, model ID,
+  and output format.
+- Move the hardcoded ElevenLabs voice/model constants behind app settings.
+
 ## 2026-05-13 MainWindow IDE Error Triage
 
 ### Changed

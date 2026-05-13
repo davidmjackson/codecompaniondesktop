@@ -2,7 +2,10 @@ namespace CodeCompanionDesktop.Bridge;
 
 public sealed class BridgeRuntimeState
 {
+    private const int MaxRecentSpeechResults = 8;
+
     private readonly object syncRoot = new();
+    private readonly List<string> recentSpeechResults = new();
     private bool isSpeaking;
     private bool queueBridgeSpeechRequests;
     private int pendingSpeechRequests;
@@ -58,6 +61,31 @@ public sealed class BridgeRuntimeState
 
     public string LastSpeechCandidate { get; private set; } = "No speech candidates received yet.";
 
+    public string LastSpeechDecision { get; private set; } = "No speech decisions yet.";
+
+    public string LastProviderError { get; private set; } = "No provider errors.";
+
+    public string LastPlaybackError { get; private set; } = "No playback errors.";
+
+    public BridgeDiagnosticsSnapshot GetDiagnosticsSnapshot()
+    {
+        lock (syncRoot)
+        {
+            return new BridgeDiagnosticsSnapshot(
+                isSpeaking,
+                queueBridgeSpeechRequests,
+                pendingSpeechRequests,
+                maxQueuedSpeechRequests,
+                LastStatus,
+                LastClient,
+                LastSpeechCandidate,
+                LastSpeechDecision,
+                LastProviderError,
+                LastPlaybackError,
+                recentSpeechResults.ToArray());
+        }
+    }
+
     public void ConfigureQueue(bool isEnabled, int maxQueuedRequests)
     {
         lock (syncRoot)
@@ -93,7 +121,53 @@ public sealed class BridgeRuntimeState
     {
         lock (syncRoot)
         {
-            LastStatus = $"Bridge speech candidate decision: {decision} ({reason}).";
+            LastSpeechDecision = $"{decision} ({reason})";
+            LastStatus = $"Bridge speech candidate decision: {LastSpeechDecision}.";
+            AddRecentSpeechResult($"Candidate {LastSpeechDecision}.");
+        }
+    }
+
+    public void ClearProviderError()
+    {
+        lock (syncRoot)
+        {
+            LastProviderError = "No provider errors.";
+        }
+    }
+
+    public void ClearPlaybackError()
+    {
+        lock (syncRoot)
+        {
+            LastPlaybackError = "No playback errors.";
+        }
+    }
+
+    public void RecordProviderError(string error)
+    {
+        lock (syncRoot)
+        {
+            LastProviderError = error;
+            AddRecentSpeechResult($"Provider error: {error}");
+        }
+    }
+
+    public void RecordPlaybackError(string error)
+    {
+        lock (syncRoot)
+        {
+            LastPlaybackError = error;
+            AddRecentSpeechResult($"Playback error: {error}");
+        }
+    }
+
+    public void RecordPlaybackCompleted(string source)
+    {
+        lock (syncRoot)
+        {
+            ClearProviderError();
+            ClearPlaybackError();
+            AddRecentSpeechResult($"Playback completed from {source}.");
         }
     }
 
@@ -156,4 +230,27 @@ public sealed class BridgeRuntimeState
             LastStatus = $"Bridge speech request failed: {error}";
         }
     }
+
+    private void AddRecentSpeechResult(string result)
+    {
+        var timestamp = DateTimeOffset.Now.ToString("HH:mm:ss");
+        recentSpeechResults.Insert(0, $"{timestamp} {result}");
+        if (recentSpeechResults.Count > MaxRecentSpeechResults)
+        {
+            recentSpeechResults.RemoveRange(MaxRecentSpeechResults, recentSpeechResults.Count - MaxRecentSpeechResults);
+        }
+    }
 }
+
+public sealed record BridgeDiagnosticsSnapshot(
+    bool IsSpeaking,
+    bool QueueBridgeSpeechRequests,
+    int PendingSpeechRequests,
+    int MaxQueuedSpeechRequests,
+    string LastStatus,
+    string LastClient,
+    string LastSpeechCandidate,
+    string LastSpeechDecision,
+    string LastProviderError,
+    string LastPlaybackError,
+    IReadOnlyList<string> RecentSpeechResults);
