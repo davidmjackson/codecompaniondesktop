@@ -300,7 +300,9 @@ Recent bridge clients and speech results are stored for desktop diagnostics in:
 ```
 
 The history is diagnostic only. Provider API keys remain in Windows Credential
-Manager and are not written to this file.
+Manager and are not written to this file. The main Desktop window includes a
+Project Speech History panel that groups recent speech candidate decisions by
+stable `projectId`.
 
 Observed project identities and path aliases are stored for desktop diagnostics
 in:

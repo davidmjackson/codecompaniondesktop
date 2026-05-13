@@ -586,7 +586,7 @@ Acceptance criteria:
 
 Status:
 
-- In progress.
+- Complete.
 - Code Companion Desktop now has `.code-companion/project.json` with project ID
   `codecompaniondesktop`.
 - Code Companion Voice already reads `.code-companion/project.json` when present
@@ -596,7 +596,8 @@ Status:
 - Desktop diagnostics show recent observed projects and roots, and the main
   window has a Project Registry panel with Refresh, Copy, Add Alias, and Remove
   Alias actions.
-- Remaining work: history views grouped by project ID.
+- Desktop stores structured speech history records by project ID and the main
+  window has a Project Speech History panel grouped by project.
 
 ### Milestone 6: Pairing Without Persistent VS Code Secrets
 

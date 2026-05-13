@@ -7,6 +7,7 @@ public sealed class BridgeRuntimeState
     private const int MaxRecentBridgeClients = 8;
     private const int MaxRecentSpeechResults = 8;
     private const int MaxRecentProjects = 8;
+    private const int MaxRecentProjectSpeech = 40;
 
     private readonly object syncRoot = new();
     private readonly SpeechHistoryStore? speechHistoryStore;
@@ -14,10 +15,12 @@ public sealed class BridgeRuntimeState
     private readonly List<string> recentBridgeClients = new();
     private readonly List<string> recentSpeechResults = new();
     private readonly List<string> recentProjects = new();
+    private readonly List<ProjectSpeechHistoryRecord> recentProjectSpeech = new();
     private bool isSpeaking;
     private bool queueBridgeSpeechRequests;
     private int pendingSpeechRequests;
     private int maxQueuedSpeechRequests = 3;
+    private PendingSpeechCandidate? pendingSpeechCandidate;
 
     public bool IsSpeaking
     {
@@ -87,6 +90,7 @@ public sealed class BridgeRuntimeState
         {
             recentBridgeClients.AddRange(snapshot.RecentBridgeClients.Take(MaxRecentBridgeClients));
             recentSpeechResults.AddRange(snapshot.RecentSpeechResults.Take(MaxRecentSpeechResults));
+            recentProjectSpeech.AddRange(snapshot.RecentProjectSpeech.Take(MaxRecentProjectSpeech));
         }
 
         if (projectRegistryStore is not null)
@@ -112,7 +116,8 @@ public sealed class BridgeRuntimeState
                 LastPlaybackError,
                 recentProjects.ToArray(),
                 recentBridgeClients.ToArray(),
-                recentSpeechResults.ToArray());
+                recentSpeechResults.ToArray(),
+                recentProjectSpeech.ToArray());
         }
     }
 
@@ -128,6 +133,24 @@ public sealed class BridgeRuntimeState
             return projectRegistryStore
                 .LoadRecentRecords(maxCount)
                 .Select(ProjectRegistryStore.FormatDetails)
+                .ToList();
+        }
+    }
+
+    public IReadOnlyList<string> LoadProjectSpeechHistoryDetails(int maxProjects)
+    {
+        lock (syncRoot)
+        {
+            if (recentProjectSpeech.Count == 0)
+            {
+                return [];
+            }
+
+            return recentProjectSpeech
+                .GroupBy(record => record.ProjectId, StringComparer.OrdinalIgnoreCase)
+                .OrderByDescending(group => group.Max(record => record.TimestampUtc))
+                .Take(maxProjects)
+                .Select(FormatProjectSpeechHistoryGroup)
                 .ToList();
         }
     }
@@ -208,6 +231,13 @@ public sealed class BridgeRuntimeState
         {
             RecordProjectSeen(client, workspace);
             var preview = text.Length <= 80 ? text : $"{text[..80]}...";
+            pendingSpeechCandidate = new PendingSpeechCandidate(
+                workspace.ProjectId,
+                workspace.DisplayName,
+                client.Name,
+                client.Environment,
+                messageId,
+                preview);
             LastSpeechCandidate = $"{client.Environment} project {workspace.ProjectId} message {messageId}: {preview}";
             LastStatus = "Bridge speech candidate received.";
         }
@@ -220,6 +250,7 @@ public sealed class BridgeRuntimeState
             LastSpeechDecision = $"{decision} ({reason})";
             LastStatus = $"Bridge speech candidate decision: {LastSpeechDecision}.";
             AddRecentSpeechResult($"Candidate {LastSpeechDecision}.");
+            AddRecentProjectSpeechResult(decision, reason);
         }
     }
 
@@ -353,6 +384,33 @@ public sealed class BridgeRuntimeState
         SaveHistory();
     }
 
+    private void AddRecentProjectSpeechResult(string decision, string reason)
+    {
+        if (pendingSpeechCandidate is null)
+        {
+            return;
+        }
+
+        recentProjectSpeech.Insert(0, new ProjectSpeechHistoryRecord
+        {
+            TimestampUtc = DateTimeOffset.UtcNow,
+            ProjectId = pendingSpeechCandidate.ProjectId,
+            DisplayName = pendingSpeechCandidate.DisplayName,
+            ClientName = pendingSpeechCandidate.ClientName,
+            Environment = pendingSpeechCandidate.Environment,
+            MessageId = pendingSpeechCandidate.MessageId,
+            Preview = pendingSpeechCandidate.Preview,
+            Decision = decision,
+            Reason = reason
+        });
+        if (recentProjectSpeech.Count > MaxRecentProjectSpeech)
+        {
+            recentProjectSpeech.RemoveRange(MaxRecentProjectSpeech, recentProjectSpeech.Count - MaxRecentProjectSpeech);
+        }
+
+        SaveHistory();
+    }
+
     private void RecordProjectSeen(BridgeClient client, BridgeWorkspace workspace)
     {
         var record = projectRegistryStore?.RecordObservation(
@@ -397,10 +455,41 @@ public sealed class BridgeRuntimeState
         speechHistoryStore?.Save(new SpeechHistorySnapshot
         {
             RecentBridgeClients = recentBridgeClients.ToList(),
-            RecentSpeechResults = recentSpeechResults.ToList()
+            RecentSpeechResults = recentSpeechResults.ToList(),
+            RecentProjectSpeech = recentProjectSpeech.ToList()
         });
     }
+
+    private static string FormatProjectSpeechHistoryGroup(IGrouping<string, ProjectSpeechHistoryRecord> group)
+    {
+        var latest = group.OrderByDescending(record => record.TimestampUtc).First();
+        var items = group
+            .OrderByDescending(record => record.TimestampUtc)
+            .Take(8)
+            .Select(record =>
+                $"  - {FormatTimestamp(record.TimestampUtc)} {record.Decision}/{record.Reason} {record.Environment} {record.MessageId}: {record.Preview}");
+
+        return string.Join(
+            Environment.NewLine,
+            $"{latest.DisplayName} ({latest.ProjectId})",
+            string.Join(Environment.NewLine, items));
+    }
+
+    private static string FormatTimestamp(DateTimeOffset value)
+    {
+        return value == default
+            ? "unknown"
+            : value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+    }
 }
+
+internal sealed record PendingSpeechCandidate(
+    string ProjectId,
+    string DisplayName,
+    string ClientName,
+    string Environment,
+    string MessageId,
+    string Preview);
 
 public sealed record BridgeDiagnosticsSnapshot(
     bool IsSpeaking,
@@ -415,4 +504,5 @@ public sealed record BridgeDiagnosticsSnapshot(
     string LastPlaybackError,
     IReadOnlyList<string> RecentProjects,
     IReadOnlyList<string> RecentBridgeClients,
-    IReadOnlyList<string> RecentSpeechResults);
+    IReadOnlyList<string> RecentSpeechResults,
+    IReadOnlyList<ProjectSpeechHistoryRecord> RecentProjectSpeech);

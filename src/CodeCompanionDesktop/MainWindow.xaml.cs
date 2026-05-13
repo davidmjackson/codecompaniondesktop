@@ -95,6 +95,7 @@ public partial class MainWindow : Window
         BridgeStatusText.Text = status;
         RefreshSpeechDiagnostics();
         RefreshProjectRegistry();
+        RefreshProjectSpeechHistory();
     }
 
     private async Task PlayElevenLabsSpeechAsync(string text, string source)
@@ -392,6 +393,26 @@ public partial class MainWindow : Window
         UpdateProjectAlias(isAdd: false);
     }
 
+    private void RefreshProjectSpeechHistoryButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshProjectSpeechHistory();
+    }
+
+    private void CopyProjectSpeechHistoryButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshProjectSpeechHistory();
+
+        try
+        {
+            System.Windows.Clipboard.SetText(ProjectSpeechHistoryTextBox.Text);
+            BridgeStatusText.Text = "Copied project speech history.";
+        }
+        catch (Exception ex)
+        {
+            BridgeStatusText.Text = $"Copying project speech history failed: {ex.Message}";
+        }
+    }
+
     private void QueueBridgeSpeechCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         if (isInitializing)
@@ -455,6 +476,7 @@ public partial class MainWindow : Window
         BridgeStatusText.Text = $"Bridge listening on {LocalBridgeServer.BaseUrl}. State: {speaking}. {queue} {bridgeRuntimeState.LastStatus}";
         RefreshSpeechDiagnostics();
         RefreshProjectRegistry();
+        RefreshProjectSpeechHistory();
     }
 
     private void RefreshSpeechDiagnostics()
@@ -509,6 +531,16 @@ public partial class MainWindow : Window
             : string.Join(
                 $"{Environment.NewLine}{Environment.NewLine}",
                 projectDetails);
+    }
+
+    private void RefreshProjectSpeechHistory()
+    {
+        var projectHistory = bridgeRuntimeState.LoadProjectSpeechHistoryDetails(20);
+        ProjectSpeechHistoryTextBox.Text = projectHistory.Count == 0
+            ? "No project speech history yet."
+            : string.Join(
+                $"{Environment.NewLine}{Environment.NewLine}",
+                projectHistory);
     }
 
     private void UpdateProjectAlias(bool isAdd)
@@ -584,6 +616,7 @@ public partial class MainWindow : Window
             RefreshBridgeStatus();
             RefreshSpeechDiagnostics();
             RefreshProjectRegistry();
+            RefreshProjectSpeechHistory();
         }
         finally
         {

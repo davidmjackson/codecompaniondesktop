@@ -36,6 +36,13 @@ public sealed class BridgeRuntimeStateTests
         Assert.Contains(snapshot.RecentSpeechResults, result => result.Contains("Candidate spoken (accepted).", StringComparison.Ordinal));
         Assert.Contains(snapshot.RecentSpeechResults, result => result.Contains("Provider error: provider unavailable", StringComparison.Ordinal));
         Assert.Contains(snapshot.RecentSpeechResults, result => result.Contains("Playback error: device unavailable", StringComparison.Ordinal));
+        var projectSpeech = Assert.Single(snapshot.RecentProjectSpeech);
+        Assert.Equal("codecompaniondesktop", projectSpeech.ProjectId);
+        Assert.Equal("spoken", projectSpeech.Decision);
+        Assert.Contains("Speech diagnostics test.", projectSpeech.Preview, StringComparison.Ordinal);
+        var projectHistory = Assert.Single(state.LoadProjectSpeechHistoryDetails(8));
+        Assert.Contains("Code Companion Desktop (codecompaniondesktop)", projectHistory, StringComparison.Ordinal);
+        Assert.Contains("spoken/accepted", projectHistory, StringComparison.Ordinal);
     }
 
     [Fact]

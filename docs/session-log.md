@@ -4,6 +4,36 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Project Speech History
+
+### Current Milestone
+
+- Milestone 5: Project Identity.
+
+### Changed
+
+- Added structured project speech history records to `speech-history.json`.
+- Added Desktop runtime grouping for recent speech candidate decisions by stable
+  `projectId`.
+- Added a Project Speech History panel with Refresh and Copy actions.
+- Updated tests for persisted project speech records and grouped history output.
+- Updated the architecture status to mark Milestone 5 complete.
+
+### Decision
+
+- Project speech history records store candidate decision metadata and a short
+  preview, not provider secrets or full provider responses.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- `dotnet test CodeCompanionDesktop.sln --no-build`; 21 tests passed.
+- `git diff --check`
+
+### Next
+
+- Start Milestone 6: Pairing Without Persistent VS Code Secrets.
+
 ## 2026-05-13 Project Registry Alias Management
 
 ### Current Milestone

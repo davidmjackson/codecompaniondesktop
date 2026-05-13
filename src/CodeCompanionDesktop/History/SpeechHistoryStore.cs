@@ -70,4 +70,27 @@ public sealed class SpeechHistorySnapshot
     public List<string> RecentBridgeClients { get; set; } = [];
 
     public List<string> RecentSpeechResults { get; set; } = [];
+
+    public List<ProjectSpeechHistoryRecord> RecentProjectSpeech { get; set; } = [];
+}
+
+public sealed class ProjectSpeechHistoryRecord
+{
+    public DateTimeOffset TimestampUtc { get; set; }
+
+    public string ProjectId { get; set; } = string.Empty;
+
+    public string DisplayName { get; set; } = string.Empty;
+
+    public string ClientName { get; set; } = string.Empty;
+
+    public string Environment { get; set; } = string.Empty;
+
+    public string MessageId { get; set; } = string.Empty;
+
+    public string Decision { get; set; } = string.Empty;
+
+    public string Reason { get; set; } = string.Empty;
+
+    public string Preview { get; set; } = string.Empty;
 }
