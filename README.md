@@ -216,6 +216,14 @@ artifacts\checksums\CodeCompanionDesktopSetup-0.1.0.exe.sha256
 artifacts\release-notes\desktop-0.1.0.md
 ```
 
+Preview the GitHub Release draft command with:
+
+```powershell
+.\scripts\draft-github-release.ps1 -AppVersion 0.1.0
+```
+
+Add `-Create` only when you are ready to create the draft GitHub Release.
+
 ## Install For Daily Use
 
 Preferred path after building an installer:

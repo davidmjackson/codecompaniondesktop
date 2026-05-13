@@ -88,12 +88,13 @@ Release notes must include:
 Draft release command, once release publication is ready:
 
 ```powershell
-gh release create v<version> `
-  .\artifacts\installer\CodeCompanionDesktopSetup-<version>.exe `
-  .\artifacts\checksums\CodeCompanionDesktopSetup-<version>.exe.sha256 `
-  --draft `
-  --title "Code Companion Desktop <version>" `
-  --notes-file .\artifacts\release-notes\desktop-<version>.md
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\draft-github-release.ps1 -AppVersion <version>
+```
+
+The command above is a dry run by default. To create the draft GitHub Release:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\draft-github-release.ps1 -AppVersion <version> -Create
 ```
 
 Do not mark the GitHub Release as final until the fresh-install verification

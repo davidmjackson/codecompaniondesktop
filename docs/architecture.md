@@ -770,6 +770,8 @@ Status:
 - `docs/release-checklist.md` documents the release gates for this milestone.
 - `scripts/build-release-package.ps1` builds the Desktop installer, SHA256
   checksum, and draft GitHub release notes from one command.
+- `scripts/draft-github-release.ps1` validates the generated artifacts and
+  previews or creates the draft Desktop GitHub Release.
 
 ## Session Checklist
 
