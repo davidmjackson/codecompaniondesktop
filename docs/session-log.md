@@ -4,6 +4,49 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Environment-Agnostic Speech Architecture
+
+### Current Milestone
+
+- Milestone 0: Architecture Baseline.
+
+### Changed
+
+- Added `docs/architecture.md` as the source of truth for the target
+  environment-agnostic speech architecture.
+- Defined Code Companion Desktop as the speech authority and Code Companion
+  Voice as a thin VS Code client.
+- Documented that the Windows app owns provider credentials, provider calls,
+  speech policy, queueing, diagnostics, and native Windows playback.
+- Documented that VS Code should forward structured speech candidates to the
+  Windows app and should not own TTS playback, webview audio unlock, provider
+  keys, or provider calls.
+- Added a milestone plan from architecture baseline through bridge contract,
+  desktop speech pipeline, diagnostics, thin client migration, project identity,
+  pairing, packaging, and cleanup.
+- Updated `README.md` to point to the architecture document.
+- Updated `AGENTS.md` so future sessions must read `docs/architecture.md` and
+  report the current architecture milestone at session start.
+
+### Decisions
+
+- Refactor the existing VS Code extension instead of starting from scratch.
+- Preserve the extension repository history and move or clone it to a Windows
+  checkout only after WSL-specific prototype responsibilities are removed.
+- Treat project identity as a stable ID, not as a path comparison problem.
+- Use the current copied bridge token only as a temporary compatibility
+  mechanism while moving toward desktop-managed client pairing.
+
+### Verified
+
+- `git diff --check`.
+
+### Next
+
+- Implement Milestone 1: Desktop Bridge Contract.
+- Add versioned bridge DTOs and endpoints in the Windows app while keeping
+  `/speak` as a temporary compatibility endpoint.
+
 ## 2026-05-13 MainWindow IDE Error Triage
 
 ### Changed

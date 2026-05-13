@@ -13,11 +13,12 @@ this project unless the user explicitly asks to switch projects.
 ## Session Start
 
 - Work in `/mnt/d/Development/CodeCompanionDesktop`.
-- Read `README.md` and `docs/session-log.md` before planning or coding.
+- Read `README.md`, `docs/architecture.md`, and `docs/session-log.md` before
+  planning or coding.
 - Check the current git branch, working tree status, latest commits, and whether
   any Code Companion Desktop process is already running.
-- Summarize the current state, last verified baseline, and recommended next
-  steps before making substantial changes.
+- Summarize the current state, current architecture milestone, last verified
+  baseline, and recommended next steps before making substantial changes.
 
 ## Project Context
 
@@ -25,6 +26,8 @@ this project unless the user explicitly asks to switch projects.
 - The desktop app owns native Windows audio, Windows Credential Manager storage,
   ElevenLabs provider calls, tray behavior, startup behavior, release publishing,
   and the local authenticated bridge.
+- `docs/architecture.md` is the source of truth for the environment-agnostic
+  speech architecture and milestone plan.
 - The related VS Code extension remains in `/var/www/CodeCompanion` and should
   only be edited when the user explicitly asks for extension work.
 - Keep the desktop app and extension repositories separate unless the user

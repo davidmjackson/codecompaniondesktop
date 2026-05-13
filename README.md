@@ -7,6 +7,19 @@ Windows desktop companion app for Code Companion Voice.
 The first proof of concept is a small WPF tray app that can play a generated
 local WAV test tone through normal Windows audio.
 
+## Architecture
+
+The target architecture is documented in `docs/architecture.md`.
+
+Code Companion Desktop is the speech authority. It owns provider credentials,
+speech policy, TTS provider calls, queueing, diagnostics, and native Windows
+audio playback. Code Companion Voice should become a thin VS Code client that
+observes Codex activity and forwards structured speech candidates to the Windows
+app, independent of whether the active project is opened from Windows or WSL.
+
+Every development session should identify the current milestone from
+`docs/architecture.md` before implementation.
+
 ## Repository Layout
 
 Start desktop-app work in this Windows checkout:
