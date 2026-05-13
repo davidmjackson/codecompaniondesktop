@@ -67,7 +67,10 @@ $publishArgs = @(
     "-p:InformationalVersion=$AppVersion"
 )
 
-& $dotnetPath @publishArgs
+$publishProcess = Start-Process -FilePath $dotnetPath -ArgumentList $publishArgs -NoNewWindow -Wait -PassThru
+if ($publishProcess.ExitCode -ne 0) {
+    throw "dotnet publish failed with exit code $($publishProcess.ExitCode)."
+}
 
 Write-Host ""
 Write-Host "Published Code Companion Desktop to:"

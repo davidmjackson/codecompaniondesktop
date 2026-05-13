@@ -201,6 +201,21 @@ a post-install option to launch Code Companion Desktop. The app still stores
 credentials in Windows Credential Manager and stores user settings under
 `%APPDATA%\CodeCompanionDesktop`.
 
+For a release candidate, build the installer, checksum, and draft release notes
+with:
+
+```powershell
+.\scripts\build-release-package.ps1 -AppVersion 0.1.0
+```
+
+The release package outputs are:
+
+```text
+artifacts\installer\CodeCompanionDesktopSetup-0.1.0.exe
+artifacts\checksums\CodeCompanionDesktopSetup-0.1.0.exe.sha256
+artifacts\release-notes\desktop-0.1.0.md
+```
+
 ## Install For Daily Use
 
 Preferred path after building an installer:

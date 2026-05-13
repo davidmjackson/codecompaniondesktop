@@ -39,13 +39,15 @@ Before packaging:
 From PowerShell in `D:\Development\CodeCompanionDesktop`:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -AppVersion <version>
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-release-package.ps1 -AppVersion <version>
 ```
 
-Expected output:
+Expected outputs:
 
 ```text
 artifacts\installer\CodeCompanionDesktopSetup-<version>.exe
+artifacts\checksums\CodeCompanionDesktopSetup-<version>.exe.sha256
+artifacts\release-notes\desktop-<version>.md
 ```
 
 Required checks:
@@ -53,16 +55,17 @@ Required checks:
 - `dotnet build CodeCompanionDesktop.sln`
 - `dotnet test CodeCompanionDesktop.sln --no-build`
 - `git diff --check`
-- Installer build completes without warnings.
+- Release package script completes without errors.
 - Installer launches the installed app from:
   `%LOCALAPPDATA%\Programs\Code Companion Desktop\CodeCompanionDesktop.exe`.
 - `Invoke-RestMethod http://127.0.0.1:47321/health` returns `status: ok` and
   `bridge: listening`.
 
-Create a checksum:
+The lower-level installer build remains available for local development
+iterations:
 
 ```powershell
-Get-FileHash .\artifacts\installer\CodeCompanionDesktopSetup-<version>.exe -Algorithm SHA256
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -AppVersion <version>
 ```
 
 ## Desktop GitHub Release
@@ -85,7 +88,12 @@ Release notes must include:
 Draft release command, once release publication is ready:
 
 ```powershell
-gh release create v<version> .\artifacts\installer\CodeCompanionDesktopSetup-<version>.exe --draft --title "Code Companion Desktop <version>" --notes-file .\artifacts\release-notes\desktop-<version>.md
+gh release create v<version> `
+  .\artifacts\installer\CodeCompanionDesktopSetup-<version>.exe `
+  .\artifacts\checksums\CodeCompanionDesktopSetup-<version>.exe.sha256 `
+  --draft `
+  --title "Code Companion Desktop <version>" `
+  --notes-file .\artifacts\release-notes\desktop-<version>.md
 ```
 
 Do not mark the GitHub Release as final until the fresh-install verification

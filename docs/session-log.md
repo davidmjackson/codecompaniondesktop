@@ -4,6 +4,39 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Desktop Release Package Script
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### Changed
+
+- Added `scripts/build-release-package.ps1`.
+- The script runs Desktop build/test checks, builds the installer, writes a
+  SHA256 checksum file, and writes draft Desktop GitHub release notes.
+- Updated `scripts/publish-release.ps1` to launch `dotnet publish` with
+  checked native process execution.
+- Updated README and `docs/release-checklist.md` to use the release-package
+  script for release candidates.
+- Updated `docs/architecture.md` so Milestone 9 is now in progress.
+
+### Verified
+
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'D:\Development\CodeCompanionDesktop\scripts\build-release-package.ps1' -AppVersion 0.1.1 ...`
+- Release package script ran `dotnet build`, `dotnet test`; 27 tests passed.
+- Generated installer:
+  `D:\Development\CodeCompanionDesktop\artifacts\installer\CodeCompanionDesktopSetup-0.1.1.exe`
+- Generated checksum:
+  `D:\Development\CodeCompanionDesktop\artifacts\checksums\CodeCompanionDesktopSetup-0.1.1.exe.sha256`
+- Generated release notes:
+  `D:\Development\CodeCompanionDesktop\artifacts\release-notes\desktop-0.1.1.md`
+
+### Next
+
+- Decide whether to draft the GitHub Release from the generated installer,
+  checksum, and notes, or continue hardening Marketplace metadata first.
+
 ## 2026-05-13 Desktop 0.1.1 Installer Build
 
 ### Current Milestone
