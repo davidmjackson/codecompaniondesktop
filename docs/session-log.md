@@ -29,6 +29,36 @@ options.
 - Use the install checklist to validate the Windows app installer path and the
   VS Code extension install path from scratch.
 
+## 2026-05-13 Milestone 7 Download Source Clarification
+
+### Current Milestone
+
+- Milestone 7: Packaging And First Run.
+
+### Changed
+
+- Expanded `docs/architecture.md` Milestone 7 with target production download
+  sources and current development install artifacts.
+- Updated the Desktop README distribution model to distinguish GitHub Releases
+  and VS Code Marketplace targets from today's local installer and VSIX
+  artifacts.
+
+### Decision
+
+- Production Desktop downloads should come from GitHub Releases.
+- Production Voice extension installs should come from the VS Code Marketplace.
+- Until those publishing steps are complete, clean-install testing uses local
+  development artifacts.
+
+### Verified
+
+- `git diff --check`
+
+### Next
+
+- Validate the local installer and local VSIX flow, then add release publishing
+  automation when ready.
+
 ## 2026-05-13 Voice Check-In Speech Hint Contract
 
 ### Current Milestone

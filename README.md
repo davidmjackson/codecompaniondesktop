@@ -71,8 +71,8 @@ locations.
 
 Code Companion uses two separate installs:
 
-- The VS Code extension is installed from the VS Code Marketplace.
 - Code Companion Desktop is installed separately as a Windows app.
+- The VS Code extension is installed separately into VS Code.
 
 The VS Code extension owns VS Code commands, workspace context, Codex log
 watching, and calls to the local desktop bridge. The Windows app owns
@@ -81,6 +81,24 @@ credentials, ElevenLabs calls, queueing, and native Windows audio playback.
 They are paired by launching Code Companion Desktop, copying the bridge token,
 and saving it in the VS Code extension with
 `Code Companion Voice: Set Desktop Bridge Token`.
+
+Target production download locations:
+
+- Code Companion Desktop: GitHub Releases for the Code Companion Desktop
+  repository, with a Windows installer named
+  `CodeCompanionDesktopSetup-<version>.exe`.
+- Code Companion Voice: VS Code Marketplace.
+
+Current development install locations:
+
+- Code Companion Desktop: local installer under `artifacts\installer` after
+  running `.\scripts\build-installer.ps1`.
+- Code Companion Voice: local VSIX from the Voice repository after running
+  `npm run package:vsix`.
+
+Marketplace and release publication are tracked under Milestone 7 in
+`docs/architecture.md`. Until that milestone is complete, use the local
+development artifacts.
 
 ## Run
 

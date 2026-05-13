@@ -609,6 +609,7 @@ Acceptance criteria:
 Goal:
 
 - Make installation and first-run behavior predictable.
+- Make the download locations and fresh-install verification path explicit.
 
 Scope:
 
@@ -616,14 +617,55 @@ Scope:
 - VS Code extension detects whether the desktop app is reachable.
 - VS Code extension shows only setup guidance and bridge status.
 - README documents the two-install flow.
+- README documents current development install sources and target production
+  download sources.
+- Fresh-install verification is documented as a required release check.
+
+Download model:
+
+- Target production source for Code Companion Desktop:
+  - GitHub Releases for the Code Companion Desktop repository.
+  - Primary asset: signed or checksummed Windows installer,
+    `CodeCompanionDesktopSetup-<version>.exe`.
+- Current development source for Code Companion Desktop:
+  - Local installer artifact created by
+    `.\scripts\build-installer.ps1 -AppVersion <version>`.
+  - Local portable publish artifact created by `.\scripts\publish-release.ps1`.
+- Target production source for Code Companion Voice:
+  - VS Code Marketplace.
+  - The same extension must be installable in both Windows and WSL extension
+    hosts when a workspace requires the WSL host.
+- Current development source for Code Companion Voice:
+  - Local VSIX artifact created by `npm run package:vsix`.
+  - Installed into the Windows VS Code profile with Windows `code.cmd`.
+  - Installed into the WSL VS Code server with WSL `code` when testing WSL
+    workspaces.
 
 Acceptance criteria:
 
 - Install Windows app.
 - Install VS Code extension.
 - Configure provider in Windows app.
-- Approve VS Code client in Windows app.
-- Speech works from Windows and WSL projects without per-project token copying.
+- Pair the extension with the desktop app. During migration this can still use
+  `Code Companion Voice: Set Desktop Bridge Token`; after Milestone 6 it should
+  use Desktop-owned approval.
+- Reload VS Code.
+- Open the Code Companion Voice panel.
+- Confirm the normal Desktop bridge panel shows only `Enable Voice`, `Mute`,
+  and `Desktop Test`.
+- Click `Desktop Test`.
+- Confirm Code Companion Desktop speaks and the extension output includes
+  `candidate spoken`.
+- Speech works from Windows and WSL projects without provider keys, provider
+  calls, or audio unlock in VS Code.
+
+Status:
+
+- In progress.
+- Fresh-install verification is documented in both repository READMEs.
+- Current development installs are local artifacts. Marketplace and GitHub
+  Releases publication are still release milestones, not completed distribution
+  channels.
 
 ### Milestone 8: Cleanup And Compatibility Removal
 
