@@ -29,6 +29,7 @@ public sealed class LocalBridgeServer : IDisposable
     private readonly Func<string, Task> speakAsync;
     private readonly BridgeRuntimeState runtimeState;
     private readonly BridgeSpeechQueue speechQueue;
+    private readonly SpeechCandidatePipeline speechCandidatePipeline;
     private readonly int port;
     private readonly CancellationTokenSource cancellation = new();
     private TcpListener? listener;
@@ -39,6 +40,7 @@ public sealed class LocalBridgeServer : IDisposable
         Func<string, Task> speakAsync,
         BridgeRuntimeState runtimeState,
         BridgeSpeechQueue speechQueue,
+        SpeechCandidatePipeline? speechCandidatePipeline = null,
         int port = Port)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
@@ -51,6 +53,7 @@ public sealed class LocalBridgeServer : IDisposable
         this.speakAsync = speakAsync;
         this.runtimeState = runtimeState;
         this.speechQueue = speechQueue;
+        this.speechCandidatePipeline = speechCandidatePipeline ?? new SpeechCandidatePipeline();
         this.port = port;
     }
 
@@ -224,14 +227,107 @@ public sealed class LocalBridgeServer : IDisposable
             candidateRequest.Codex.MessageId,
             candidateRequest.Candidate.Text);
 
-        await WriteJsonAsync(
-            stream,
-            HttpStatusCode.Accepted,
-            new SpeechCandidateResponse(
-                "accepted",
-                "ignored",
-                "speech_pipeline_not_implemented",
-                0));
+        var pipelineResult = speechCandidatePipeline.Prepare(new SpeechCandidatePipelineInput(
+            candidateRequest.Codex.MessageId,
+            candidateRequest.Candidate.Kind,
+            candidateRequest.Candidate.Phase,
+            candidateRequest.Candidate.Text));
+
+        if (pipelineResult.Decision == "ignored" || pipelineResult.Decision == "duplicate")
+        {
+            runtimeState.RecordSpeechCandidateDecision(pipelineResult.Decision, pipelineResult.Reason);
+            await WriteJsonAsync(
+                stream,
+                HttpStatusCode.Accepted,
+                new SpeechCandidateResponse(
+                    "accepted",
+                    pipelineResult.Decision,
+                    pipelineResult.Reason,
+                    0));
+            return;
+        }
+
+        if (pipelineResult.SpeechText is null || pipelineResult.Reservation is null)
+        {
+            runtimeState.RecordSpeechCandidateDecision("rejected", "invalid_pipeline_result");
+            await WriteJsonAsync(
+                stream,
+                HttpStatusCode.InternalServerError,
+                new SpeechCandidateResponse(
+                    "rejected",
+                    "rejected",
+                    "invalid_pipeline_result",
+                    0));
+            return;
+        }
+
+        if (runtimeState.QueueBridgeSpeechRequests)
+        {
+            if (!speechQueue.TryEnqueue(
+                pipelineResult.SpeechText,
+                exception =>
+                {
+                    if (exception is not null)
+                    {
+                        speechCandidatePipeline.Release(pipelineResult.Reservation);
+                    }
+
+                    return Task.CompletedTask;
+                },
+                out var position))
+            {
+                speechCandidatePipeline.Release(pipelineResult.Reservation);
+                runtimeState.RecordSpeechCandidateDecision("rejected", "queue_full");
+                await WriteJsonAsync(
+                    stream,
+                    HttpStatusCode.Conflict,
+                    new SpeechCandidateResponse("rejected", "rejected", "queue_full", 0));
+                return;
+            }
+
+            runtimeState.RecordSpeechCandidateDecision("queued", pipelineResult.Reason);
+            await WriteJsonAsync(
+                stream,
+                HttpStatusCode.Accepted,
+                new SpeechCandidateResponse(
+                    "accepted",
+                    "queued",
+                    pipelineResult.Reason,
+                    position));
+            return;
+        }
+
+        if (!runtimeState.TryBeginSpeaking())
+        {
+            speechCandidatePipeline.Release(pipelineResult.Reservation);
+            runtimeState.RecordSpeechCandidateDecision("rejected", "busy");
+            await WriteJsonAsync(
+                stream,
+                HttpStatusCode.Conflict,
+                new SpeechCandidateResponse("rejected", "rejected", "busy", 0));
+            return;
+        }
+
+        try
+        {
+            await speakAsync(pipelineResult.SpeechText);
+            runtimeState.CompleteSpeaking();
+            runtimeState.RecordSpeechCandidateDecision("spoken", pipelineResult.Reason);
+            await WriteJsonAsync(
+                stream,
+                HttpStatusCode.Accepted,
+                new SpeechCandidateResponse(
+                    "accepted",
+                    "spoken",
+                    pipelineResult.Reason,
+                    0));
+        }
+        catch (Exception ex)
+        {
+            speechCandidatePipeline.Release(pipelineResult.Reservation);
+            runtimeState.FailSpeaking(ex.Message);
+            await WriteJsonAsync(stream, HttpStatusCode.InternalServerError, new ErrorResponse(ex.Message));
+        }
     }
 
     private async Task HandleSpeakAsync(Stream stream, BridgeRequest request)

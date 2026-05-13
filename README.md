@@ -287,11 +287,11 @@ pairing is still pending:
 ```
 
 `POST /v1/speech/candidates` accepts structured Codex speech candidate events.
-During the Milestone 1 bridge-contract phase, it validates the request and
-returns a placeholder decision. Milestone 2 will connect this endpoint to the
-desktop-owned speech policy, rewrite, queue, provider, and playback pipeline.
+The desktop app validates the request, applies deterministic speech policy,
+redacts common secret patterns, deduplicates by message ID and normalized text,
+then sends accepted text through the desktop queue and ElevenLabs playback path.
 This endpoint currently requires the same `Authorization: Bearer <token>` header
-as `/speak`.
+as `/speak` until desktop-managed pairing replaces copied tokens.
 
 ```json
 {
@@ -322,16 +322,21 @@ as `/speak`.
 }
 ```
 
-Current placeholder response:
+Example spoken response:
 
 ```json
 {
   "status": "accepted",
-  "decision": "ignored",
-  "reason": "speech_pipeline_not_implemented",
+  "decision": "spoken",
+  "reason": "accepted",
   "queuePosition": 0
 }
 ```
+
+When bridge queueing is enabled, a valid candidate can return
+`"decision": "queued"` with a positive `queuePosition`. Duplicate candidates
+return `"decision": "duplicate"` and are not spoken. Non-final or unsupported
+candidate kinds return `"decision": "ignored"`.
 
 `POST /speak` requires an `Authorization: Bearer <token>` header and a JSON body:
 
@@ -343,11 +348,12 @@ If speech is already playing, `/speak` returns `409 Conflict` with
 `{"error":"busy"}` by default.
 
 The Local Bridge section includes `Queue bridge speech requests`. When enabled,
-new `/speak` requests are accepted into a bounded queue instead of being
-rejected while another bridge speech request is playing. The queue limit is
-stored with the app settings and can be set to 1, 3, 5, or 10 pending requests.
-When the queue is full, `/speak` returns `409 Conflict` with
-`{"error":"queue_full"}`.
+new `/speak` requests and valid `/v1/speech/candidates` requests are accepted
+into a bounded queue instead of being rejected while another bridge speech
+request is playing. The queue limit is stored with the app settings and can be
+set to 1, 3, 5, or 10 pending requests. When the queue is full, `/speak` returns
+`409 Conflict` with `{"error":"queue_full"}` and speech candidates return a
+structured rejected decision with reason `queue_full`.
 
 The bridge token is generated once and stored in Windows Credential Manager:
 

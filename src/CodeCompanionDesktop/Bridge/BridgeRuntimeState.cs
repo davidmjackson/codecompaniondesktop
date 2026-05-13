@@ -85,7 +85,15 @@ public sealed class BridgeRuntimeState
         {
             var preview = text.Length <= 80 ? text : $"{text[..80]}...";
             LastSpeechCandidate = $"{environment} project {projectId} message {messageId}: {preview}";
-            LastStatus = "Bridge speech candidate accepted for future desktop pipeline.";
+            LastStatus = "Bridge speech candidate received.";
+        }
+    }
+
+    public void RecordSpeechCandidateDecision(string decision, string reason)
+    {
+        lock (syncRoot)
+        {
+            LastStatus = $"Bridge speech candidate decision: {decision} ({reason}).";
         }
     }
 

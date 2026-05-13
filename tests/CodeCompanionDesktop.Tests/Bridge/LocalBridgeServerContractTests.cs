@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Collections.Concurrent;
 using CodeCompanionDesktop.Bridge;
 
 namespace CodeCompanionDesktop.Tests.Bridge;
@@ -147,7 +148,7 @@ public sealed class LocalBridgeServerContractTests
     }
 
     [Fact]
-    public async Task SpeechCandidateAcceptsValidPayloadWithPlaceholderDecision()
+    public async Task SpeechCandidateSpeaksValidPayload()
     {
         using var fixture = BridgeFixture.Start();
         fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
@@ -161,15 +162,107 @@ public sealed class LocalBridgeServerContractTests
         using var document = await ReadJsonAsync(response);
         var root = document.RootElement;
         Assert.Equal("accepted", root.GetProperty("status").GetString());
-        Assert.Equal("ignored", root.GetProperty("decision").GetString());
-        Assert.Equal("speech_pipeline_not_implemented", root.GetProperty("reason").GetString());
+        Assert.Equal("spoken", root.GetProperty("decision").GetString());
+        Assert.Equal("accepted", root.GetProperty("reason").GetString());
         Assert.Equal(0, root.GetProperty("queuePosition").GetInt32());
         Assert.Contains("message-1", fixture.RuntimeState.LastSpeechCandidate, StringComparison.Ordinal);
+        Assert.Equal(["The bridge contract test candidate is ready."], fixture.SpokenTexts);
     }
 
-    private static string ValidSpeechCandidateJson()
+    [Fact]
+    public async Task SpeechCandidateIgnoresDuplicateMessageId()
     {
-        return """
+        using var fixture = BridgeFixture.Start();
+        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+
+        using var first = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson()));
+        using var second = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson()));
+
+        Assert.Equal(HttpStatusCode.Accepted, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, second.StatusCode);
+
+        using var document = await ReadJsonAsync(second);
+        var root = document.RootElement;
+        Assert.Equal("duplicate", root.GetProperty("decision").GetString());
+        Assert.Equal("duplicate_candidate", root.GetProperty("reason").GetString());
+        Assert.Single(fixture.SpokenTexts);
+    }
+
+    [Fact]
+    public async Task SpeechCandidateIgnoresDuplicateNormalizedText()
+    {
+        using var fixture = BridgeFixture.Start();
+        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+
+        using var first = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson("message-1", "The bridge contract test candidate is ready.")));
+        using var second = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson("message-2", "  the   bridge contract test candidate is ready.  ")));
+
+        Assert.Equal(HttpStatusCode.Accepted, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, second.StatusCode);
+
+        using var document = await ReadJsonAsync(second);
+        var root = document.RootElement;
+        Assert.Equal("duplicate", root.GetProperty("decision").GetString());
+        Assert.Equal("duplicate_candidate", root.GetProperty("reason").GetString());
+        Assert.Single(fixture.SpokenTexts);
+    }
+
+    [Fact]
+    public async Task SpeechCandidatePrivacyFiltersBeforeSpeaking()
+    {
+        using var fixture = BridgeFixture.Start();
+        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+
+        using var response = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson(
+                "message-privacy",
+                "Use Authorization: Bearer abcdefghijklmnop and email david@example.com.")));
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+
+        using var document = await ReadJsonAsync(response);
+        var root = document.RootElement;
+        Assert.Equal("spoken", root.GetProperty("decision").GetString());
+        Assert.Equal("privacy_filtered", root.GetProperty("reason").GetString());
+        var spoken = Assert.Single(fixture.SpokenTexts);
+        Assert.Contains("[redacted]", spoken, StringComparison.Ordinal);
+        Assert.Contains("[redacted email]", spoken, StringComparison.Ordinal);
+        Assert.DoesNotContain("abcdefghijklmnop", spoken, StringComparison.Ordinal);
+        Assert.DoesNotContain("david@example.com", spoken, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SpeechCandidateQueuesWhenQueueIsEnabled()
+    {
+        using var fixture = BridgeFixture.Start(queueEnabled: true);
+        fixture.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+
+        using var response = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson()));
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+
+        using var document = await ReadJsonAsync(response);
+        var root = document.RootElement;
+        Assert.Equal("queued", root.GetProperty("decision").GetString());
+        Assert.Equal(1, root.GetProperty("queuePosition").GetInt32());
+    }
+
+    private static string ValidSpeechCandidateJson(
+        string messageId = "message-1",
+        string text = "The bridge contract test candidate is ready.")
+    {
+        return $$"""
             {
               "schemaVersion": 1,
               "client": {
@@ -186,13 +279,13 @@ public sealed class LocalBridgeServerContractTests
               },
               "codex": {
                 "sessionId": "session-1",
-                "messageId": "message-1",
+                "messageId": "{{messageId}}",
                 "timestamp": "2026-05-13T00:00:00Z"
               },
               "candidate": {
                 "kind": "assistant-message",
                 "phase": "final",
-                "text": "The bridge contract test candidate is ready.",
+                "text": "{{JsonEncodedText.Encode(text)}}",
                 "source": "codex-jsonl"
               }
             }
@@ -220,10 +313,14 @@ public sealed class LocalBridgeServerContractTests
     {
         private readonly LocalBridgeServer server;
 
-        private BridgeFixture(LocalBridgeServer server, BridgeRuntimeState runtimeState)
+        private BridgeFixture(
+            LocalBridgeServer server,
+            BridgeRuntimeState runtimeState,
+            ConcurrentQueue<string> spokenTexts)
         {
             this.server = server;
             RuntimeState = runtimeState;
+            SpokenTexts = spokenTexts;
             Client = new HttpClient
             {
                 BaseAddress = new Uri(server.LocalBaseUrl)
@@ -234,15 +331,29 @@ public sealed class LocalBridgeServerContractTests
 
         public BridgeRuntimeState RuntimeState { get; }
 
-        public static BridgeFixture Start()
+        public ConcurrentQueue<string> SpokenTexts { get; }
+
+        public static BridgeFixture Start(bool queueEnabled = false, Func<string, Task>? speakAsync = null)
         {
             var runtimeState = new BridgeRuntimeState();
-            runtimeState.ConfigureQueue(false, 3);
-            var queue = new BridgeSpeechQueue(_ => Task.CompletedTask, runtimeState);
-            var server = new LocalBridgeServer(Token, _ => Task.CompletedTask, runtimeState, queue, port: 0);
+            runtimeState.ConfigureQueue(queueEnabled, 3);
+            var spokenTexts = new ConcurrentQueue<string>();
+            var captureSpeechAsync = speakAsync ?? (text =>
+            {
+                spokenTexts.Enqueue(text);
+                return Task.CompletedTask;
+            });
+            var queue = new BridgeSpeechQueue(captureSpeechAsync, runtimeState);
+            var server = new LocalBridgeServer(
+                Token,
+                captureSpeechAsync,
+                runtimeState,
+                queue,
+                new SpeechCandidatePipeline(),
+                port: 0);
             server.Start();
 
-            return new BridgeFixture(server, runtimeState);
+            return new BridgeFixture(server, runtimeState, spokenTexts);
         }
 
         public void Dispose()

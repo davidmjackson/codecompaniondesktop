@@ -418,6 +418,14 @@ Acceptance criteria:
 - Provider keys remain in Windows Credential Manager.
 - No provider key is needed in VS Code.
 
+Status:
+
+- Initial desktop runtime pipeline complete in this branch.
+- Automated tests cover accepted/spoken, queued, duplicate, and privacy-filtered
+  candidate decisions.
+- Live ElevenLabs playback from `/v1/speech/candidates` still needs a manual
+  smoke test with a saved provider key before closing the milestone fully.
+
 ### Milestone 3: Desktop Configuration And Diagnostics
 
 Goal:

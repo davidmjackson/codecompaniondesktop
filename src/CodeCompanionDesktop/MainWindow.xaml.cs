@@ -74,7 +74,14 @@ public partial class MainWindow : Window
 
     public async Task PlayElevenLabsTestSpeechAsync()
     {
-        await PlayElevenLabsSpeechAsync("Code Companion desktop speech test.", "ElevenLabs test");
+        try
+        {
+            await PlayElevenLabsSpeechAsync("Code Companion desktop speech test.", "ElevenLabs test");
+        }
+        catch
+        {
+            // The UI has already been updated with the playback error.
+        }
     }
 
     public async Task PlayBridgeSpeechAsync(string text)
@@ -114,14 +121,14 @@ public partial class MainWindow : Window
         {
             StatusText.Text = "Unable to read ElevenLabs API key.";
             AudioPathText.Text = ex.Message;
-            return;
+            throw new InvalidOperationException("Unable to read ElevenLabs API key.", ex);
         }
 
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             StatusText.Text = "Save an ElevenLabs API key first.";
             AudioPathText.Text = string.Empty;
-            return;
+            throw new InvalidOperationException("Save an ElevenLabs API key first.");
         }
 
         isPlaying = true;
@@ -141,6 +148,7 @@ public partial class MainWindow : Window
         {
             StatusText.Text = "ElevenLabs playback failed.";
             AudioPathText.Text = ex.Message;
+            throw;
         }
         finally
         {

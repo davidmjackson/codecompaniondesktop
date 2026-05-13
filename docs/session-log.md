@@ -136,6 +136,47 @@ options.
 - Move speech policy, privacy filtering, rewrite, duplicate detection, queueing,
   provider calls, and playback behind `POST /v1/speech/candidates`.
 
+## 2026-05-13 Desktop Speech Pipeline
+
+### Current Milestone
+
+- Milestone 2: Desktop Speech Pipeline.
+
+### Changed
+
+- Added `SpeechCandidatePipeline` for desktop-owned candidate policy.
+- Added deterministic whitespace normalization and 1000-character speech
+  rewriting before playback.
+- Added privacy filtering for authorization headers, bearer tokens, API-key-like
+  assignments, secret-like provider tokens, and email addresses.
+- Added duplicate detection by Codex message ID and normalized speech text hash.
+- Connected `POST /v1/speech/candidates` to the existing desktop speech queue
+  and bridge playback path.
+- Updated queued speech requests so candidate reservations can be released if
+  queued playback fails.
+- Changed bridge-triggered ElevenLabs playback to report provider/key failures
+  back to the bridge instead of silently completing.
+- Updated README bridge documentation for candidate decisions.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` using
+  `C:\Program Files\dotnet\dotnet.exe`.
+- `dotnet test CodeCompanionDesktop.sln --no-build` using
+  `C:\Program Files\dotnet\dotnet.exe`; 10 tests passed.
+
+### Remaining Gap
+
+- Live provider smoke test from `/v1/speech/candidates` is still pending. The
+  automated tests use a fake speech delegate and do not call ElevenLabs.
+
+### Next
+
+- Run `git diff --check`.
+- Smoke-test `/v1/speech/candidates` against the running desktop app with a
+  saved ElevenLabs key.
+- Commit and push the Milestone 2 desktop pipeline work.
+
 ## 2026-05-13 MainWindow IDE Error Triage
 
 ### Changed

@@ -7,7 +7,7 @@ namespace CodeCompanionDesktop.Bridge;
 public sealed class BridgeSpeechQueue
 {
     private readonly object syncRoot = new();
-    private readonly Queue<string> requests = new();
+    private readonly Queue<QueuedSpeechRequest> requests = new();
     private readonly Func<string, Task> speakAsync;
     private readonly BridgeRuntimeState runtimeState;
     private bool isProcessing;
@@ -20,6 +20,11 @@ public sealed class BridgeSpeechQueue
 
     public bool TryEnqueue(string text, out int position)
     {
+        return TryEnqueue(text, null, out position);
+    }
+
+    public bool TryEnqueue(string text, Func<Exception?, Task>? completeAsync, out int position)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
 
         lock (syncRoot)
@@ -31,7 +36,7 @@ public sealed class BridgeSpeechQueue
                 return false;
             }
 
-            requests.Enqueue(text);
+            requests.Enqueue(new QueuedSpeechRequest(text, completeAsync));
             position = requests.Count;
             runtimeState.QueueSpeechRequest(requests.Count);
 
@@ -49,7 +54,7 @@ public sealed class BridgeSpeechQueue
     {
         while (true)
         {
-            string text;
+            QueuedSpeechRequest request;
             lock (syncRoot)
             {
                 if (requests.Count == 0)
@@ -59,7 +64,7 @@ public sealed class BridgeSpeechQueue
                     return;
                 }
 
-                text = requests.Dequeue();
+                request = requests.Dequeue();
                 runtimeState.DequeueSpeechRequest(requests.Count);
             }
 
@@ -69,7 +74,7 @@ public sealed class BridgeSpeechQueue
 
                 lock (syncRoot)
                 {
-                    requests.Enqueue(text);
+                    requests.Enqueue(request);
                     runtimeState.QueueSpeechRequest(requests.Count);
                 }
 
@@ -78,13 +83,23 @@ public sealed class BridgeSpeechQueue
 
             try
             {
-                await speakAsync(text);
+                await speakAsync(request.Text);
                 runtimeState.CompleteSpeaking();
+                await request.CompleteAsync(null);
             }
             catch (Exception ex)
             {
                 runtimeState.FailSpeaking(ex.Message);
+                await request.CompleteAsync(ex);
             }
+        }
+    }
+
+    private sealed record QueuedSpeechRequest(string Text, Func<Exception?, Task>? OnCompleteAsync)
+    {
+        public Task CompleteAsync(Exception? exception)
+        {
+            return OnCompleteAsync?.Invoke(exception) ?? Task.CompletedTask;
         }
     }
 }
