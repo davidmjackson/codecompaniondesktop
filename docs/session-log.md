@@ -4,6 +4,35 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Pairing Smoke Test
+
+### Current Milestone
+
+- Milestone 6: Pairing Without Persistent VS Code Secrets.
+
+### Verified
+
+- Built and installed the updated Desktop installer from
+  `artifacts\installer\CodeCompanionDesktopSetup-0.1.0.exe`.
+- Installed Code Companion Voice `0.0.46` into both Windows and WSL VS Code
+  extension hosts.
+- Confirmed Desktop bridge health at `http://127.0.0.1:47321/health`.
+- Opened a new VS Code window to avoid losing the active Codex chat.
+- Ran `Code Companion Voice: Open Panel` and confirmed the thin-client buttons.
+- Clicked `Desktop Test`; Desktop recorded the WSL VS Code client as pending in
+  the Client Pairing panel.
+- Approved client `31b62747-aac7-42f8-b0a0-22568dcb33e4` in Desktop.
+- Clicked `Desktop Test` again and heard speech through Code Companion Desktop.
+
+### Decision
+
+- Milestone 6 is verified end to end for WSL-hosted VS Code client pairing and
+  Desktop-owned speech playback.
+
+### Next
+
+- Continue to Milestone 8 cleanup unless another pairing polish item is needed.
+
 ## 2026-05-13 Voice Pairing Migration
 
 ### Current Milestone
