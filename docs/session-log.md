@@ -4,6 +4,31 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Windows GitHub CLI Path
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### Changed
+
+- Confirmed Windows GitHub CLI is installed at
+  `C:\Program Files\GitHub CLI\gh.exe`.
+- Added `C:\Program Files\GitHub CLI` to the Windows user PATH.
+- Updated `scripts/draft-github-release.ps1` to fall back to standard GitHub CLI
+  install locations when the current process PATH has not refreshed yet.
+
+### Verified
+
+- `C:\Program Files\GitHub CLI\gh.exe --version` reports `2.92.0`.
+- Windows GitHub CLI is not authenticated yet; `gh auth login` is still needed
+  before using `scripts\draft-github-release.ps1 -Create` from PowerShell.
+
+### Next
+
+- Authenticate Windows GitHub CLI when ready, or create the draft release from
+  the already authenticated WSL `gh` session.
+
 ## 2026-05-13 Desktop Release Package Script
 
 ### Current Milestone

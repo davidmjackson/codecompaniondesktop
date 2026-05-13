@@ -18,6 +18,21 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 
+function Resolve-GitHubCliPath {
+    $ghCommand = Get-Command gh -ErrorAction SilentlyContinue
+    if ($ghCommand) {
+        return $ghCommand.Source
+    }
+
+    $candidatePaths = @(
+        (Join-Path $env:ProgramFiles "GitHub CLI\gh.exe"),
+        (Join-Path ${env:ProgramFiles(x86)} "GitHub CLI\gh.exe"),
+        (Join-Path $env:LOCALAPPDATA "Programs\GitHub CLI\gh.exe")
+    ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+    return $candidatePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+}
+
 if ([string]::IsNullOrWhiteSpace($InstallerOutputPath)) {
     $InstallerOutputPath = Join-Path $repoRoot "artifacts\installer"
 }
@@ -80,12 +95,12 @@ if (-not $Create.IsPresent) {
     return
 }
 
-$ghCommand = Get-Command gh -ErrorAction SilentlyContinue
-if (-not $ghCommand) {
+$ghPath = Resolve-GitHubCliPath
+if ([string]::IsNullOrWhiteSpace($ghPath) -or -not (Test-Path $ghPath)) {
     throw "Unable to find gh. Install GitHub CLI or add gh to PATH."
 }
 
-$process = Start-Process -FilePath $ghCommand.Source -ArgumentList $releaseArgs -NoNewWindow -Wait -PassThru
+$process = Start-Process -FilePath $ghPath -ArgumentList $releaseArgs -NoNewWindow -Wait -PassThru
 if ($process.ExitCode -ne 0) {
     throw "gh release create failed with exit code $($process.ExitCode)."
 }
