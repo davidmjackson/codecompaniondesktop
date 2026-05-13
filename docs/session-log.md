@@ -4,6 +4,31 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Fresh Install Documentation Refresh
+
+### Current Milestone
+
+- Milestone 4A: Windows-Owned Candidate Ingress.
+
+### Changed
+
+- Updated the Desktop README install-for-daily-use flow to include the current
+  VS Code thin-client panel verification and `Desktop Test` bridge check.
+
+### Decision
+
+- A fresh install is not considered paired until the extension panel shows the
+  Desktop bridge thin-client controls and Desktop speaks a candidate test.
+
+### Verified
+
+- `git diff --check`
+
+### Next
+
+- Use the install checklist to validate the Windows app installer path and the
+  VS Code extension install path from scratch.
+
 ## 2026-05-13 Voice Check-In Speech Hint Contract
 
 ### Current Milestone

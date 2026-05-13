@@ -158,10 +158,14 @@ Preferred path after building an installer:
 5. Use `Copy Token` in the Local Bridge section.
 6. In VS Code, run `Code Companion Voice: Set Desktop Bridge Token` and paste the
    token.
-7. In the Startup section, enable `Start hidden to tray` if you want the app to
+7. Reload the VS Code window, run `Code Companion Voice: Open Panel`, and confirm
+   the panel shows `Enable Voice`, `Mute`, and `Desktop Test`.
+8. Click `Desktop Test` and confirm Code Companion Desktop speaks the test
+   phrase.
+9. In the Startup section, enable `Start hidden to tray` if you want the app to
    stay out of the way after launch.
-8. Enable `Start with Windows sign-in` from the installed app.
-9. Click `Refresh Diagnostics` and confirm the registered executable path points
+10. Enable `Start with Windows sign-in` from the installed app.
+11. Click `Refresh Diagnostics` and confirm the registered executable path points
    to `%LOCALAPPDATA%\Programs\Code Companion Desktop\CodeCompanionDesktop.exe`.
 
 For developer testing, the published folder can still be used as a portable
