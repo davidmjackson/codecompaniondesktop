@@ -4,6 +4,37 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-13 Project Registry Alias Management
+
+### Current Milestone
+
+- Milestone 5: Project Identity.
+
+### Changed
+
+- Added Project Registry controls for adding and removing root aliases by
+  stable `projectId`.
+- Added Desktop runtime methods to update aliases and refresh recent project
+  diagnostics after registry edits.
+- Added `ProjectRegistryStore` support for explicit root alias add/remove.
+- Added test coverage for adding and removing an alias without splitting the
+  project identity.
+
+### Decision
+
+- Alias management is scoped to observed root aliases for existing projects.
+  Creating and merging project identities remains out of scope for this slice.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln`
+- `dotnet test CodeCompanionDesktop.sln --no-build`; 21 tests passed.
+- `git diff --check`
+
+### Next
+
+- Add history views grouped by project ID to close Milestone 5 acceptance.
+
 ## 2026-05-13 Project Registry UI
 
 ### Current Milestone

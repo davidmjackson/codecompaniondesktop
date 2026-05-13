@@ -190,8 +190,35 @@
                                     Content="Copy"
                                     Click="CopyProjectRegistryButton_Click" />
                         </WrapPanel>
+                        <TextBlock Text="Project ID"
+                                   Margin="0,2,0,0"
+                                   Style="{StaticResource MutedTextStyle}" />
+                        <TextBox x:Name="ProjectAliasProjectIdTextBox"
+                                 Height="32"
+                                 Margin="0,4,0,0" />
+                        <TextBlock Text="Root alias"
+                                   Margin="0,10,0,0"
+                                   Style="{StaticResource MutedTextStyle}" />
+                        <TextBox x:Name="ProjectAliasRootTextBox"
+                                 Height="32"
+                                 Margin="0,4,0,0" />
+                        <WrapPanel Margin="0,12,0,0">
+                            <Button MinWidth="128"
+                                    Height="32"
+                                    Margin="0,0,10,10"
+                                    Content="Add Alias"
+                                    Click="AddProjectAliasButton_Click" />
+                            <Button MinWidth="128"
+                                    Height="32"
+                                    Margin="0,0,10,10"
+                                    Content="Remove Alias"
+                                    Click="RemoveProjectAliasButton_Click" />
+                        </WrapPanel>
+                        <TextBlock x:Name="ProjectRegistryStatusText"
+                                   Text="Project registry loaded."
+                                   Style="{StaticResource MutedTextStyle}" />
                         <TextBox x:Name="ProjectRegistryTextBox"
-                                 Margin="0,0,0,0"
+                                 Margin="0,12,0,0"
                                  MinHeight="156"
                                  Padding="8"
                                  FontFamily="Consolas"

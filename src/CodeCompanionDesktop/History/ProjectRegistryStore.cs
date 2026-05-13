@@ -111,6 +111,48 @@ public sealed class ProjectRegistryStore
             .ToList();
     }
 
+    public bool TryAddRootAlias(string projectId, string root)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(root);
+
+        var snapshot = Load();
+        var record = FindProject(snapshot, projectId);
+        if (record is null)
+        {
+            return false;
+        }
+
+        AddDistinct(record.ObservedRoots, [root]);
+        record.LastSeenUtc = DateTimeOffset.UtcNow;
+        Save(snapshot);
+        return true;
+    }
+
+    public bool TryRemoveRootAlias(string projectId, string root)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(root);
+
+        var snapshot = Load();
+        var record = FindProject(snapshot, projectId);
+        if (record is null)
+        {
+            return false;
+        }
+
+        var removed = record.ObservedRoots.RemoveAll(
+            existing => string.Equals(existing, root.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (removed == 0)
+        {
+            return false;
+        }
+
+        record.LastSeenUtc = DateTimeOffset.UtcNow;
+        Save(snapshot);
+        return true;
+    }
+
     public void Save(ProjectRegistrySnapshot snapshot)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
@@ -178,6 +220,13 @@ public sealed class ProjectRegistryStore
                 target.Add(trimmed);
             }
         }
+    }
+
+    private static ProjectRegistryRecord? FindProject(ProjectRegistrySnapshot snapshot, string projectId)
+    {
+        var normalizedProjectId = projectId.Trim();
+        return snapshot.Projects.FirstOrDefault(
+            project => string.Equals(project.ProjectId, normalizedProjectId, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string CreateDefaultPath()

@@ -382,6 +382,16 @@ public partial class MainWindow : Window
         }
     }
 
+    private void AddProjectAliasButton_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateProjectAlias(isAdd: true);
+    }
+
+    private void RemoveProjectAliasButton_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateProjectAlias(isAdd: false);
+    }
+
     private void QueueBridgeSpeechCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         if (isInitializing)
@@ -499,6 +509,35 @@ public partial class MainWindow : Window
             : string.Join(
                 $"{Environment.NewLine}{Environment.NewLine}",
                 projectDetails);
+    }
+
+    private void UpdateProjectAlias(bool isAdd)
+    {
+        var projectId = ProjectAliasProjectIdTextBox.Text.Trim();
+        var root = ProjectAliasRootTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(projectId) || string.IsNullOrWhiteSpace(root))
+        {
+            ProjectRegistryStatusText.Text = "Enter a project ID and root alias.";
+            return;
+        }
+
+        var updated = isAdd
+            ? bridgeRuntimeState.TryAddProjectRootAlias(projectId, root)
+            : bridgeRuntimeState.TryRemoveProjectRootAlias(projectId, root);
+        if (!updated)
+        {
+            ProjectRegistryStatusText.Text = isAdd
+                ? $"Alias was not added. Project not found: {projectId}."
+                : $"Alias was not removed. Project or alias not found: {projectId}.";
+            RefreshProjectRegistry();
+            return;
+        }
+
+        ProjectRegistryStatusText.Text = isAdd
+            ? $"Added root alias for {projectId}."
+            : $"Removed root alias for {projectId}.";
+        RefreshSpeechDiagnostics();
+        RefreshProjectRegistry();
     }
 
     private string GetProviderKeyStatus()

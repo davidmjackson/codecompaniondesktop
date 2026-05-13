@@ -132,6 +132,36 @@ public sealed class BridgeRuntimeState
         }
     }
 
+    public bool TryAddProjectRootAlias(string projectId, string root)
+    {
+        lock (syncRoot)
+        {
+            if (projectRegistryStore?.TryAddRootAlias(projectId, root) != true)
+            {
+                return false;
+            }
+
+            ReloadRecentProjects();
+            LastStatus = $"Project root alias added for {projectId.Trim()}.";
+            return true;
+        }
+    }
+
+    public bool TryRemoveProjectRootAlias(string projectId, string root)
+    {
+        lock (syncRoot)
+        {
+            if (projectRegistryStore?.TryRemoveRootAlias(projectId, root) != true)
+            {
+                return false;
+            }
+
+            ReloadRecentProjects();
+            LastStatus = $"Project root alias removed for {projectId.Trim()}.";
+            return true;
+        }
+    }
+
     public void ConfigureQueue(bool isEnabled, int maxQueuedRequests)
     {
         lock (syncRoot)
@@ -349,6 +379,17 @@ public sealed class BridgeRuntimeState
         {
             recentProjects.RemoveRange(MaxRecentProjects, recentProjects.Count - MaxRecentProjects);
         }
+    }
+
+    private void ReloadRecentProjects()
+    {
+        if (projectRegistryStore is null)
+        {
+            return;
+        }
+
+        recentProjects.Clear();
+        recentProjects.AddRange(projectRegistryStore.LoadRecentSummaries(MaxRecentProjects));
     }
 
     private void SaveHistory()

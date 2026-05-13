@@ -78,4 +78,38 @@ public sealed class BridgeRuntimeStateTests
             directory.Delete(recursive: true);
         }
     }
+
+    [Fact]
+    public void ProjectRegistryAliasManagementUpdatesObservedRoots()
+    {
+        var directory = Directory.CreateTempSubdirectory("code-companion-project-aliases-");
+        try
+        {
+            var registryPath = Path.Combine(directory.FullName, "project-registry.json");
+            var registry = new ProjectRegistryStore(registryPath);
+            var state = new BridgeRuntimeState(projectRegistryStore: registry);
+            var client = new BridgeClient("test-client", "Code Companion Voice", "0.0.0", "windows", "windows");
+            var workspace = new BridgeWorkspace(
+                "codecompaniondesktop",
+                "Code Companion Desktop",
+                ["D:\\Development\\CodeCompanionDesktop"]);
+
+            state.RecordClientSeen(client, workspace);
+
+            Assert.True(state.TryAddProjectRootAlias("codecompaniondesktop", "/mnt/d/Development/CodeCompanionDesktop"));
+            Assert.Contains(
+                registry.Load().Projects.Single().ObservedRoots,
+                root => root == "/mnt/d/Development/CodeCompanionDesktop");
+
+            Assert.True(state.TryRemoveProjectRootAlias("codecompaniondesktop", "/mnt/d/Development/CodeCompanionDesktop"));
+            Assert.DoesNotContain(
+                registry.Load().Projects.Single().ObservedRoots,
+                root => root == "/mnt/d/Development/CodeCompanionDesktop");
+            Assert.False(state.TryAddProjectRootAlias("missing-project", "D:\\Development\\Missing"));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
 }
