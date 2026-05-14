@@ -738,6 +738,8 @@ Scope:
 - Publish Code Companion Desktop through GitHub Releases.
 - Prepare Code Companion Voice Marketplace metadata.
 - Remove development-only extension package metadata.
+- Improve Desktop Client Pairing UX so a pending client can be approved without
+  manually copying its client ID.
 - Publish Code Companion Voice through the VS Code Marketplace.
 - Run fresh-install verification from the published sources, not local
   development artifacts.

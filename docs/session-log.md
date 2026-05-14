@@ -4,6 +4,32 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-14 Client Pairing UX Follow-Up
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### Observed
+
+- During Code Companion Voice `0.0.51` smoke testing, the new Marketplace
+  publisher ID created a new VS Code client identity.
+- Desktop correctly marked the new client as `pending`, but approving it
+  required manually finding and pasting the client ID into the Client Pairing
+  field.
+
+### Decision
+
+- Added a Milestone 9 release-readiness polish item to improve Desktop Client
+  Pairing UX so pending clients can be approved without manually copying the
+  client ID.
+
+### Next
+
+- Implement a smoother Client Pairing approval flow before publishing, for
+  example selecting a pending client from the diagnostics list or adding an
+  `Approve Pending Client` action.
+
 ## 2026-05-14 Communication Preference Clarified
 
 ### Current Milestone
