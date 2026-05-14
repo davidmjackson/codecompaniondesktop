@@ -89,14 +89,8 @@ public sealed class ClientTrustStore
     public bool TrySetAuthorization(string clientId, string authorization)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(clientId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(authorization);
 
-        var normalizedAuthorization = authorization.Trim().ToLowerInvariant();
-        if (normalizedAuthorization is not (Pending or Allowed or Denied))
-        {
-            throw new ArgumentException("Unsupported client authorization.", nameof(authorization));
-        }
-
+        var normalizedAuthorization = NormalizeAuthorization(authorization);
         var snapshot = Load();
         var record = FindClient(snapshot, clientId);
         if (record is null)
@@ -105,6 +99,27 @@ public sealed class ClientTrustStore
         }
 
         record.Authorization = normalizedAuthorization;
+        Save(snapshot);
+        return true;
+    }
+
+    public bool TrySetMostRecentPendingAuthorization(string authorization, out ClientTrustRecord? updatedClient)
+    {
+        var normalizedAuthorization = NormalizeAuthorization(authorization);
+        var snapshot = Load();
+        var record = snapshot.Clients
+            .Where(client => string.Equals(client.Authorization, Pending, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(client => client.LastSeenUtc)
+            .ThenBy(client => client.ClientId, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+        if (record is null)
+        {
+            updatedClient = null;
+            return false;
+        }
+
+        record.Authorization = normalizedAuthorization;
+        updatedClient = record;
         Save(snapshot);
         return true;
     }
@@ -169,6 +184,19 @@ public sealed class ClientTrustStore
             Denied => 2,
             _ => 3
         };
+    }
+
+    private static string NormalizeAuthorization(string authorization)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(authorization);
+
+        var normalizedAuthorization = authorization.Trim().ToLowerInvariant();
+        if (normalizedAuthorization is not (Pending or Allowed or Denied))
+        {
+            throw new ArgumentException("Unsupported client authorization.", nameof(authorization));
+        }
+
+        return normalizedAuthorization;
     }
 
     private static string CreateDefaultPath()

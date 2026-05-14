@@ -49,4 +49,83 @@ public sealed class ClientTrustStoreTests
             directory.Delete(recursive: true);
         }
     }
+
+    [Fact]
+    public void MostRecentPendingAuthorizationUpdatesLatestPendingClient()
+    {
+        var directory = Directory.CreateTempSubdirectory("code-companion-client-trust-");
+        try
+        {
+            var store = new ClientTrustStore(Path.Combine(directory.FullName, "client-trust.json"));
+            store.Save(new ClientTrustSnapshot
+            {
+                Clients =
+                [
+                    new ClientTrustRecord
+                    {
+                        ClientId = "already-approved",
+                        Name = "Code Companion Voice",
+                        Authorization = ClientTrustStore.Allowed,
+                        LastSeenUtc = DateTimeOffset.Parse("2026-05-14T09:00:00Z")
+                    },
+                    new ClientTrustRecord
+                    {
+                        ClientId = "older-pending",
+                        Name = "Code Companion Voice",
+                        Authorization = ClientTrustStore.Pending,
+                        LastSeenUtc = DateTimeOffset.Parse("2026-05-14T07:00:00Z")
+                    },
+                    new ClientTrustRecord
+                    {
+                        ClientId = "latest-pending",
+                        Name = "Code Companion Voice",
+                        Authorization = ClientTrustStore.Pending,
+                        LastSeenUtc = DateTimeOffset.Parse("2026-05-14T08:00:00Z")
+                    }
+                ]
+            });
+
+            Assert.True(store.TrySetMostRecentPendingAuthorization(ClientTrustStore.Allowed, out var updatedClient));
+
+            Assert.NotNull(updatedClient);
+            Assert.Equal("latest-pending", updatedClient.ClientId);
+            var clients = store.Load().Clients.ToDictionary(client => client.ClientId);
+            Assert.Equal(ClientTrustStore.Allowed, clients["latest-pending"].Authorization);
+            Assert.Equal(ClientTrustStore.Pending, clients["older-pending"].Authorization);
+            Assert.Equal(ClientTrustStore.Allowed, clients["already-approved"].Authorization);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void MostRecentPendingAuthorizationReturnsFalseWhenNoClientIsPending()
+    {
+        var directory = Directory.CreateTempSubdirectory("code-companion-client-trust-");
+        try
+        {
+            var store = new ClientTrustStore(Path.Combine(directory.FullName, "client-trust.json"));
+            store.Save(new ClientTrustSnapshot
+            {
+                Clients =
+                [
+                    new ClientTrustRecord
+                    {
+                        ClientId = "already-approved",
+                        Authorization = ClientTrustStore.Allowed,
+                        LastSeenUtc = DateTimeOffset.Parse("2026-05-14T09:00:00Z")
+                    }
+                ]
+            });
+
+            Assert.False(store.TrySetMostRecentPendingAuthorization(ClientTrustStore.Allowed, out var updatedClient));
+            Assert.Null(updatedClient);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
 }

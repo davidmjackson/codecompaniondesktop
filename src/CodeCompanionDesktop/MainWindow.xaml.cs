@@ -434,6 +434,20 @@ public partial class MainWindow : Window
         UpdateClientPairing(ClientTrustStore.Allowed);
     }
 
+    private void ApprovePendingClientPairingButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!clientTrustStore.TrySetMostRecentPendingAuthorization(ClientTrustStore.Allowed, out var client))
+        {
+            ClientPairingStatusText.Text = "No pending clients to approve.";
+            RefreshClientPairing();
+            return;
+        }
+
+        ClientPairingClientIdTextBox.Text = client.ClientId;
+        ClientPairingStatusText.Text = $"Approved pending client {client.Name} ({client.ClientId}).";
+        RefreshClientPairing();
+    }
+
     private void DenyClientPairingButton_Click(object sender, RoutedEventArgs e)
     {
         UpdateClientPairing(ClientTrustStore.Denied);
