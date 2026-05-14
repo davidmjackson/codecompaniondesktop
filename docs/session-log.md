@@ -4,6 +4,57 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-14 Private Field-Test Build
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+
+### Decision
+
+- Visual Studio Marketplace publication for Code Companion Voice is deferred
+  because publisher account/token setup requires additional Azure/account
+  configuration.
+- The immediate path is local field testing with:
+  - Code Companion Desktop installed from a private Windows installer.
+  - Code Companion Voice installed locally as a VSIX.
+- The Desktop installer can be backed up privately to cloud storage alongside
+  the source repositories.
+
+### Built
+
+- Rebuilt private Desktop `0.1.2` field-test package.
+- Installer:
+  `D:\Development\CodeCompanionDesktop\artifacts\installer\CodeCompanionDesktopSetup-0.1.2.exe`
+- Checksum file:
+  `D:\Development\CodeCompanionDesktop\artifacts\checksums\CodeCompanionDesktopSetup-0.1.2.exe.sha256`
+- Release notes:
+  `D:\Development\CodeCompanionDesktop\artifacts\release-notes\desktop-0.1.2.md`
+- SHA256:
+  `a29ea8bef42d2c8327083f3a7b3af8bf8318b4905fd4f9df1ab7d4cf5450cc7b`
+
+### Verified
+
+- Stopped the running published Desktop app before rebuilding.
+- Release build succeeded with 0 warnings and 0 errors.
+- `dotnet test CodeCompanionDesktop.sln --configuration Release --no-build`
+  returned successfully.
+- `git diff --check` passed.
+- `scripts/build-release-package.ps1 -AppVersion 0.1.2 -SkipChecks` rebuilt
+  the installer, checksum, and private release notes after the separate checks.
+- Published executable reports:
+  - `ProductVersion`: `0.1.2+4d4cc6e338d70a0e14c3d151e09a053b8baf96c5`
+  - `FileVersion`: `0.1.2.0`
+- Restarted the published executable and confirmed `/health` returned
+  `appVersion: 0.1.2`.
+
+### Next
+
+- Back up the installer, checksum, release notes, Desktop repository, and Voice
+  repository to private cloud storage.
+- Continue local field testing before revisiting public Marketplace or GitHub
+  release publication.
+
 ## 2026-05-14 Desktop 0.1.2 Release Package
 
 ### Current Milestone
