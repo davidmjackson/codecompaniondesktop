@@ -4,6 +4,28 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-14 Communication Preference Clarified
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### Changed
+
+- Updated `AGENTS.md` so spoken/text summaries are the default after every
+  major milestone slice, important decision, or blocking issue.
+
+### Verified
+
+- User confirmed Desktop Test speech was working before this preference update.
+
+### Next
+
+- Continue using concise progress updates while working.
+- For significant milestones, decisions, or issues, send a short spoken summary
+  through Code Companion Desktop when the app is running and include the same
+  point in the final text summary.
+
 ## 2026-05-14 Post-Reboot CLR Recovery Verified
 
 ### Current Milestone
