@@ -4,6 +4,50 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-14 Windows PowerShell CLR Failure
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### Current State
+
+- Branch: `feature/environment-agnostic-speech-architecture`.
+- Working tree was clean before this troubleshooting entry.
+- Code Companion Desktop was running as `CodeCompanionDesktop.exe` PID `31460`.
+
+### Diagnosed
+
+- Windows PowerShell 5.1 fails immediately with:
+  `Starting the CLR failed with HRESULT 80004005`.
+- Windows Application logs show multiple .NET Framework 4.x startup crashes
+  against `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\clr.dll`.
+- Affected startup-time processes included Windows PowerShell, ASUS/ROG
+  services, Intel XTU, and `taskhostw.exe`.
+- Windows `.NET 8` SDK/runtime is healthy; the issue appears isolated to
+  Windows-owned .NET Framework 4.x/CLR startup.
+
+### Changed
+
+- Installed PowerShell 7.6.1 with `winget` as a working `pwsh.exe` fallback.
+
+### Verified
+
+- `pwsh.exe -NoLogo -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'`
+  returns `7.6.1`.
+- `DISM /Online /Cleanup-Image /RestoreHealth` completed successfully.
+- `sfc /scannow` completed with:
+  `Windows Resource Protection did not find any integrity violations.`
+- Windows PowerShell 5.1 still fails before reboot with CLR error `80004005`.
+
+### Next
+
+- Reboot Windows.
+- After reboot, retest Windows PowerShell 5.1:
+  `powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$PSVersionTable.PSVersion.ToString()"`
+- If Windows PowerShell still fails, continue with official .NET Framework
+  repair/reinstall or Windows feature servicing for .NET Framework 4.x.
+
 ## 2026-05-13 End Of Day Handover
 
 ### Current Milestone
