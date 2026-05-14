@@ -17,12 +17,14 @@ diagnostics available when needed.
 
 ## Proposed Window Structure
 
-Use a tabbed main window:
+Use a tabbed main window for the first implementation slice:
 
 - `Status`
-- `Settings`
 - `Advanced`
 - `Notes`
+
+Normal setup controls can initially live in `Status`. If that becomes too
+dense, split a dedicated `Settings` tab out later.
 
 The app should use fixed normal dimensions and should not allow full-screen or
 maximize behavior. Resizing can stay disabled unless a specific accessibility or
@@ -53,9 +55,11 @@ Recommended copy:
 - Not healthy: list the concrete fix, for example `Save an ElevenLabs API key`
   or `Approve the pending VS Code client`.
 
-## Settings Tab
+## Settings Area
 
-Use accordion-style sections with expand/collapse affordances.
+For the first implementation slice, keep normal setup controls in the `Status`
+tab beneath the readiness summary. Later, split them into a dedicated
+accordion-style `Settings` tab if the Status tab becomes too dense.
 
 Recommended default order:
 
@@ -206,8 +210,7 @@ The user requested text and images. Implementation options:
 
 ## Open Decisions
 
-- Should this UX refresh block the first public release, or become the next
-  milestone after release packaging?
+- Resolved: this UX refresh is pulled forward before completing Milestone 9.
 - Should app resizing be completely disabled, or should resizing be constrained
   to a fixed minimum/maximum for accessibility?
 - Should persisted speech history be retained by default, shortened, or made

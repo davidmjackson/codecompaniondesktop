@@ -2,10 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Code Companion Desktop"
-        Width="640"
-        Height="680"
-        MinWidth="420"
-        MinHeight="520"
+        Width="760"
+        Height="760"
+        ResizeMode="CanMinimize"
         Icon="Assets/app.png"
         WindowStartupLocation="CenterScreen">
     <Grid Margin="24">
@@ -52,363 +51,487 @@
             </Grid>
         </Border>
 
-        <ScrollViewer Grid.Row="1"
-                      Margin="0,18,0,20"
-                      VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <Border Padding="18"
-                        Style="{StaticResource CardBorderStyle}">
+        <TabControl Grid.Row="1"
+                    Margin="0,18,0,20">
+            <TabItem Header="Status">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              Padding="0,14,0,0">
                     <StackPanel>
-                        <TextBlock Text="Status"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <TextBlock x:Name="StatusText"
-                                   Margin="0,8,0,0"
-                                   Text="Ready. Tray icon is active."
-                                   TextWrapping="Wrap" />
-                        <TextBlock x:Name="AudioPathText"
-                                   Margin="0,12,0,0"
-                                   Style="{StaticResource MutedTextStyle}" />
-                    </StackPanel>
-                </Border>
+                        <Border Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Width="46"
+                                        Height="46"
+                                        BorderBrush="{StaticResource AppBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Background="{StaticResource AppSurfaceAltBrush}">
+                                    <TextBlock x:Name="ReadinessIconText"
+                                               Text="?"
+                                               FontSize="24"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                </Border>
+                                <StackPanel Grid.Column="1"
+                                            Margin="14,0,0,0">
+                                    <TextBlock x:Name="ReadinessSummaryText"
+                                               Text="Checking Code Companion status..."
+                                               FontSize="18"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock x:Name="ReadinessDetailsText"
+                                               Margin="0,8,0,0"
+                                               Style="{StaticResource MutedTextStyle}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
 
-                <Border Margin="0,18,0,0"
-                        Padding="18"
-                        Style="{StaticResource CardBorderStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Speech Provider"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <TextBlock Text="Provider"
-                                   Margin="0,10,0,0"
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <ComboBox x:Name="SpeechProviderComboBox"
-                                  Height="32"
-                                  Margin="0,4,0,0">
-                            <ComboBoxItem Content="ElevenLabs" />
-                        </ComboBox>
-                        <TextBlock Text="ElevenLabs voice ID"
-                                   Margin="0,10,0,0"
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBox x:Name="ElevenLabsVoiceIdTextBox"
-                                 Height="32"
-                                 Margin="0,4,0,0" />
-                        <TextBlock Text="ElevenLabs model ID"
-                                   Margin="0,10,0,0"
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBox x:Name="ElevenLabsModelIdTextBox"
-                                 Height="32"
-                                 Margin="0,4,0,0" />
-                        <TextBlock Text="ElevenLabs output format"
-                                   Margin="0,10,0,0"
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBox x:Name="ElevenLabsOutputFormatTextBox"
-                                 Height="32"
-                                 Margin="0,4,0,0" />
-                        <WrapPanel Margin="0,12,0,0">
-                            <Button MinWidth="156"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Save Provider"
-                                    Click="SaveProviderSettingsButton_Click" />
-                        </WrapPanel>
-                        <TextBlock x:Name="ProviderSettingsStatusText"
-                                   Text="Provider settings loaded."
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBlock Text="ElevenLabs API Key"
-                                   Margin="0,16,0,0"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <PasswordBox x:Name="ElevenLabsApiKeyBox"
-                                     Margin="0,10,0,0"
-                                     Height="32" />
-                        <WrapPanel Margin="0,12,0,0">
-                            <Button MinWidth="108"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Save Key"
-                                    Click="SaveApiKeyButton_Click" />
-                            <Button MinWidth="108"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Load Key"
-                                    Click="LoadApiKeyButton_Click" />
-                            <Button MinWidth="108"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Clear Key"
-                                    Click="ClearApiKeyButton_Click" />
-                        </WrapPanel>
-                        <TextBlock x:Name="CredentialStatusText"
-                                   Text="No key loaded."
-                                   Style="{StaticResource MutedTextStyle}" />
-                    </StackPanel>
-                </Border>
+                        <Border Margin="0,18,0,0"
+                                Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Status"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <TextBlock x:Name="StatusText"
+                                           Margin="0,8,0,0"
+                                           Text="Ready. Tray icon is active."
+                                           TextWrapping="Wrap" />
+                                <TextBlock x:Name="AudioPathText"
+                                           Margin="0,12,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+                        </Border>
 
-                <Border Margin="0,18,0,0"
-                        Padding="18"
-                        Style="{StaticResource CardBorderStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Speech Diagnostics"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <WrapPanel Margin="0,10,0,0">
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Refresh"
-                                    Click="RefreshSpeechDiagnosticsButton_Click" />
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Copy"
-                                    Click="CopySpeechDiagnosticsButton_Click" />
-                        </WrapPanel>
-                        <TextBox x:Name="SpeechDiagnosticsTextBox"
-                                 Margin="0,0,0,0"
-                                 MinHeight="156"
-                                 Padding="8"
-                                 FontFamily="Consolas"
-                                 FontSize="12"
-                                 IsReadOnly="True"
-                                 TextWrapping="Wrap"
-                                 VerticalScrollBarVisibility="Auto" />
-                    </StackPanel>
-                </Border>
+                        <Border Margin="0,18,0,0"
+                                Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Startup"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <TextBlock Text="Controls whether Code Companion Desktop is ready before VS Code opens."
+                                           Margin="0,6,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <CheckBox x:Name="StartHiddenToTrayCheckBox"
+                                          Margin="0,10,0,0"
+                                          Content="Start hidden to tray"
+                                          Checked="StartHiddenToTrayCheckBox_Changed"
+                                          Unchecked="StartHiddenToTrayCheckBox_Changed" />
+                                <CheckBox x:Name="StartWithWindowsCheckBox"
+                                          Margin="0,10,0,0"
+                                          Content="Start with Windows sign-in"
+                                          Checked="StartWithWindowsCheckBox_Changed"
+                                          Unchecked="StartWithWindowsCheckBox_Changed" />
+                                <TextBlock x:Name="SettingsStatusText"
+                                           Margin="0,10,0,0"
+                                           Text="Startup preference loaded."
+                                           Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+                        </Border>
 
-                <Border Margin="0,18,0,0"
-                        Padding="18"
-                        Style="{StaticResource CardBorderStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Project Registry"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <WrapPanel Margin="0,10,0,0">
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Refresh"
-                                    Click="RefreshProjectRegistryButton_Click" />
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Copy"
-                                    Click="CopyProjectRegistryButton_Click" />
-                        </WrapPanel>
-                        <TextBlock Text="Project ID"
-                                   Margin="0,2,0,0"
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBox x:Name="ProjectAliasProjectIdTextBox"
-                                 Height="32"
-                                 Margin="0,4,0,0" />
-                        <TextBlock Text="Root alias"
-                                   Margin="0,10,0,0"
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBox x:Name="ProjectAliasRootTextBox"
-                                 Height="32"
-                                 Margin="0,4,0,0" />
-                        <WrapPanel Margin="0,12,0,0">
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Add Alias"
-                                    Click="AddProjectAliasButton_Click" />
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Remove Alias"
-                                    Click="RemoveProjectAliasButton_Click" />
-                        </WrapPanel>
-                        <TextBlock x:Name="ProjectRegistryStatusText"
-                                   Text="Project registry loaded."
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBox x:Name="ProjectRegistryTextBox"
-                                 Margin="0,12,0,0"
-                                 MinHeight="156"
-                                 Padding="8"
-                                 FontFamily="Consolas"
-                                 FontSize="12"
-                                 IsReadOnly="True"
-                                 TextWrapping="Wrap"
-                                 VerticalScrollBarVisibility="Auto" />
-                    </StackPanel>
-                </Border>
+                        <Border Margin="0,18,0,0"
+                                Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Speech Provider"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <TextBlock Text="Provider"
+                                           Margin="0,10,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <ComboBox x:Name="SpeechProviderComboBox"
+                                          Height="32"
+                                          Margin="0,4,0,0">
+                                    <ComboBoxItem Content="ElevenLabs" />
+                                </ComboBox>
+                                <TextBlock Text="ElevenLabs voice ID"
+                                           Margin="0,10,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBox x:Name="ElevenLabsVoiceIdTextBox"
+                                         Height="32"
+                                         Margin="0,4,0,0" />
+                                <TextBlock Text="ElevenLabs model ID"
+                                           Margin="0,10,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBox x:Name="ElevenLabsModelIdTextBox"
+                                         Height="32"
+                                         Margin="0,4,0,0" />
+                                <TextBlock Text="ElevenLabs output format"
+                                           Margin="0,10,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBox x:Name="ElevenLabsOutputFormatTextBox"
+                                         Height="32"
+                                         Margin="0,4,0,0" />
+                                <WrapPanel Margin="0,12,0,0">
+                                    <Button MinWidth="156"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Save Provider"
+                                            Click="SaveProviderSettingsButton_Click" />
+                                </WrapPanel>
+                                <TextBlock x:Name="ProviderSettingsStatusText"
+                                           Text="Provider settings loaded."
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBlock Text="ElevenLabs API Key"
+                                           Margin="0,16,0,0"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <PasswordBox x:Name="ElevenLabsApiKeyBox"
+                                             Margin="0,10,0,0"
+                                             Height="32" />
+                                <WrapPanel Margin="0,12,0,0">
+                                    <Button MinWidth="108"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Save Key"
+                                            Click="SaveApiKeyButton_Click" />
+                                    <Button MinWidth="108"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Load Key"
+                                            Click="LoadApiKeyButton_Click" />
+                                    <Button MinWidth="108"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Clear Key"
+                                            Click="ClearApiKeyButton_Click" />
+                                </WrapPanel>
+                                <TextBlock x:Name="CredentialStatusText"
+                                           Text="No key loaded."
+                                           Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+                        </Border>
 
-                <Border Margin="0,18,0,0"
-                        Padding="18"
-                        Style="{StaticResource CardBorderStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Project Speech History"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <WrapPanel Margin="0,10,0,0">
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Refresh"
-                                    Click="RefreshProjectSpeechHistoryButton_Click" />
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Copy"
-                                    Click="CopyProjectSpeechHistoryButton_Click" />
-                        </WrapPanel>
-                        <TextBox x:Name="ProjectSpeechHistoryTextBox"
-                                 Margin="0,0,0,0"
-                                 MinHeight="156"
-                                 Padding="8"
-                                 FontFamily="Consolas"
-                                 FontSize="12"
-                                 IsReadOnly="True"
-                                 TextWrapping="Wrap"
-                                 VerticalScrollBarVisibility="Auto" />
-                    </StackPanel>
-                </Border>
+                        <Border Margin="0,18,0,0"
+                                Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Client Pairing"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <TextBlock Text="Approves VS Code clients so they can send speech candidates to Desktop."
+                                           Margin="0,6,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <WrapPanel Margin="0,10,0,0">
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Refresh"
+                                            Click="RefreshClientPairingButton_Click" />
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Copy"
+                                            Click="CopyClientPairingButton_Click" />
+                                </WrapPanel>
+                                <TextBlock Text="Client ID"
+                                           Margin="0,2,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBox x:Name="ClientPairingClientIdTextBox"
+                                         Height="32"
+                                         Margin="0,4,0,0" />
+                                <WrapPanel Margin="0,12,0,0">
+                                    <Button MinWidth="154"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Approve Pending"
+                                            Click="ApprovePendingClientPairingButton_Click" />
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Approve"
+                                            Click="ApproveClientPairingButton_Click" />
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Deny"
+                                            Click="DenyClientPairingButton_Click" />
+                                </WrapPanel>
+                                <TextBlock x:Name="ClientPairingStatusText"
+                                           Text="Client pairing loaded."
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBox x:Name="ClientPairingTextBox"
+                                         Margin="0,12,0,0"
+                                         MinHeight="132"
+                                         Padding="8"
+                                         FontFamily="Consolas"
+                                         FontSize="12"
+                                         IsReadOnly="True"
+                                         TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto" />
+                            </StackPanel>
+                        </Border>
 
-                <Border Margin="0,18,0,0"
-                        Padding="18"
-                        Style="{StaticResource CardBorderStyle}">
+                        <Border Margin="0,18,0,0"
+                                Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Local Bridge"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <TextBlock Text="The local bridge receives approved speech requests from Code Companion Voice."
+                                           Margin="0,6,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBlock x:Name="BridgeStatusText"
+                                           Margin="0,8,0,0"
+                                           Text="Bridge starting..."
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="Speech Behavior"
+                                           Margin="0,14,0,0"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <CheckBox x:Name="QueueBridgeSpeechCheckBox"
+                                          Margin="0,10,0,0"
+                                          Content="Queue bridge speech requests"
+                                          Checked="QueueBridgeSpeechCheckBox_Changed"
+                                          Unchecked="QueueBridgeSpeechCheckBox_Changed" />
+                                <StackPanel Margin="0,10,0,0"
+                                            Orientation="Horizontal">
+                                    <TextBlock Text="Queue limit"
+                                               VerticalAlignment="Center"
+                                               Style="{StaticResource MutedTextStyle}" />
+                                    <ComboBox x:Name="MaxBridgeQueueComboBox"
+                                              Width="72"
+                                              Height="32"
+                                              Margin="12,0,0,0"
+                                              SelectionChanged="MaxBridgeQueueComboBox_SelectionChanged">
+                                        <ComboBoxItem Content="1" />
+                                        <ComboBoxItem Content="3" />
+                                        <ComboBoxItem Content="5" />
+                                        <ComboBoxItem Content="10" />
+                                    </ComboBox>
+                                </StackPanel>
+                                <WrapPanel Margin="0,12,0,0">
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Refresh Status"
+                                            Click="RefreshBridgeStatusButton_Click" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Advanced">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              Padding="0,14,0,0">
                     <StackPanel>
-                        <TextBlock Text="Local Bridge"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <TextBlock x:Name="BridgeStatusText"
-                                   Margin="0,8,0,0"
-                                   Text="Bridge starting..."
-                                   TextWrapping="Wrap" />
-                        <TextBlock Text="Speech Behavior"
-                                   Margin="0,14,0,0"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <CheckBox x:Name="QueueBridgeSpeechCheckBox"
-                                  Margin="0,10,0,0"
-                                  Content="Queue bridge speech requests"
-                                  Checked="QueueBridgeSpeechCheckBox_Changed"
-                                  Unchecked="QueueBridgeSpeechCheckBox_Changed" />
-                        <StackPanel Margin="0,10,0,0"
-                                    Orientation="Horizontal">
-                            <TextBlock Text="Queue limit"
-                                       VerticalAlignment="Center"
-                                       Style="{StaticResource MutedTextStyle}" />
-                            <ComboBox x:Name="MaxBridgeQueueComboBox"
-                                      Width="72"
-                                      Height="32"
-                                      Margin="12,0,0,0"
-                                      SelectionChanged="MaxBridgeQueueComboBox_SelectionChanged">
-                                <ComboBoxItem Content="1" />
-                                <ComboBoxItem Content="3" />
-                                <ComboBoxItem Content="5" />
-                                <ComboBoxItem Content="10" />
-                            </ComboBox>
+                        <Border Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <TextBlock Text="This section is for development and troubleshooting. You usually do not need to change anything here."
+                                       TextWrapping="Wrap" />
+                        </Border>
+
+                        <Border Margin="0,18,0,0"
+                                Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Speech Diagnostics"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <TextBlock Text="Shows current-session bridge, provider, playback, and policy details."
+                                           Margin="0,6,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <WrapPanel Margin="0,10,0,0">
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Refresh"
+                                            Click="RefreshSpeechDiagnosticsButton_Click" />
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Copy"
+                                            Click="CopySpeechDiagnosticsButton_Click" />
+                                </WrapPanel>
+                                <TextBox x:Name="SpeechDiagnosticsTextBox"
+                                         MinHeight="156"
+                                         Padding="8"
+                                         FontFamily="Consolas"
+                                         FontSize="12"
+                                         IsReadOnly="True"
+                                         TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,18,0,0"
+                                Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Project Registry"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <TextBlock Text="Tracks known Code Companion projects and their Windows/WSL path aliases so speech history and diagnostics can be grouped correctly."
+                                           Margin="0,6,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <WrapPanel Margin="0,10,0,0">
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Refresh"
+                                            Click="RefreshProjectRegistryButton_Click" />
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Copy"
+                                            Click="CopyProjectRegistryButton_Click" />
+                                </WrapPanel>
+                                <TextBlock Text="Project ID"
+                                           Margin="0,2,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBox x:Name="ProjectAliasProjectIdTextBox"
+                                         Height="32"
+                                         Margin="0,4,0,0" />
+                                <TextBlock Text="Root alias"
+                                           Margin="0,10,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBox x:Name="ProjectAliasRootTextBox"
+                                         Height="32"
+                                         Margin="0,4,0,0" />
+                                <WrapPanel Margin="0,12,0,0">
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Add Alias"
+                                            Click="AddProjectAliasButton_Click" />
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Remove Alias"
+                                            Click="RemoveProjectAliasButton_Click" />
+                                </WrapPanel>
+                                <TextBlock x:Name="ProjectRegistryStatusText"
+                                           Text="Project registry loaded."
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBox x:Name="ProjectRegistryTextBox"
+                                         Margin="0,12,0,0"
+                                         MinHeight="156"
+                                         Padding="8"
+                                         FontFamily="Consolas"
+                                         FontSize="12"
+                                         IsReadOnly="True"
+                                         TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,18,0,0"
+                                Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Project Speech History"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <TextBlock Text="Shows recent speech decisions grouped by project for troubleshooting."
+                                           Margin="0,6,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <WrapPanel Margin="0,10,0,0">
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Refresh"
+                                            Click="RefreshProjectSpeechHistoryButton_Click" />
+                                    <Button MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Copy"
+                                            Click="CopyProjectSpeechHistoryButton_Click" />
+                                </WrapPanel>
+                                <TextBox x:Name="ProjectSpeechHistoryTextBox"
+                                         MinHeight="156"
+                                         Padding="8"
+                                         FontFamily="Consolas"
+                                         FontSize="12"
+                                         IsReadOnly="True"
+                                         TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,18,0,0"
+                                Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Startup Diagnostics"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <TextBlock Text="Shows the Windows Run registration and executable path used for sign-in startup."
+                                           Margin="0,6,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <WrapPanel Margin="0,12,0,0">
+                                    <Button MinWidth="154"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Refresh Diagnostics"
+                                            Click="RefreshStartupDiagnosticsButton_Click" />
+                                    <Button MinWidth="154"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="Copy Diagnostics"
+                                            Click="CopyStartupDiagnosticsButton_Click" />
+                                </WrapPanel>
+                                <TextBox x:Name="StartupDiagnosticsTextBox"
+                                         MinHeight="108"
+                                         Padding="8"
+                                         FontFamily="Consolas"
+                                         FontSize="12"
+                                         IsReadOnly="True"
+                                         TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Notes">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              Padding="0,14,0,0">
+                    <Border Padding="18"
+                            Style="{StaticResource CardBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Setup Notes"
+                                       FontSize="18"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Margin="0,12,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="1. Start Code Companion Desktop. Keep it running or hidden to tray while using VS Code." />
+                            <TextBlock Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="2. Save your ElevenLabs provider settings and API key in the Speech Provider section." />
+                            <TextBlock Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="3. Enable Start with Windows sign-in and Start hidden to tray if you want Desktop ready before VS Code opens." />
+                            <TextBlock Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="4. Install Code Companion Voice in VS Code. Use the normal Windows extension host for Windows workspaces and the WSL Remote host for WSL workspaces." />
+                            <TextBlock Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="5. Run Code Companion Voice: Send Desktop Candidate Test from VS Code." />
+                            <TextBlock Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="6. If Desktop shows a pending VS Code client, use Client Pairing > Approve Pending, then run the Desktop Candidate Test again." />
+                            <TextBlock Margin="0,18,0,0"
+                                       Text="What The Main Controls Do"
+                                       Style="{StaticResource SectionTitleTextStyle}" />
+                            <TextBlock Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="Status shows whether Desktop is ready to speak and lists the next fix when something is missing." />
+                            <TextBlock Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="Speech Provider stores provider configuration and the API key in Windows Credential Manager." />
+                            <TextBlock Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="Client Pairing approves VS Code clients so they can send speech candidates to Desktop." />
+                            <TextBlock Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="Local Bridge shows the local Desktop service endpoint used by Code Companion Voice." />
+                            <TextBlock Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="Advanced contains development and troubleshooting diagnostics. You usually do not need it for daily use." />
                         </StackPanel>
-                        <WrapPanel Margin="0,12,0,0">
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Refresh Status"
-                                    Click="RefreshBridgeStatusButton_Click" />
-                        </WrapPanel>
-                        <TextBlock Text="Bridge access uses Client Pairing and short-lived session authorization."
-                                   Style="{StaticResource MutedTextStyle}" />
-                    </StackPanel>
-                </Border>
-
-                <Border Margin="0,18,0,0"
-                        Padding="18"
-                        Style="{StaticResource CardBorderStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Client Pairing"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <WrapPanel Margin="0,10,0,0">
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Refresh"
-                                    Click="RefreshClientPairingButton_Click" />
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Copy"
-                                    Click="CopyClientPairingButton_Click" />
-                        </WrapPanel>
-                        <TextBlock Text="Client ID"
-                                   Margin="0,2,0,0"
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBox x:Name="ClientPairingClientIdTextBox"
-                                 Height="32"
-                                 Margin="0,4,0,0" />
-                        <WrapPanel Margin="0,12,0,0">
-                            <Button MinWidth="154"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Approve Pending"
-                                    Click="ApprovePendingClientPairingButton_Click" />
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Approve"
-                                    Click="ApproveClientPairingButton_Click" />
-                            <Button MinWidth="128"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Deny"
-                                    Click="DenyClientPairingButton_Click" />
-                        </WrapPanel>
-                        <TextBlock x:Name="ClientPairingStatusText"
-                                   Text="Client pairing loaded."
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <TextBox x:Name="ClientPairingTextBox"
-                                 Margin="0,12,0,0"
-                                 MinHeight="156"
-                                 Padding="8"
-                                 FontFamily="Consolas"
-                                 FontSize="12"
-                                 IsReadOnly="True"
-                                 TextWrapping="Wrap"
-                                 VerticalScrollBarVisibility="Auto" />
-                    </StackPanel>
-                </Border>
-
-                <Border Margin="0,18,0,0"
-                        Padding="18"
-                        Style="{StaticResource CardBorderStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Startup"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <CheckBox x:Name="StartHiddenToTrayCheckBox"
-                                  Margin="0,10,0,0"
-                                  Content="Start hidden to tray"
-                                  Checked="StartHiddenToTrayCheckBox_Changed"
-                                  Unchecked="StartHiddenToTrayCheckBox_Changed" />
-                        <CheckBox x:Name="StartWithWindowsCheckBox"
-                                  Margin="0,10,0,0"
-                                  Content="Start with Windows sign-in"
-                                  Checked="StartWithWindowsCheckBox_Changed"
-                                  Unchecked="StartWithWindowsCheckBox_Changed" />
-                        <TextBlock x:Name="SettingsStatusText"
-                                   Margin="0,10,0,0"
-                                   Text="Startup preference loaded."
-                                   Style="{StaticResource MutedTextStyle}" />
-                        <WrapPanel Margin="0,12,0,0">
-                            <Button MinWidth="154"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Refresh Diagnostics"
-                                    Click="RefreshStartupDiagnosticsButton_Click" />
-                            <Button MinWidth="154"
-                                    Height="32"
-                                    Margin="0,0,10,10"
-                                    Content="Copy Diagnostics"
-                                    Click="CopyStartupDiagnosticsButton_Click" />
-                        </WrapPanel>
-                        <TextBlock Text="Startup Diagnostics"
-                                   Margin="0,2,0,0"
-                                   Style="{StaticResource SectionTitleTextStyle}" />
-                        <TextBox x:Name="StartupDiagnosticsTextBox"
-                                 Margin="0,8,0,0"
-                                 MinHeight="108"
-                                 Padding="8"
-                                 FontFamily="Consolas"
-                                 FontSize="12"
-                                 IsReadOnly="True"
-                                 TextWrapping="Wrap"
-                                 VerticalScrollBarVisibility="Auto" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
+                    </Border>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
 
         <WrapPanel Grid.Row="2">
             <Button x:Name="PlayButton"

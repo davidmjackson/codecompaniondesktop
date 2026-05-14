@@ -4,6 +4,82 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-14 Desktop UX Tabbed Layout Slice
+
+### Current Milestone
+
+- Milestone 10: Desktop UX And Onboarding Refresh.
+
+### Changed
+
+- Reworked the main Desktop window into fixed-size tabs:
+  - `Status`
+  - `Advanced`
+  - `Notes`
+- Set the window to fixed dimensions with minimize-only behavior.
+- Added a top-level readiness summary on the Status tab with green tick / red
+  cross status.
+- The readiness summary checks provider key state, active provider/playback
+  errors, and pending VS Code clients.
+- Kept normal setup controls on Status:
+  - Startup
+  - Speech Provider
+  - Client Pairing
+  - Local Bridge
+- Moved troubleshooting/development views to Advanced:
+  - Speech Diagnostics
+  - Project Registry
+  - Project Speech History
+  - Startup Diagnostics
+- Added explanatory text to Advanced sections.
+- Added a first text-only Notes tab with setup, testing, pairing, and control
+  descriptions.
+- Updated provider key status wording so saved keys show as `Key loaded`.
+
+### Verified
+
+- Stopped the running Debug app before building.
+- `dotnet build CodeCompanionDesktop.sln --no-restore` succeeded with 0
+  warnings and 0 errors.
+- `dotnet test CodeCompanionDesktop.sln --no-build` passed 29 tests.
+- `git diff --check` passed.
+- Restarted the Debug app and confirmed `http://127.0.0.1:47321/health`
+  returned healthy bridge status.
+
+### Next
+
+- Manually inspect the tabbed window for readability and text fit.
+- Decide whether the first slice is enough for Milestone 10 or whether to add
+  accordions/screenshots/log cleanup before returning to release packaging.
+
+## 2026-05-14 Milestone 10 Pulled Forward
+
+### Current Milestone
+
+- Milestone 10: Desktop UX And Onboarding Refresh.
+
+### Decision
+
+- Paused Milestone 9 release packaging.
+- Pulled Milestone 10 forward because the Desktop app should be simplified
+  before release.
+- First UI target is a simpler tabbed app with:
+  - `Status` for green/red readiness and normal setup controls.
+  - `Advanced` for diagnostics/development details.
+  - `Notes` for setup and usage guidance.
+
+### Changed
+
+- Updated `docs/architecture.md` to mark Milestone 9 paused and Milestone 10 in
+  progress.
+- Updated `docs/desktop-ux-refresh.md` so the first implementation slice uses
+  `Status`, `Advanced`, and `Notes` tabs, with a separate `Settings` tab
+  deferred unless the Status tab becomes too dense.
+
+### Next
+
+- Rework `MainWindow.xaml` into the first Milestone 10 tabbed layout.
+
 ## 2026-05-14 Desktop UX Refresh Notes Captured
 
 ### Current Milestone

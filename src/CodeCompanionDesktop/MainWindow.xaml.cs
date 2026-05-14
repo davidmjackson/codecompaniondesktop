@@ -1,7 +1,10 @@
 using System;
 using System.ComponentModel;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using CodeCompanionDesktop.Audio;
 using CodeCompanionDesktop.Bridge;
 using CodeCompanionDesktop.Credentials;
@@ -69,6 +72,7 @@ public partial class MainWindow : Window
         {
             isPlaying = false;
             SetPlaybackButtonsEnabled(true);
+            RefreshReadinessSummary();
         }
     }
 
@@ -267,10 +271,12 @@ public partial class MainWindow : Window
             settingsStore.Save(settings);
             ProviderSettingsStatusText.Text = $"Saved {settings.SpeechProvider} voice settings.";
             RefreshSpeechDiagnostics();
+            RefreshReadinessSummary();
         }
         catch (Exception ex)
         {
             ProviderSettingsStatusText.Text = $"Saving provider settings failed: {ex.Message}";
+            RefreshReadinessSummary();
         }
     }
 
@@ -289,11 +295,13 @@ public partial class MainWindow : Window
                 WindowsCredentialStore.ElevenLabsApiKeyTarget,
                 "ElevenLabs",
                 apiKey);
-            CredentialStatusText.Text = $"Saved key to Windows Credential Manager ({DescribeSecret(apiKey)}).";
+            CredentialStatusText.Text = $"Key loaded. Saved to Windows Credential Manager ({DescribeSecret(apiKey)}).";
+            RefreshReadinessSummary();
         }
         catch (Exception ex)
         {
             CredentialStatusText.Text = $"Save failed: {ex.Message}";
+            RefreshReadinessSummary();
         }
     }
 
@@ -306,15 +314,18 @@ public partial class MainWindow : Window
             {
                 ElevenLabsApiKeyBox.Clear();
                 CredentialStatusText.Text = "No saved ElevenLabs API key found.";
+                RefreshReadinessSummary();
                 return;
             }
 
             ElevenLabsApiKeyBox.Password = apiKey;
-            CredentialStatusText.Text = $"Loaded saved key from Windows Credential Manager ({DescribeSecret(apiKey)}).";
+            CredentialStatusText.Text = $"Key loaded from Windows Credential Manager ({DescribeSecret(apiKey)}).";
+            RefreshReadinessSummary();
         }
         catch (Exception ex)
         {
             CredentialStatusText.Text = $"Load failed: {ex.Message}";
+            RefreshReadinessSummary();
         }
     }
 
@@ -327,10 +338,12 @@ public partial class MainWindow : Window
             CredentialStatusText.Text = deleted
                 ? "Deleted saved ElevenLabs API key."
                 : "No saved ElevenLabs API key found.";
+            RefreshReadinessSummary();
         }
         catch (Exception ex)
         {
             CredentialStatusText.Text = $"Clear failed: {ex.Message}";
+            RefreshReadinessSummary();
         }
     }
 
@@ -352,10 +365,12 @@ public partial class MainWindow : Window
         {
             System.Windows.Clipboard.SetText(SpeechDiagnosticsTextBox.Text);
             BridgeStatusText.Text = "Copied speech diagnostics.";
+            RefreshReadinessSummary();
         }
         catch (Exception ex)
         {
             BridgeStatusText.Text = $"Copying speech diagnostics failed: {ex.Message}";
+            RefreshReadinessSummary();
         }
     }
 
@@ -372,10 +387,12 @@ public partial class MainWindow : Window
         {
             System.Windows.Clipboard.SetText(ProjectRegistryTextBox.Text);
             BridgeStatusText.Text = "Copied project registry.";
+            RefreshReadinessSummary();
         }
         catch (Exception ex)
         {
             BridgeStatusText.Text = $"Copying project registry failed: {ex.Message}";
+            RefreshReadinessSummary();
         }
     }
 
@@ -402,10 +419,12 @@ public partial class MainWindow : Window
         {
             System.Windows.Clipboard.SetText(ProjectSpeechHistoryTextBox.Text);
             BridgeStatusText.Text = "Copied project speech history.";
+            RefreshReadinessSummary();
         }
         catch (Exception ex)
         {
             BridgeStatusText.Text = $"Copying project speech history failed: {ex.Message}";
+            RefreshReadinessSummary();
         }
     }
 
@@ -427,6 +446,8 @@ public partial class MainWindow : Window
         {
             ClientPairingStatusText.Text = $"Copying client pairing diagnostics failed: {ex.Message}";
         }
+
+        RefreshReadinessSummary();
     }
 
     private void ApproveClientPairingButton_Click(object sender, RoutedEventArgs e)
@@ -440,12 +461,14 @@ public partial class MainWindow : Window
         {
             ClientPairingStatusText.Text = "No pending clients to approve.";
             RefreshClientPairing();
+            RefreshReadinessSummary();
             return;
         }
 
-        ClientPairingClientIdTextBox.Text = client.ClientId;
+        ClientPairingClientIdTextBox.Text = client!.ClientId;
         ClientPairingStatusText.Text = $"Approved pending client {client.Name} ({client.ClientId}).";
         RefreshClientPairing();
+        RefreshReadinessSummary();
     }
 
     private void DenyClientPairingButton_Click(object sender, RoutedEventArgs e)
@@ -505,6 +528,7 @@ public partial class MainWindow : Window
         RefreshProjectRegistry();
         RefreshProjectSpeechHistory();
         RefreshClientPairing();
+        RefreshReadinessSummary();
     }
 
     private void RefreshSpeechDiagnostics()
@@ -549,6 +573,7 @@ public partial class MainWindow : Window
             recentProjects,
             recentClients,
             recent);
+        RefreshReadinessSummary();
     }
 
     private void RefreshProjectRegistry()
@@ -579,6 +604,7 @@ public partial class MainWindow : Window
             : string.Join(
                 $"{Environment.NewLine}{Environment.NewLine}",
                 clientDetails);
+        RefreshReadinessSummary();
     }
 
     private void UpdateProjectAlias(bool isAdd)
@@ -628,6 +654,7 @@ public partial class MainWindow : Window
 
         ClientPairingStatusText.Text = $"{authorization} client {clientId}.";
         RefreshClientPairing();
+        RefreshReadinessSummary();
     }
 
     private string GetProviderKeyStatus()
@@ -643,6 +670,86 @@ public partial class MainWindow : Window
         {
             return $"unavailable: {ex.Message}";
         }
+    }
+
+    private void RefreshCredentialStatus()
+    {
+        try
+        {
+            var apiKey = credentialStore.ReadSecret(WindowsCredentialStore.ElevenLabsApiKeyTarget);
+            CredentialStatusText.Text = string.IsNullOrWhiteSpace(apiKey)
+                ? "No key loaded."
+                : $"Key loaded ({DescribeSecret(apiKey)}).";
+        }
+        catch (Exception ex)
+        {
+            CredentialStatusText.Text = $"Key status unavailable: {ex.Message}";
+        }
+    }
+
+    private void RefreshReadinessSummary()
+    {
+        if (ReadinessIconText is null)
+        {
+            return;
+        }
+
+        var issues = new List<string>();
+        var providerKeyStatus = GetProviderKeyStatus();
+        if (providerKeyStatus.StartsWith("missing", StringComparison.OrdinalIgnoreCase))
+        {
+            issues.Add("Save an ElevenLabs API key.");
+        }
+        else if (providerKeyStatus.StartsWith("unavailable", StringComparison.OrdinalIgnoreCase))
+        {
+            issues.Add($"Check provider key storage: {providerKeyStatus}.");
+        }
+
+        var snapshot = bridgeRuntimeState.GetDiagnosticsSnapshot();
+        if (IsActiveError(snapshot.LastProviderError, "No provider errors."))
+        {
+            issues.Add($"Provider error: {snapshot.LastProviderError}");
+        }
+
+        if (IsActiveError(snapshot.LastPlaybackError, "No playback errors."))
+        {
+            issues.Add($"Playback error: {snapshot.LastPlaybackError}");
+        }
+
+        var clients = clientTrustStore.Load().Clients;
+        var pendingCount = clients.Count(
+            client => string.Equals(client.Authorization, ClientTrustStore.Pending, StringComparison.OrdinalIgnoreCase));
+        if (pendingCount > 0)
+        {
+            issues.Add(pendingCount == 1
+                ? "Approve the pending VS Code client."
+                : $"Approve {pendingCount} pending VS Code clients.");
+        }
+
+        var deniedCount = clients.Count(
+            client => string.Equals(client.Authorization, ClientTrustStore.Denied, StringComparison.OrdinalIgnoreCase));
+        if (deniedCount > 0)
+        {
+            issues.Add(deniedCount == 1
+                ? "One VS Code client is denied."
+                : $"{deniedCount} VS Code clients are denied.");
+        }
+
+        var isHealthy = issues.Count == 0;
+        ReadinessIconText.Text = isHealthy ? "✓" : "✕";
+        ReadinessIconText.Foreground = isHealthy ? System.Windows.Media.Brushes.ForestGreen : System.Windows.Media.Brushes.Firebrick;
+        ReadinessSummaryText.Text = isHealthy
+            ? "All systems are working and APIs are configured."
+            : "Code Companion needs attention.";
+        ReadinessDetailsText.Text = isHealthy
+            ? $"Bridge is listening on {LocalBridgeServer.BaseUrl}. Provider key is loaded. No active provider or playback errors."
+            : string.Join(Environment.NewLine, issues.Select(issue => $"- {issue}"));
+    }
+
+    private static bool IsActiveError(string value, string emptyValue)
+    {
+        return !string.IsNullOrWhiteSpace(value)
+            && !string.Equals(value, emptyValue, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string DescribeSecret(string secret)
@@ -666,6 +773,7 @@ public partial class MainWindow : Window
             QueueBridgeSpeechCheckBox.IsChecked = settings.QueueBridgeSpeechRequests;
             SetMaxBridgeQueueSelection(settings.MaxQueuedBridgeSpeechRequests);
             ApplyProviderSettingsToUi();
+            RefreshCredentialStatus();
             bridgeRuntimeState.ConfigureQueue(
                 settings.QueueBridgeSpeechRequests,
                 settings.MaxQueuedBridgeSpeechRequests);
@@ -676,6 +784,7 @@ public partial class MainWindow : Window
             RefreshProjectRegistry();
             RefreshProjectSpeechHistory();
             RefreshClientPairing();
+            RefreshReadinessSummary();
         }
         finally
         {
@@ -691,10 +800,12 @@ public partial class MainWindow : Window
             settingsStore.Save(settings);
             SettingsStatusText.Text = DescribeStartupPreferences("Saved startup preference.");
             RefreshStartupDiagnostics();
+            RefreshReadinessSummary();
         }
         catch (Exception ex)
         {
             SettingsStatusText.Text = $"Saving startup preference failed: {ex.Message}";
+            RefreshReadinessSummary();
         }
     }
 
@@ -711,10 +822,12 @@ public partial class MainWindow : Window
                 settings.QueueBridgeSpeechRequests,
                 settings.MaxQueuedBridgeSpeechRequests);
             RefreshBridgeStatus();
+            RefreshReadinessSummary();
         }
         catch (Exception ex)
         {
             BridgeStatusText.Text = $"Saving bridge speech settings failed: {ex.Message}";
+            RefreshReadinessSummary();
         }
     }
 
@@ -733,6 +846,7 @@ public partial class MainWindow : Window
 
             SettingsStatusText.Text = DescribeStartupPreferences("Saved Windows sign-in preference.");
             RefreshStartupDiagnostics();
+            RefreshReadinessSummary();
         }
         catch (Exception ex)
         {
@@ -748,6 +862,7 @@ public partial class MainWindow : Window
 
             SettingsStatusText.Text = $"Saving Windows sign-in preference failed: {ex.Message}";
             RefreshStartupDiagnostics();
+            RefreshReadinessSummary();
         }
     }
 
