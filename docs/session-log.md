@@ -45,12 +45,16 @@ options.
 - `git diff --check` passed.
 - Restarted the Debug app and confirmed `http://127.0.0.1:47321/health`
   returned healthy bridge status.
+- User visually inspected the running Desktop window and confirmed:
+  - Status tab and messages look good.
+  - Advanced tab looks appropriate.
+  - Notes tab looks good.
 
 ### Next
 
-- Manually inspect the tabbed window for readability and text fit.
-- Decide whether the first slice is enough for Milestone 10 or whether to add
-  accordions/screenshots/log cleanup before returning to release packaging.
+- Treat the first Milestone 10 slice as accepted.
+- Decide whether to return to Milestone 9 release packaging or do another small
+  UX polish pass.
 
 ## 2026-05-14 Milestone 10 Pulled Forward
 
