@@ -4,6 +4,43 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-14 Post-Reboot CLR Recovery Verified
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### Current State
+
+- Branch: `feature/environment-agnostic-speech-architecture`.
+- Current commit before this entry: `36f2a1e`.
+- Working tree was clean before this log update.
+- Code Companion Desktop was running from the Debug build as PID `29680`:
+  `D:\Development\CodeCompanionDesktop\src\CodeCompanionDesktop\bin\Debug\net8.0-windows\CodeCompanionDesktop.exe`.
+
+### Verified
+
+- After reboot, Windows PowerShell 5.1 starts successfully again.
+- `powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command '$PSVersionTable.PSVersion.ToString()'`
+  returns `5.1.26100.8457`.
+- This confirms the earlier `.NET Framework 4.x` / CLR startup failure
+  `HRESULT 80004005` cleared after reboot.
+
+### Notes
+
+- Treat the CLR issue as resolved unless the same startup error reappears.
+- Follow-up correction: the Desktop bridge port is `47321`, not `5138`.
+  `http://127.0.0.1:47321/health` later returned healthy bridge status from
+  the same running Debug process.
+
+### Next
+
+- Continue Milestone 9 with Code Companion Voice Marketplace/package hardening
+  and fresh-install verification when explicitly switching to the Voice
+  repository.
+- If Desktop bridge testing is needed, restart Code Companion Desktop and
+  recheck `/health`.
+
 ## 2026-05-14 Windows PowerShell CLR Failure
 
 ### Current Milestone
