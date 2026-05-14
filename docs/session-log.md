@@ -4,6 +4,37 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-14 Desktop UX Refresh Notes Captured
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### User Input
+
+- User provided product notes for a Desktop app display refresh covering status,
+  settings organization, advanced/development diagnostics, provider key status,
+  fixed window behavior, and a built-in Notes/help tab.
+
+### Changed
+
+- Added `docs/desktop-ux-refresh.md` with structured requirements,
+  recommendations, and open decisions.
+- Added proposed Milestone 10: Desktop UX And Onboarding Refresh to
+  `docs/architecture.md`.
+
+### Recommendation
+
+- Treat the Desktop UX refresh as Milestone 10 unless the user wants to delay
+  public release for a clearer first-run Desktop experience.
+- If pulled before release, build it as a focused layout/help/status refresh and
+  avoid expanding into a broad diagnostics rewrite.
+
+### Next
+
+- Decide whether to continue Milestone 9 release packaging or switch now to
+  Milestone 10 UX work.
+
 ## 2026-05-14 Client Pairing UX Polish Implemented
 
 ### Current Milestone

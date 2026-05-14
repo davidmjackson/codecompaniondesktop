@@ -775,6 +775,38 @@ Status:
 - `scripts/draft-github-release.ps1` validates the generated artifacts and
   previews or creates the draft Desktop GitHub Release.
 
+### Milestone 10: Desktop UX And Onboarding Refresh
+
+Goal:
+
+- Make Code Companion Desktop easier for normal users to read, configure, and
+  troubleshoot without exposing development diagnostics as the primary
+  experience.
+
+Scope:
+
+- Rework the main window around clear `Status`, `Settings`, `Advanced`, and
+  `Notes` areas.
+- Add a top-level readiness summary with healthy and unhealthy states.
+- Use Settings accordions for normal user configuration.
+- Move development and diagnostic details into Advanced.
+- Add plain-language explanatory text for every visible section.
+- Add an in-app Notes surface for install, setup, pairing, testing, and control
+  explanations.
+- Clarify current-session diagnostics versus persisted project speech history.
+- Improve provider key status wording so saved/working keys read as healthy.
+- Keep the window compact and prevent full-screen/maximized presentation.
+
+Reference:
+
+- Detailed notes are maintained in `docs/desktop-ux-refresh.md`.
+
+Status:
+
+- Proposed.
+- Needs decision on whether this blocks the first public release or follows
+  immediately after Milestone 9.
+
 ## Session Checklist
 
 At the start of each session:
