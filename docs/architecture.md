@@ -768,7 +768,8 @@ Acceptance criteria:
 
 Status:
 
-- Paused while Milestone 10 Desktop UX work is pulled forward.
+- In progress.
+- Resumed after accepting the first Milestone 10 Desktop UX slice.
 - `docs/release-checklist.md` documents the release gates for this milestone.
 - `scripts/build-release-package.ps1` builds the Desktop installer, SHA256
   checksum, and draft GitHub release notes from one command.
@@ -803,9 +804,10 @@ Reference:
 
 Status:
 
-- In progress.
+- First slice accepted.
 - Pulled forward before completing Milestone 9 because the Desktop app needs a
   clearer first-run/status experience before release.
+- Status, Advanced, and Notes tabs passed manual review.
 
 ## Session Checklist
 

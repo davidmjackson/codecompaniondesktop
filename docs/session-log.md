@@ -4,6 +4,76 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-14 Desktop 0.1.2 Release Package
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### Changed
+
+- Resumed Milestone 9 after accepting the first Milestone 10 Desktop UX slice.
+- Updated Desktop project version metadata to `0.1.2`.
+- Built a new Desktop `0.1.2` release package containing:
+  - Client Pairing `Approve Pending`
+  - Status / Advanced / Notes tabbed UI
+  - Milestone 10 first-slice UX changes
+
+### Release Artifacts
+
+- Installer:
+  `D:\Development\CodeCompanionDesktop\artifacts\installer\CodeCompanionDesktopSetup-0.1.2.exe`
+- SHA256:
+  `37893df3847332ac04100560700bb962fdfc2851e20f7d11316452456d890ca5`
+- Checksum file:
+  `D:\Development\CodeCompanionDesktop\artifacts\checksums\CodeCompanionDesktopSetup-0.1.2.exe.sha256`
+- Release notes:
+  `D:\Development\CodeCompanionDesktop\artifacts\release-notes\desktop-0.1.2.md`
+
+### Verified
+
+- `scripts/build-release-package.ps1 -AppVersion 0.1.2` ran Release build and
+  tests; 29 tests passed.
+- `git diff --check` passed through the release package script.
+- Published executable reports:
+  - `ProductVersion`: `0.1.2+0ae77e9dc4de49ade61590c3f0c55afeda8cc70f`
+  - `FileVersion`: `0.1.2.0`
+- Launched the published executable and confirmed `/health` returned:
+  `appVersion: 0.1.2`.
+- `scripts/draft-github-release.ps1 -AppVersion 0.1.2` dry-run validated the
+  installer, checksum, and release notes, and printed the draft `gh release`
+  command.
+
+### Next
+
+- Decide whether to create the draft GitHub Release for Desktop `v0.1.2`.
+- Continue Voice Marketplace preview publication and final fresh-install
+  verification.
+
+## 2026-05-14 Milestone 9 Resumed
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging.
+
+### Decision
+
+- Resumed Milestone 9 after the first Milestone 10 Desktop UX slice passed
+  manual review.
+- Next Desktop release candidate version is `0.1.2` because `0.1.1` already
+  has a draft GitHub Release and older installer artifacts.
+
+### Changed
+
+- Updated Desktop project version metadata to `0.1.2`.
+- Updated `docs/architecture.md` to mark Milestone 9 in progress again and
+  Milestone 10 first slice accepted.
+
+### Next
+
+- Build the Desktop `0.1.2` release package.
+- Draft or update the Desktop GitHub Release after package verification.
+
 ## 2026-05-14 Desktop UX Tabbed Layout Slice
 
 ### Current Milestone
