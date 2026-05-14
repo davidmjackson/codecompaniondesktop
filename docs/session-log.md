@@ -30,6 +30,15 @@ options.
 - Release notes:
   `D:\Development\CodeCompanionDesktop\artifacts\release-notes\desktop-0.1.2.md`
 
+### Draft GitHub Release
+
+- Created draft release `v0.1.2` in `davidmjackson/codecompaniondesktop`.
+- GitHub draft URL:
+  `https://github.com/davidmjackson/codecompaniondesktop/releases/tag/untagged-6d18ec652d3b88b6d63c`
+- Uploaded assets:
+  - `CodeCompanionDesktopSetup-0.1.2.exe`
+  - `CodeCompanionDesktopSetup-0.1.2.exe.sha256`
+
 ### Verified
 
 - `scripts/build-release-package.ps1 -AppVersion 0.1.2` ran Release build and
@@ -43,10 +52,13 @@ options.
 - `scripts/draft-github-release.ps1 -AppVersion 0.1.2` dry-run validated the
   installer, checksum, and release notes, and printed the draft `gh release`
   command.
+- `scripts/draft-github-release.ps1 -AppVersion 0.1.2 -Create` created the
+  draft release.
+- `gh release view v0.1.2 --repo davidmjackson/codecompaniondesktop` confirmed
+  the draft release tag, title, draft state, and both uploaded assets.
 
 ### Next
 
-- Decide whether to create the draft GitHub Release for Desktop `v0.1.2`.
 - Continue Voice Marketplace preview publication and final fresh-install
   verification.
 
