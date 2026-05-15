@@ -4,6 +4,37 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-15 C# Dev Kit Solution Load Fix
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+
+### Issue
+
+- VS Code C# Dev Kit reported that no solution was open, then failed to load
+  `CodeCompanionDesktop.sln` with an invalid all-zero project type GUID error.
+
+### Changed
+
+- Updated `CodeCompanionDesktop.sln` to use the classic C# project type GUID for
+  the desktop and test projects, matching the shape produced by `dotnet new sln`
+  and accepted by C# Dev Kit.
+- Confirmed the folder-level VS Code setting points at
+  `CodeCompanionDesktop.sln`.
+
+### Verified
+
+- `dotnet sln CodeCompanionDesktop.sln list` via the Windows SDK path listed
+  both projects.
+- `git diff --check` passed for the touched files.
+- User confirmed the solution now opens in VS Code.
+
+### Next
+
+- Leave generated `.lscache` files untracked unless they become useful
+  diagnostic artifacts.
+
 ## 2026-05-15 Directory Path Speech Rewrite
 
 ### Current Milestone
