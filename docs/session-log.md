@@ -4,6 +4,42 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-15 Playback Warmup For Clipped Starts
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+
+### Issue
+
+- User reported the start of spoken messages was clipped by a fraction of a
+  second, for example `Hello David` sounding like `llo David`.
+
+### Changed
+
+- Updated `AudioFilePlayer` so provider audio starts after `MediaOpened`.
+- Added a short same-player muted warmup, then seek back to the beginning
+  before normal-volume playback.
+- This keeps the Windows audio path awake before the first phoneme is heard
+  without changing provider output or speech policy.
+
+### Verified
+
+- Stopped the running Debug app before building.
+- `dotnet build CodeCompanionDesktop.sln` via the Windows SDK path succeeded
+  with 0 warnings and 0 errors.
+- `dotnet test CodeCompanionDesktop.sln --no-build` passed 29 tests.
+- `git diff --check` passed.
+- Restarted the Debug app and confirmed `/health` returned `appVersion: 0.1.2`.
+- Sent `Hello David. Playback warmup test.` through the Desktop candidate inbox;
+  Desktop history recorded `spoken/manual-speak-last` and playback completed.
+
+### Next
+
+- User should confirm by ear that the first phoneme is no longer clipped.
+- If clipping remains on some devices, tune the warmup duration or move to an
+  audio backend with explicit buffer/device control.
+
 ## 2026-05-14 Private Field-Test Build
 
 ### Current Milestone
