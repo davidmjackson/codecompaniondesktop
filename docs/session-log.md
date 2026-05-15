@@ -4,6 +4,46 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-15 Directory Path Speech Rewrite
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+
+### Issue
+
+- Directory paths are not useful when read aloud, for example Windows or WSL
+  project paths become hard to understand in speech.
+
+### Changed
+
+- Updated `SpeechCandidatePipeline` to rewrite absolute Windows, UNC, and
+  common Linux/WSL directory paths to `the path below` before speech.
+- Preserved URLs and bridge API routes such as `/health` and
+  `/v1/speech/candidates`.
+- Added focused pipeline tests for:
+  - Windows paths.
+  - WSL/Linux paths with file and line suffixes.
+  - UNC paths.
+  - URL and bridge-route non-rewrites.
+
+### Verified
+
+- Stopped the running Debug app before building.
+- `dotnet build CodeCompanionDesktop.sln` via the Windows SDK path succeeded
+  with 0 warnings and 0 errors.
+- `dotnet test CodeCompanionDesktop.sln --no-build` passed 33 tests.
+- `git diff --check` passed.
+- Restarted the Debug app and confirmed `/health` returned `appVersion: 0.1.2`.
+- Sent a live candidate containing
+  `D:\Development\CodeCompanionDesktop\src\CodeCompanionDesktop`; Desktop
+  history recorded `spoken/speech_rewritten` and playback completed.
+
+### Next
+
+- Continue listening for any awkward non-directory path cases during field
+  testing and tune the speech rewrite if needed.
+
 ## 2026-05-15 Paired Application Verification
 
 ### Current Milestone

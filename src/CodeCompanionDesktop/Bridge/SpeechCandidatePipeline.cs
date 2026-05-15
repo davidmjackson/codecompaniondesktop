@@ -39,15 +39,14 @@ public sealed partial class SpeechCandidatePipeline
             return SpeechCandidatePipelineResult.Ignored("empty_candidate");
         }
 
-        var filtered = RedactSensitiveText(normalized);
+        var speechPolicyText = ReplaceDirectoryPaths(normalized);
+        var filtered = RedactSensitiveText(speechPolicyText);
         if (string.IsNullOrWhiteSpace(filtered))
         {
             return SpeechCandidatePipelineResult.Ignored("empty_after_privacy_filter");
         }
 
-        var reason = string.Equals(filtered, normalized, StringComparison.Ordinal)
-            ? IsExplicitSpeechRequest(speechHint) ? speechHint! : "accepted"
-            : "privacy_filtered";
+        var reason = GetAcceptedReason(normalized, speechPolicyText, filtered, speechHint);
 
         if (filtered.Length > MaxSpeechTextLength)
         {
@@ -97,6 +96,51 @@ public sealed partial class SpeechCandidatePipeline
         return filtered;
     }
 
+    private static string ReplaceDirectoryPaths(string text)
+    {
+        var filtered = UncPathRegex().Replace(text, ReplacePathMatch);
+        filtered = WindowsPathRegex().Replace(filtered, ReplacePathMatch);
+        return UnixPathRegex().Replace(filtered, ReplacePathMatch);
+    }
+
+    private static string ReplacePathMatch(Match match)
+    {
+        var value = match.Value;
+        var trailingPunctuation = string.Empty;
+
+        while (value.Length > 0 && IsPathTrailingPunctuation(value[^1]))
+        {
+            trailingPunctuation = value[^1] + trailingPunctuation;
+            value = value[..^1];
+        }
+
+        return $"the path below{trailingPunctuation}";
+    }
+
+    private static bool IsPathTrailingPunctuation(char value)
+    {
+        return value is '.' or ',' or ';' or '!' or '?' or ')';
+    }
+
+    private static string GetAcceptedReason(
+        string normalized,
+        string speechPolicyText,
+        string filtered,
+        string? speechHint)
+    {
+        if (!string.Equals(filtered, speechPolicyText, StringComparison.Ordinal))
+        {
+            return "privacy_filtered";
+        }
+
+        if (!string.Equals(speechPolicyText, normalized, StringComparison.Ordinal))
+        {
+            return "speech_rewritten";
+        }
+
+        return IsExplicitSpeechRequest(speechHint) ? speechHint! : "accepted";
+    }
+
     private static bool IsExplicitSpeechRequest(string? speechHint)
     {
         return speechHint is "voice-check-in" or "manual-speak-last" or "manual-desktop-candidate-test";
@@ -133,6 +177,15 @@ public sealed partial class SpeechCandidatePipeline
 
     [GeneratedRegex(@"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", RegexOptions.IgnoreCase)]
     private static partial Regex EmailRegex();
+
+    [GeneratedRegex(@"(?<![\w])(?:[A-Za-z]:[\\/][^\s""<>|]+)")]
+    private static partial Regex WindowsPathRegex();
+
+    [GeneratedRegex(@"(?<![\w])\\\\[^\s\\/:*?""<>|]+\\[^\s""<>|]+")]
+    private static partial Regex UncPathRegex();
+
+    [GeneratedRegex(@"(?<![\w])/(?:mnt|var|home|tmp|etc|usr|opt|workspace|srv)/[^\s\])}>""']+")]
+    private static partial Regex UnixPathRegex();
 }
 
 public sealed record SpeechCandidatePipelineInput(
