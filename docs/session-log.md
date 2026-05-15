@@ -4,6 +4,49 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-15 OneDrive Copy-Back Repository Audit
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+
+### Scope
+
+- Checked the Desktop and Voice repositories after they were copied to OneDrive
+  and Code Companion Voice was restored to its original `D:\Development`
+  location.
+
+### Verified
+
+- Desktop branch remained
+  `feature/environment-agnostic-speech-architecture` at `a240d17`.
+- Desktop had no tracked diffs and no deleted tracked files.
+- Desktop upstream remained
+  `origin/feature/environment-agnostic-speech-architecture`.
+- `git fsck --full` reported only dangling trees.
+- `dotnet build CodeCompanionDesktop.sln` succeeded with 0 warnings and 0
+  errors.
+- `dotnet test CodeCompanionDesktop.sln --no-build` passed 33 tests.
+- `git diff --check` passed.
+- Voice branch remained `feature/desktop-bridge-client` at `02f00d7`.
+- Voice had no tracked diffs and no deleted tracked files.
+- Voice upstream remained `origin/feature/desktop-bridge-client`.
+- Voice `npm run compile`, `npm test`, compiled JS syntax checks, and
+  `npm audit --omit=dev` passed.
+
+### Notes
+
+- Existing untracked Desktop files were left untouched:
+  `app/CodeCompanionDesktop.exe` and generated C# Dev Kit `.lscache` files.
+- Existing untracked Voice workspace file was left untouched.
+- Desktop was stopped for build verification and should be restarted afterward.
+
+### Next
+
+- No repair work is needed based on the audit.
+- Consider ignoring generated `.lscache` files if C# Dev Kit keeps recreating
+  them.
+
 ## 2026-05-15 C# Dev Kit Solution Load Fix
 
 ### Current Milestone
