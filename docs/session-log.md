@@ -4,6 +4,35 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-15 Spoken Update Wait Before Desktop Stop
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+
+### Issue
+
+- A spoken update warning that Desktop was about to be stopped could be cut off
+  if the process was stopped immediately after writing the speech candidate.
+
+### Changed
+
+- Added `-WaitForPlayback` to `scripts/send-speech-candidate.ps1`.
+- The wait mode polls Desktop bridge health, waits for any current speech to
+  become idle, writes the candidate, then waits until the new playback finishes.
+- Documented that stop/restart warnings should use `-WaitForPlayback`.
+
+### Verified
+
+- `scripts/send-speech-candidate.ps1 -WaitForPlayback` completed after Desktop
+  spoke the test update.
+- `git diff --check` passed.
+
+### Next
+
+- Use `-WaitForPlayback` before any workflow step that stops or restarts
+  Code Companion Desktop.
+
 ## 2026-05-15 Long Final Speech Truncation Fix
 
 ### Current Milestone

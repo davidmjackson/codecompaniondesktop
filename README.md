@@ -85,6 +85,12 @@ end-of-milestone summaries through Code Companion Desktop with:
 
 The script writes a valid speech candidate into the Desktop candidate inbox
 using the Desktop-owned audio path. It does not rely on VS Code webview audio.
+When the next action will stop or restart Code Companion Desktop, wait for the
+spoken update to finish first:
+
+```powershell
+.\scripts\send-speech-candidate.ps1 -Text "I am stopping the Desktop app briefly." -WaitForPlayback
+```
 
 ## Requirements
 

@@ -842,3 +842,8 @@ Use:
 The script writes an `assistant-message` candidate with `speechHint:
 manual-speak-last` into the Desktop candidate inbox. This keeps spoken updates
 on the Desktop-owned audio path and does not depend on VS Code webview audio.
+
+If the next operation will stop or restart Code Companion Desktop, call the
+script with `-WaitForPlayback` and wait for the command to return before
+stopping the process. This prevents the spoken warning from being cut off by the
+stop operation.
