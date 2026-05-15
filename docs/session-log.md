@@ -4,6 +4,69 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-15 Paired Application Verification
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+
+### Scope
+
+- Ran a broad Desktop + Voice verification after the Voice `final_answer`
+  normalization fix and Desktop playback warmup fix.
+
+### Verified
+
+- Desktop repository remained on
+  `feature/environment-agnostic-speech-architecture`.
+- Existing local Desktop changes were left untouched:
+  - `.vscode/settings.json`
+  - untracked `app/`
+- Voice repository was checked on `feature/desktop-bridge-client`; only the
+  existing untracked `CodeCompanionVoice.code-workspace` was present.
+- Installed WSL Voice extension reported
+  `davidmjackson.code-companion-voice@0.0.51`.
+- Current VSIX artifact exists at
+  `D:\Development\CodeCompanionVoice\code-companion-voice-0.0.51.vsix`.
+- Desktop checks:
+  - `dotnet build CodeCompanionDesktop.sln` via Windows SDK path succeeded.
+  - `dotnet test CodeCompanionDesktop.sln --no-build` passed 29 tests.
+  - `git diff --check` passed.
+- Voice checks:
+  - `npm run compile` succeeded.
+  - `npm test` passed 38 tests.
+  - `git diff --check` passed.
+  - `find dist -name '*.js' -print0 | xargs -0 -n1 node --check` passed.
+  - `npm audit --omit=dev` reported 0 vulnerabilities.
+- Verified the installed WSL and Windows Voice extension parser maps
+  `final_answer` to `final`.
+- Confirmed the VSIX contains expected package, docs, asset, and compiled
+  `dist` files.
+- Restarted Debug Desktop app and confirmed `/health` returned:
+  - `status: ok`
+  - `bridge: listening`
+  - `appVersion: 0.1.2`
+- Sent `Hello David. Full application smoke test.` through the Desktop inbox;
+  Desktop history recorded `spoken/manual-speak-last` and playback completed.
+- Sent an authenticated WSL-shaped HTTP candidate through the Desktop bridge;
+  Desktop returned `202 accepted`, `decision: spoken`, `reason: accepted`.
+- Desktop history recorded the WSL HTTP candidate under project
+  `retrospective-wsl-ubuntu-24-04` with playback completed.
+
+### Notes
+
+- A direct WSL request to `127.0.0.1:47321` failed, as expected from this shell.
+  The WSL bridge smoke used the Windows host gateway `192.168.16.1`, matching
+  the intended WSL-to-Windows bridge path.
+- Manual confirmation by ear is still the source of truth for subjective audio
+  quality, but the live provider/playback path completed successfully.
+
+### Next
+
+- Continue field testing with the current Desktop Debug app or build a fresh
+  private package when ready.
+- Keep the Voice VSIX beside the Desktop installer in cloud backup for recovery.
+
 ## 2026-05-15 Playback Warmup For Clipped Starts
 
 ### Current Milestone
