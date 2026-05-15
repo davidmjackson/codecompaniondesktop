@@ -18,7 +18,7 @@ public sealed class SpeechCandidatePipelineTests
 
         Assert.Equal("accepted", result.Decision);
         Assert.Equal("speech_rewritten", result.Reason);
-        Assert.Equal("Open the path below before testing.", result.SpeechText);
+        Assert.Equal("Open that location before testing.", result.SpeechText);
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public sealed class SpeechCandidatePipelineTests
 
         Assert.Equal("accepted", result.Decision);
         Assert.Equal("speech_rewritten", result.Reason);
-        Assert.Equal("The Retrospective app is in the path below.", result.SpeechText);
+        Assert.Equal("The Retrospective app is in that location.", result.SpeechText);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public sealed class SpeechCandidatePipelineTests
 
         Assert.Equal("accepted", result.Decision);
         Assert.Equal("speech_rewritten", result.Reason);
-        Assert.Equal("Use the path below for the project.", result.SpeechText);
+        Assert.Equal("Use that location for the project.", result.SpeechText);
     }
 
     [Fact]

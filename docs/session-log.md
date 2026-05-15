@@ -4,6 +4,35 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-15 Speech Path Placeholder Wording
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+
+### Issue
+
+- User asked that Desktop stop saying `path below` when rewriting directory
+  paths for speech.
+
+### Changed
+
+- Updated the speech path placeholder from `the path below` to `that location`.
+- Updated the focused speech pipeline tests for Windows, WSL/Linux, and UNC
+  path rewrites.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` succeeded with 0 warnings and 0
+  errors.
+- `dotnet test CodeCompanionDesktop.sln --no-build` passed 33 tests.
+- `git diff --check` passed.
+
+### Next
+
+- Listen for the next real path rewrite during normal use and adjust again if
+  `that location` still sounds awkward.
+
 ## 2026-05-15 OneDrive Copy-Back Repository Audit
 
 ### Current Milestone

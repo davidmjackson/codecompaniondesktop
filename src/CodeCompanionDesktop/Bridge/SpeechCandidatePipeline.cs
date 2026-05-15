@@ -114,7 +114,7 @@ public sealed partial class SpeechCandidatePipeline
             value = value[..^1];
         }
 
-        return $"the path below{trailingPunctuation}";
+        return $"that location{trailingPunctuation}";
     }
 
     private static bool IsPathTrailingPunctuation(char value)
