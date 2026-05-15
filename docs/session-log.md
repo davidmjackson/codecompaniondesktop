@@ -4,6 +4,37 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-15 Long Final Speech Truncation Fix
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+
+### Issue
+
+- A `/var/www/website` final Codex plan reached Desktop but was not spoken.
+- Voice logs showed Desktop returned HTTP 500 because the final speech text was
+  longer than the 1000-character playback guard after truncation.
+
+### Changed
+
+- Updated `SpeechCandidatePipeline` truncation to reserve the full ellipsis
+  length before appending it, guaranteeing speech text stays within
+  `MaxSpeechTextLength`.
+- Added a regression test for long final candidates.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` succeeded with 0 warnings and 0
+  errors.
+- `dotnet test CodeCompanionDesktop.sln --no-build` passed 34 tests.
+- `git diff --check` passed.
+
+### Next
+
+- Restart Desktop and verify the next long Codex final answer is spoken as a
+  truncated summary instead of being rejected.
+
 ## 2026-05-15 Speech Path Placeholder Wording
 
 ### Current Milestone

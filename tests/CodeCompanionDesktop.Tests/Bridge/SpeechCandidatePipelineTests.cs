@@ -73,4 +73,24 @@ public sealed class SpeechCandidatePipelineTests
             "Bridge health is at http://127.0.0.1:47321/health and candidates use /v1/speech/candidates.",
             result.SpeechText);
     }
+
+    [Fact]
+    public void TruncatesLongFinalCandidatesWithinSpeechLimit()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+        var longText = string.Join(" ", Enumerable.Repeat("website planning summary", 120));
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-long-final",
+            "assistant-message",
+            "final",
+            null,
+            longText));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("truncated", result.Reason);
+        Assert.NotNull(result.SpeechText);
+        Assert.True(result.SpeechText.Length <= SpeechCandidatePipeline.MaxSpeechTextLength);
+        Assert.EndsWith("...", result.SpeechText);
+    }
 }

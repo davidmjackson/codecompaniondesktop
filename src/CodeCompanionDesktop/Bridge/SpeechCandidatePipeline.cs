@@ -9,6 +9,7 @@ namespace CodeCompanionDesktop.Bridge;
 public sealed partial class SpeechCandidatePipeline
 {
     public const int MaxSpeechTextLength = 1000;
+    private const string TruncationSuffix = "...";
 
     private readonly object syncRoot = new();
     private readonly HashSet<string> seenMessageIds = new(StringComparer.Ordinal);
@@ -50,7 +51,7 @@ public sealed partial class SpeechCandidatePipeline
 
         if (filtered.Length > MaxSpeechTextLength)
         {
-            filtered = $"{filtered[..(MaxSpeechTextLength - 1)].TrimEnd()}...";
+            filtered = $"{filtered[..(MaxSpeechTextLength - TruncationSuffix.Length)].TrimEnd()}{TruncationSuffix}";
             reason = reason == "privacy_filtered" ? "privacy_filtered_truncated" : "truncated";
         }
 
