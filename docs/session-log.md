@@ -4,6 +4,39 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-16 Automatic Speech Candidate Scope Diagnosis
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+
+### Issue
+
+- User reported that the MCP explanation response was not converted to speech.
+
+### Findings
+
+- Code Companion Desktop was running from the Debug build and Windows bridge
+  health returned OK at `http://127.0.0.1:47321/health`.
+- Desktop speech history showed recent Code Companion Voice client hello events
+  around the report time, but no speech candidate after the last manual spoken
+  update.
+- The Windows Voice extension was reading `C:\Users\User\.codex\sessions`,
+  which only contained older Windows Codex sessions.
+- The WSL Voice extension was watching `~/.codex/sessions` for workspace
+  `/var/www/sandbox`; diagnostics showed `matching=0`.
+- The active Codex session for the reported response was under
+  `/mnt/d/Development/CodeCompanionDesktop`, so the WSL watcher did not select
+  it and did not forward a candidate to Desktop.
+
+### Next
+
+- Fix or configure Code Companion Voice so automatic candidate discovery can
+  follow the active Codex session when the VS Code workspace and Codex session
+  cwd differ.
+- Consider adding clearer Voice diagnostics when Desktop receives client hello
+  events but no matching Codex session is active.
+
 ## 2026-05-15 Spoken Update Wait Before Desktop Stop
 
 ### Current Milestone
