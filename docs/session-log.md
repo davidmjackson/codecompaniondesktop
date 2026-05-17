@@ -4,6 +4,38 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-17 Notes Tab Voice Extension Setup
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+- Milestone 10: Desktop UX And Onboarding Refresh includes in-app setup notes.
+
+### Changed
+
+- Expanded the Desktop Notes tab with a `VS Code Extension Setup` section.
+- Documented that Code Companion Voice is installed separately into VS Code.
+- Pointed local development installs at the Voice repository VSIX from
+  `D:\Development\CodeCompanionVoice` after `npm run package:vsix`.
+- Noted that Windows VS Code and WSL Remote use separate extension hosts and
+  each host needs the extension installed.
+- Kept the VS Code Marketplace described as the future production source until
+  publication is complete.
+
+### Verified
+
+- `git diff --check` passed.
+- `dotnet build CodeCompanionDesktop.sln` passed with the explicit Windows SDK
+  path.
+- `dotnet test CodeCompanionDesktop.sln --no-build` passed 47 tests with the
+  explicit Windows SDK path.
+
+### Next
+
+- Restart Desktop if live review of the Notes tab is needed.
+- Replace the local VSIX wording with Marketplace install wording after Code
+  Companion Voice publication is complete.
+
 ## 2026-05-17 Demo Mode Implementation
 
 ### Current Milestone
