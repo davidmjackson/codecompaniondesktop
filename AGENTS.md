@@ -65,6 +65,12 @@ this project unless the user explicitly asks to switch projects.
   or smoke testing.
 - Before building, check for running `CodeCompanionDesktop.exe` or relevant
   `dotnet` processes to avoid locked output files.
+- When working from WSL, do not rely on Linux `pgrep` or WSL
+  `http://127.0.0.1:47321/health` to decide whether the Windows desktop app is
+  running. Check the Windows process and bridge from PowerShell instead:
+  `powershell.exe -NoProfile -Command 'Get-Process CodeCompanionDesktop -ErrorAction SilentlyContinue'`
+  and
+  `powershell.exe -NoProfile -Command 'Invoke-RestMethod -Uri "http://127.0.0.1:47321/health" -TimeoutSec 2'`.
 - At the end of a development piece, report whether the app is running.
 
 ## Session Log
@@ -86,6 +92,9 @@ this project unless the user explicitly asks to switch projects.
   is running, then include the same point in the final text summary.
 - Use `scripts/send-speech-candidate.ps1 -Text "..."` for spoken updates. This
   writes a valid Desktop candidate inbox file and avoids VS Code webview audio.
+- When invoking the speech script from WSL, use PowerShell with the Windows path
+  to the script, for example
+  `powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'D:\Development\CodeCompanionDesktop\scripts\send-speech-candidate.ps1' -Text '...'`.
 - At the end, report branch, commit hash, tests run, push status, and app
   process status.
 - When giving the user manual steps to run, provide one step at a time.

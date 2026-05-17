@@ -828,6 +828,9 @@ At the start of each session:
 2. Read this architecture document.
 3. Read `docs/session-log.md`.
 4. Check branch, status, latest commits, and running app process.
+   - From WSL, check the Windows process and bridge with PowerShell. Do not use
+     Linux `pgrep` or WSL `localhost` as the source of truth for the Windows
+     Desktop app.
 5. State the current milestone from this document.
 6. State the last verified baseline from the session log.
 7. State the recommended next step.
@@ -853,6 +856,15 @@ Use:
 The script writes an `assistant-message` candidate with `speechHint:
 manual-speak-last` into the Desktop candidate inbox. This keeps spoken updates
 on the Desktop-owned audio path and does not depend on VS Code webview audio.
+
+When Codex is running from WSL, invoke the script through PowerShell with the
+Windows path. This avoids false negatives where WSL cannot see the Windows
+Desktop process or `127.0.0.1` bridge even though Desktop is running and
+speaking.
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'D:\Development\CodeCompanionDesktop\scripts\send-speech-candidate.ps1' -Text 'Milestone summary text.'
+```
 
 If the next operation will stop or restart Code Companion Desktop, call the
 script with `-WaitForPlayback` and wait for the command to return before

@@ -4,6 +4,46 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-17 Windows-Side Desktop Speech Checks
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+- Milestone 10: Desktop UX And Onboarding Refresh has a first accepted slice.
+
+### Issue
+
+- Codex reported that Code Companion Desktop was not running because WSL
+  `pgrep` found no Linux process and WSL `curl http://127.0.0.1:47321/health`
+  could not reach the Windows bridge.
+- The Windows app was actually running and had recently spoken a Code Companion
+  Voice candidate.
+
+### Decision
+
+- Future sessions running from WSL must check Desktop process and bridge state
+  from Windows PowerShell, not from Linux process or WSL `localhost` checks.
+- Spoken updates from WSL must invoke
+  `scripts/send-speech-candidate.ps1` through PowerShell with the Windows file
+  path.
+
+### Changed
+
+- Updated `AGENTS.md`, `README.md`, and `docs/architecture.md` with the
+  Windows-side status and spoken-update workflow.
+
+### Verified
+
+- Windows `Get-Process CodeCompanionDesktop` found the Debug app process.
+- Windows bridge health returned OK at `http://127.0.0.1:47321/health`.
+- A manual spoken update sent through the Windows script path was recorded as
+  `spoken/manual-speak-last` in Desktop speech history.
+
+### Next
+
+- Use Windows-side process, bridge, and speech-script checks whenever Codex is
+  running from WSL.
+
 ## 2026-05-17 Demo Mode Planning
 
 ### Current Milestone

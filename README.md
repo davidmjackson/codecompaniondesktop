@@ -85,6 +85,23 @@ end-of-milestone summaries through Code Companion Desktop with:
 
 The script writes a valid speech candidate into the Desktop candidate inbox
 using the Desktop-owned audio path. It does not rely on VS Code webview audio.
+When running Codex from WSL, check Desktop status and send spoken updates
+through Windows PowerShell. WSL `pgrep` and WSL `localhost` can miss a running
+Windows app and bridge.
+
+Windows-side status check from WSL:
+
+```bash
+powershell.exe -NoProfile -Command 'Get-Process CodeCompanionDesktop -ErrorAction SilentlyContinue'
+powershell.exe -NoProfile -Command 'Invoke-RestMethod -Uri "http://127.0.0.1:47321/health" -TimeoutSec 2'
+```
+
+Windows-side spoken update from WSL:
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'D:\Development\CodeCompanionDesktop\scripts\send-speech-candidate.ps1' -Text 'Milestone summary text.'
+```
+
 When the next action will stop or restart Code Companion Desktop, wait for the
 spoken update to finish first:
 
