@@ -801,6 +801,8 @@ Scope:
 Reference:
 
 - Detailed notes are maintained in `docs/desktop-ux-refresh.md`.
+- Demo Mode planning and test coverage notes are maintained in
+  `docs/demo-mode.md`.
 
 Status:
 
@@ -808,6 +810,15 @@ Status:
 - Pulled forward before completing Milestone 9 because the Desktop app needs a
   clearer first-run/status experience before release.
 - Status, Advanced, and Notes tabs passed manual review.
+
+Planned slice:
+
+- Add Demo Mode as a temporary Desktop-owned speech profile for live
+  demonstrations. The user can enter `Demo Mode` to make Codex speak more often
+  during the current session and `end demo` to restore the standard speech
+  policy. The mode must reset when the Desktop app closes and must preserve
+  pairing, privacy filtering, mute, queueing, provider settings, and normal
+  authorization behavior.
 
 ## Session Checklist
 

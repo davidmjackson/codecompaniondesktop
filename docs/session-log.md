@@ -4,6 +4,40 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-17 Demo Mode Planning
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+- Milestone 10: Desktop UX And Onboarding Refresh has a first accepted slice and
+  now includes a planned Demo Mode speech-profile slice.
+
+### Scope
+
+- Planned a temporary `Demo Mode` session behavior for live demonstrations.
+- Documented `Demo Mode` activation, `end demo` exit behavior, app-close reset,
+  Desktop-owned policy state, diagnostics, and non-goals.
+- Added a focused test plan covering command parsing, policy behavior,
+  session-only state, bridge/inbox integration, UI diagnostics, and manual
+  smoke verification.
+
+### Changed
+
+- Added `docs/demo-mode.md`.
+- Linked Demo Mode from `README.md`.
+- Updated `docs/architecture.md` Milestone 10 notes with the planned Demo Mode
+  slice.
+
+### Verified
+
+- `git diff --check` passed.
+
+### Next
+
+- Implement Demo Mode behind a Desktop-owned speech profile service.
+- Add focused unit tests before wiring the UI.
+- Keep Standard speech policy behavior unchanged when Demo Mode is inactive.
+
 ## 2026-05-16 Automatic Speech Candidate Scope Diagnosis
 
 ### Current Milestone
