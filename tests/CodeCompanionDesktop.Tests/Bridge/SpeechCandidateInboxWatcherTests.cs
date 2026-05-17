@@ -34,6 +34,19 @@ public sealed class SpeechCandidateInboxWatcherTests
         Assert.Single(Directory.EnumerateFiles(Path.Combine(fixture.InboxDirectory, "rejected"), "*.json"));
     }
 
+    [Fact]
+    public async Task ProcessFileCanEnableDemoMode()
+    {
+        using var fixture = await InboxFixture.CreateAsync();
+        var candidatePath = await fixture.WriteCandidateAsync("message-demo-mode", "Demo Mode");
+
+        var result = await fixture.Watcher.ProcessFileAsync(candidatePath);
+
+        Assert.Equal(System.Net.HttpStatusCode.Accepted, result.StatusCode);
+        Assert.True(fixture.RuntimeState.SpeechProfiles.IsDemoModeActive());
+        Assert.Equal(["Demo Mode is on. I will speak more often during this session."], fixture.SpokenTexts);
+    }
+
     private sealed class InboxFixture : IDisposable
     {
         private InboxFixture(
@@ -76,7 +89,7 @@ public sealed class SpeechCandidateInboxWatcherTests
                 },
                 runtimeState,
                 queue,
-                new SpeechCandidatePipeline());
+                new SpeechCandidatePipeline(runtimeState.SpeechProfiles));
             var watcher = new SpeechCandidateInboxWatcher(inboxDirectory, processor, runtimeState);
             await Task.Yield();
             return new InboxFixture(inboxDirectory, watcher, runtimeState, spokenTexts);

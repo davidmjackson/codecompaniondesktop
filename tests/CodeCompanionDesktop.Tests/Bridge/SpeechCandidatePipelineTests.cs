@@ -5,6 +5,175 @@ namespace CodeCompanionDesktop.Tests.Bridge;
 public sealed class SpeechCandidatePipelineTests
 {
     [Fact]
+    public void DemoModeCommandEnablesDemoProfileAndReturnsAcknowledgement()
+    {
+        var profiles = new SpeechProfileState();
+        var pipeline = new SpeechCandidatePipeline(profiles);
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-demo-mode",
+            "assistant-message",
+            "final",
+            null,
+            "  demo mode  "));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("demo-mode-enabled", result.Reason);
+        Assert.Equal("Demo Mode is on. I will speak more often during this session.", result.SpeechText);
+        Assert.True(profiles.IsDemoModeActive());
+    }
+
+    [Fact]
+    public void EndDemoCommandRestoresStandardProfile()
+    {
+        var profiles = new SpeechProfileState();
+        profiles.EnableDemoMode();
+        var pipeline = new SpeechCandidatePipeline(profiles);
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-end-demo",
+            "assistant-message",
+            "final",
+            null,
+            "End Demo"));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("demo-mode-ended", result.Reason);
+        Assert.Equal("Demo Mode is off. Standard speech policy is restored.", result.SpeechText);
+        Assert.False(profiles.IsDemoModeActive());
+    }
+
+    [Fact]
+    public void SimilarDemoPhrasesDoNotToggleProfile()
+    {
+        var profiles = new SpeechProfileState();
+        var pipeline = new SpeechCandidatePipeline(profiles);
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-similar-demo",
+            "assistant-message",
+            "commentary",
+            null,
+            "Please demo this mode."));
+
+        Assert.Equal("ignored", result.Decision);
+        Assert.Equal("non_final_candidate", result.Reason);
+        Assert.False(profiles.IsDemoModeActive());
+    }
+
+    [Fact]
+    public void DemoModeAcceptsNonFinalAssistantProgress()
+    {
+        var profiles = new SpeechProfileState();
+        profiles.EnableDemoMode();
+        var pipeline = new SpeechCandidatePipeline(profiles);
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-demo-progress",
+            "assistant-message",
+            "commentary",
+            null,
+            "I am checking the bridge and speech policy now."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("demo-mode-progress", result.Reason);
+        Assert.Equal("I am checking the bridge and speech policy now.", result.SpeechText);
+    }
+
+    [Fact]
+    public void DemoModeStillPrivacyFiltersBeforeSpeaking()
+    {
+        var profiles = new SpeechProfileState();
+        profiles.EnableDemoMode();
+        var pipeline = new SpeechCandidatePipeline(profiles);
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-demo-privacy",
+            "assistant-message",
+            "commentary",
+            null,
+            "Using token: abcdefghijklmnop and email david@example.com."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("demo-mode-progress", result.Reason);
+        Assert.NotNull(result.SpeechText);
+        Assert.Contains("[redacted]", result.SpeechText, StringComparison.Ordinal);
+        Assert.Contains("[redacted email]", result.SpeechText, StringComparison.Ordinal);
+        Assert.DoesNotContain("abcdefghijklmnop", result.SpeechText, StringComparison.Ordinal);
+        Assert.DoesNotContain("david@example.com", result.SpeechText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DuplicateDemoCommandDoesNotRepeatSpeech()
+    {
+        var profiles = new SpeechProfileState();
+        var pipeline = new SpeechCandidatePipeline(profiles);
+
+        var first = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-demo-duplicate",
+            "assistant-message",
+            "final",
+            null,
+            "Demo Mode"));
+        var second = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-demo-duplicate",
+            "assistant-message",
+            "final",
+            null,
+            "Demo Mode"));
+
+        Assert.Equal("accepted", first.Decision);
+        Assert.Equal("duplicate", second.Decision);
+        Assert.Equal("duplicate_candidate", second.Reason);
+        Assert.True(profiles.IsDemoModeActive());
+    }
+
+    [Fact]
+    public void DemoModeCanBeEnabledAgainAfterEndDemo()
+    {
+        var profiles = new SpeechProfileState();
+        var pipeline = new SpeechCandidatePipeline(profiles);
+
+        var firstEnable = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-demo-first",
+            "assistant-message",
+            "final",
+            null,
+            "Demo Mode"));
+        var endDemo = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-demo-end",
+            "assistant-message",
+            "final",
+            null,
+            "end demo"));
+        var secondEnable = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-demo-second",
+            "assistant-message",
+            "final",
+            null,
+            "Demo Mode"));
+
+        Assert.Equal("accepted", firstEnable.Decision);
+        Assert.Equal("accepted", endDemo.Decision);
+        Assert.Equal("accepted", secondEnable.Decision);
+        Assert.Equal("demo-mode-enabled", secondEnable.Reason);
+        Assert.True(profiles.IsDemoModeActive());
+    }
+
+    [Fact]
+    public void NewProfileStateStartsInStandardProfile()
+    {
+        var profiles = new SpeechProfileState();
+        profiles.EnableDemoMode();
+
+        var nextSessionProfiles = new SpeechProfileState();
+
+        Assert.True(profiles.IsDemoModeActive());
+        Assert.False(nextSessionProfiles.IsDemoModeActive());
+        Assert.Equal(nameof(SpeechProfile.Standard), nextSessionProfiles.ActiveProfileName);
+    }
+
+    [Fact]
     public void RewritesWindowsDirectoryPathsForSpeech()
     {
         var pipeline = new SpeechCandidatePipeline();

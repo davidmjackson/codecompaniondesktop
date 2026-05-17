@@ -28,6 +28,7 @@ public sealed class LocalBridgeServerContractTests
         Assert.False(root.GetProperty("queueEnabled").GetBoolean());
         Assert.Equal(0, root.GetProperty("queued").GetInt32());
         Assert.Equal(3, root.GetProperty("queueLimit").GetInt32());
+        Assert.Equal("Standard", root.GetProperty("speechProfile").GetString());
     }
 
     [Fact]
@@ -340,6 +341,106 @@ public sealed class LocalBridgeServerContractTests
     }
 
     [Fact]
+    public async Task SpeechCandidateDemoModeCommandEnablesDemoProfile()
+    {
+        using var fixture = BridgeFixture.Start();
+        await fixture.AuthorizeClientAsync();
+
+        using var response = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson(
+                messageId: "message-demo-mode",
+                text: "Demo Mode")));
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+
+        using var document = await ReadJsonAsync(response);
+        var root = document.RootElement;
+        Assert.Equal("spoken", root.GetProperty("decision").GetString());
+        Assert.Equal("demo-mode-enabled", root.GetProperty("reason").GetString());
+        Assert.True(fixture.RuntimeState.SpeechProfiles.IsDemoModeActive());
+        Assert.Equal(["Demo Mode is on. I will speak more often during this session."], fixture.SpokenTexts);
+
+        using var healthResponse = await fixture.Client.GetAsync("health");
+        using var healthDocument = await ReadJsonAsync(healthResponse);
+        Assert.Equal("Demo", healthDocument.RootElement.GetProperty("speechProfile").GetString());
+    }
+
+    [Fact]
+    public async Task SpeechCandidateDemoModeAcceptsLaterNonFinalPayload()
+    {
+        using var fixture = BridgeFixture.Start();
+        await fixture.AuthorizeClientAsync();
+
+        using var demoResponse = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson(
+                messageId: "message-demo-mode",
+                text: "Demo Mode")));
+        Assert.Equal(HttpStatusCode.Accepted, demoResponse.StatusCode);
+
+        using var response = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson(
+                messageId: "message-demo-progress",
+                text: "I am checking the code path for the demo.",
+                phase: "commentary")));
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+
+        using var document = await ReadJsonAsync(response);
+        var root = document.RootElement;
+        Assert.Equal("spoken", root.GetProperty("decision").GetString());
+        Assert.Equal("demo-mode-progress", root.GetProperty("reason").GetString());
+        Assert.Equal(
+            [
+                "Demo Mode is on. I will speak more often during this session.",
+                "I am checking the code path for the demo."
+            ],
+            fixture.SpokenTexts);
+    }
+
+    [Fact]
+    public async Task SpeechCandidateEndDemoCommandRestoresStandardPolicy()
+    {
+        using var fixture = BridgeFixture.Start();
+        await fixture.AuthorizeClientAsync();
+
+        using var demoResponse = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson(
+                messageId: "message-demo-mode",
+                text: "Demo Mode")));
+        Assert.Equal(HttpStatusCode.Accepted, demoResponse.StatusCode);
+
+        using var endResponse = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson(
+                messageId: "message-end-demo",
+                text: "end demo")));
+        Assert.Equal(HttpStatusCode.Accepted, endResponse.StatusCode);
+        Assert.False(fixture.RuntimeState.SpeechProfiles.IsDemoModeActive());
+
+        using var progressResponse = await fixture.Client.PostAsync(
+            "v1/speech/candidates",
+            JsonContent(ValidSpeechCandidateJson(
+                messageId: "message-standard-progress",
+                text: "This progress update should return to normal policy.",
+                phase: "commentary")));
+
+        using var document = await ReadJsonAsync(progressResponse);
+        var root = document.RootElement;
+        Assert.Equal("ignored", root.GetProperty("decision").GetString());
+        Assert.Equal("non_final_candidate", root.GetProperty("reason").GetString());
+        Assert.Equal(
+            [
+                "Demo Mode is on. I will speak more often during this session.",
+                "Demo Mode is off. Standard speech policy is restored."
+            ],
+            fixture.SpokenTexts);
+    }
+
+    [Fact]
     public async Task SpeechCandidateIgnoresDuplicateMessageId()
     {
         using var fixture = BridgeFixture.Start();
@@ -582,7 +683,7 @@ public sealed class LocalBridgeServerContractTests
                 captureSpeechAsync,
                 runtimeState,
                 queue,
-                new SpeechCandidatePipeline(),
+                new SpeechCandidatePipeline(runtimeState.SpeechProfiles),
                 clientTrustStore: clientTrustStore,
                 port: 0);
             server.Start();

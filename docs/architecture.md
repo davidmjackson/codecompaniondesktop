@@ -811,7 +811,7 @@ Status:
   clearer first-run/status experience before release.
 - Status, Advanced, and Notes tabs passed manual review.
 
-Planned slice:
+Implemented slice:
 
 - Add Demo Mode as a temporary Desktop-owned speech profile for live
   demonstrations. The user can enter `Demo Mode` to make Codex speak more often
@@ -819,6 +819,11 @@ Planned slice:
   policy. The mode must reset when the Desktop app closes and must preserve
   pairing, privacy filtering, mute, queueing, provider settings, and normal
   authorization behavior.
+- First implementation is complete on the Desktop side: profile commands flow
+  through the existing speech candidate pipeline, health and diagnostics expose
+  the active profile, the Status tab shows Demo Mode state, and focused tests
+  cover command handling, bridge behavior, inbox behavior, diagnostics, and
+  session-only reset.
 
 ## Session Checklist
 

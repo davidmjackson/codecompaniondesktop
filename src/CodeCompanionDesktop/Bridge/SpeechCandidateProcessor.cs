@@ -20,7 +20,7 @@ public sealed class SpeechCandidateProcessor
         this.speakAsync = speakAsync;
         this.runtimeState = runtimeState;
         this.speechQueue = speechQueue;
-        this.speechCandidatePipeline = speechCandidatePipeline ?? new SpeechCandidatePipeline();
+        this.speechCandidatePipeline = speechCandidatePipeline ?? new SpeechCandidatePipeline(runtimeState.SpeechProfiles);
     }
 
     public async Task<SpeechCandidateProcessingResult> ProcessAsync(SpeechCandidateRequest candidateRequest)

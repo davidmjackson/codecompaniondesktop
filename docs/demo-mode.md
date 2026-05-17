@@ -78,17 +78,18 @@ Candidate handling should stay deterministic:
 
 ## Desktop Implementation Notes
 
-Likely Desktop changes:
+Implemented first slice:
 
-- Add a session-only speech profile service or state object.
-- Extend `SpeechCandidatePipeline` to recognize profile commands and apply the
-  active profile to policy decisions.
-- Add diagnostics fields for active profile and last profile change.
-- Add a visible Status tab indicator and an `End Demo` button.
+- Added a session-only speech profile state object.
+- Extended `SpeechCandidatePipeline` to recognize profile commands and apply
+  the active profile to policy decisions.
+- Added health and diagnostics fields for active profile and last profile
+  change.
+- Added a visible Status tab indicator and an `End Demo` button.
 - Include profile information in persisted speech history records only as
   diagnostic metadata, not as a startup setting.
-- Avoid changing Code Companion Voice unless the current candidate shape cannot
-  represent explicit user phrases clearly enough.
+- Avoided Code Companion Voice changes for the first slice. Desktop accepts
+  `Demo Mode` and `end demo` through the existing candidate contract.
 
 Potential candidate decision reasons:
 
@@ -177,6 +178,16 @@ Run from PowerShell in the Windows checkout:
 8. Confirm Desktop speaks the exit acknowledgement and Status returns to
    Standard policy.
 9. Restart Desktop and confirm Demo Mode is off.
+
+First implementation smoke result:
+
+- Desktop health reported `speechProfile: "Standard"` on startup.
+- Inbox candidate `Demo Mode` spoke the acknowledgement and changed health to
+  `speechProfile: "Demo"`.
+- A non-final candidate without `speechHint` spoke with reason
+  `demo-mode-progress`.
+- Inbox candidate `end demo` spoke the acknowledgement and restored health to
+  `speechProfile: "Standard"`.
 
 ### Regression Checks
 

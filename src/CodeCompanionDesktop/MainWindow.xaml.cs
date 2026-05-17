@@ -523,7 +523,8 @@ public partial class MainWindow : Window
         var queue = bridgeRuntimeState.QueueBridgeSpeechRequests
             ? $"Queue: {bridgeRuntimeState.PendingSpeechRequests}/{bridgeRuntimeState.MaxQueuedSpeechRequests}."
             : "Queue disabled.";
-        BridgeStatusText.Text = $"Bridge listening on {LocalBridgeServer.BaseUrl}. State: {speaking}. {queue} {bridgeRuntimeState.LastStatus}";
+        BridgeStatusText.Text = $"Bridge listening on {LocalBridgeServer.BaseUrl}. State: {speaking}. Profile: {bridgeRuntimeState.SpeechProfiles.ActiveProfileName}. {queue} {bridgeRuntimeState.LastStatus}";
+        RefreshSpeechProfileStatus();
         RefreshSpeechDiagnostics();
         RefreshProjectRegistry();
         RefreshProjectSpeechHistory();
@@ -534,6 +535,7 @@ public partial class MainWindow : Window
     private void RefreshSpeechDiagnostics()
     {
         var snapshot = bridgeRuntimeState.GetDiagnosticsSnapshot();
+        RefreshSpeechProfileStatus();
         var queue = snapshot.QueueBridgeSpeechRequests
             ? $"{snapshot.PendingSpeechRequests}/{snapshot.MaxQueuedSpeechRequests}"
             : "disabled";
@@ -558,6 +560,8 @@ public partial class MainWindow : Window
             Environment.NewLine,
             $"Bridge endpoint: {LocalBridgeServer.BaseUrl}",
             $"Bridge state: {(snapshot.IsSpeaking ? "speaking" : "idle")}",
+            $"Speech profile: {snapshot.ActiveSpeechProfile}",
+            $"Last speech profile change: {snapshot.LastSpeechProfileChange}",
             $"Queue: {queue}",
             $"Provider: {settings.SpeechProvider}",
             $"ElevenLabs voice ID: {settings.ElevenLabsVoiceId}",
@@ -574,6 +578,32 @@ public partial class MainWindow : Window
             recentClients,
             recent);
         RefreshReadinessSummary();
+    }
+
+    private async void EndDemoModeButton_Click(object sender, RoutedEventArgs e)
+    {
+        bridgeRuntimeState.DisableDemoMode();
+        RefreshBridgeStatus();
+
+        try
+        {
+            await PlayBridgeSpeechAsync("Demo Mode is off. Standard speech policy is restored.");
+        }
+        catch (Exception ex)
+        {
+            BridgeStatusText.Text = $"Demo Mode ended. Spoken acknowledgement failed: {ex.Message}";
+            RefreshSpeechDiagnostics();
+        }
+    }
+
+    private void RefreshSpeechProfileStatus()
+    {
+        var snapshot = bridgeRuntimeState.GetDiagnosticsSnapshot();
+        var isDemo = string.Equals(snapshot.ActiveSpeechProfile, nameof(SpeechProfile.Demo), StringComparison.Ordinal);
+        SpeechProfileStatusText.Text = isDemo
+            ? "Speech profile: Demo Mode. Codex will speak more often during this Desktop session."
+            : "Speech profile: Standard. Codex will use the normal speech policy.";
+        EndDemoModeButton.IsEnabled = isDemo;
     }
 
     private void RefreshProjectRegistry()
@@ -736,13 +766,16 @@ public partial class MainWindow : Window
         }
 
         var isHealthy = issues.Count == 0;
+        var profile = bridgeRuntimeState.SpeechProfiles.ActiveProfileName;
         ReadinessIconText.Text = isHealthy ? "✓" : "✕";
         ReadinessIconText.Foreground = isHealthy ? System.Windows.Media.Brushes.ForestGreen : System.Windows.Media.Brushes.Firebrick;
         ReadinessSummaryText.Text = isHealthy
-            ? "All systems are working and APIs are configured."
+            ? profile == nameof(SpeechProfile.Demo)
+                ? "All systems are working and Demo Mode is active."
+                : "All systems are working and APIs are configured."
             : "Code Companion needs attention.";
         ReadinessDetailsText.Text = isHealthy
-            ? $"Bridge is listening on {LocalBridgeServer.BaseUrl}. Provider key is loaded. No active provider or playback errors."
+            ? $"Bridge is listening on {LocalBridgeServer.BaseUrl}. Provider key is loaded. Speech profile: {profile}. No active provider or playback errors."
             : string.Join(Environment.NewLine, issues.Select(issue => $"- {issue}"));
     }
 
@@ -780,6 +813,7 @@ public partial class MainWindow : Window
             SettingsStatusText.Text = DescribeStartupPreferences("Startup preferences loaded.");
             RefreshStartupDiagnostics();
             RefreshBridgeStatus();
+            RefreshSpeechProfileStatus();
             RefreshSpeechDiagnostics();
             RefreshProjectRegistry();
             RefreshProjectSpeechHistory();

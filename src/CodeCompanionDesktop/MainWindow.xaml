@@ -111,6 +111,30 @@
                                 Padding="18"
                                 Style="{StaticResource CardBorderStyle}">
                             <StackPanel>
+                                <TextBlock Text="Speech Profile"
+                                           Style="{StaticResource SectionTitleTextStyle}" />
+                                <TextBlock Text="Demo Mode makes Codex speak more often for the current Desktop session."
+                                           Margin="0,6,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                                <TextBlock x:Name="SpeechProfileStatusText"
+                                           Margin="0,8,0,0"
+                                           Text="Speech profile: Standard"
+                                           TextWrapping="Wrap" />
+                                <WrapPanel Margin="0,12,0,0">
+                                    <Button x:Name="EndDemoModeButton"
+                                            MinWidth="128"
+                                            Height="32"
+                                            Margin="0,0,10,10"
+                                            Content="End Demo"
+                                            Click="EndDemoModeButton_Click" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,18,0,0"
+                                Padding="18"
+                                Style="{StaticResource CardBorderStyle}">
+                            <StackPanel>
                                 <TextBlock Text="Startup"
                                            Style="{StaticResource SectionTitleTextStyle}" />
                                 <TextBlock Text="Controls whether Code Companion Desktop is ready before VS Code opens."

@@ -560,16 +560,15 @@ Bridge speech queue preferences are stored in the same settings file.
 See `docs/session-log.md` for the latest development status, verification, and
 next steps.
 
-## Demo Mode Planning
+## Demo Mode
 
-Demo Mode is planned as a temporary Desktop-owned speech profile for live demos.
+Demo Mode is a temporary Desktop-owned speech profile for live demos.
 The user can enter `Demo Mode` to make Codex speak more often during the current
 session, then enter `end demo` or close Desktop to return to the standard speech
-policy. The plan and test strategy are maintained in `docs/demo-mode.md`.
+policy. The behavior and test strategy are maintained in `docs/demo-mode.md`.
 
 ## Next Milestones
 
-1. Add Demo Mode as a session-only speech profile for live app demonstrations.
-2. Add VS Code extension first-run checks for the desktop bridge and installer
+1. Add VS Code extension first-run checks for the desktop bridge and installer
    link.
-3. Add an update/signing flow for non-developer daily use.
+2. Add an update/signing flow for non-developer daily use.

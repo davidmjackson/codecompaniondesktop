@@ -251,7 +251,8 @@ public sealed class LocalBridgeServer : IDisposable
             runtimeState.IsSpeaking,
             runtimeState.QueueBridgeSpeechRequests,
             runtimeState.PendingSpeechRequests,
-            runtimeState.MaxQueuedSpeechRequests);
+            runtimeState.MaxQueuedSpeechRequests,
+            runtimeState.SpeechProfiles.ActiveProfileName);
     }
 
     private bool IsSessionAuthorized(IReadOnlyDictionary<string, string> headers, string clientId)
@@ -494,7 +495,8 @@ public sealed class LocalBridgeServer : IDisposable
         [property: JsonPropertyName("speaking")] bool Speaking,
         [property: JsonPropertyName("queueEnabled")] bool QueueEnabled,
         [property: JsonPropertyName("queued")] int Queued,
-        [property: JsonPropertyName("queueLimit")] int QueueLimit);
+        [property: JsonPropertyName("queueLimit")] int QueueLimit,
+        [property: JsonPropertyName("speechProfile")] string SpeechProfile);
 
     private sealed record BridgeSessionAuthorization(
         string Token,

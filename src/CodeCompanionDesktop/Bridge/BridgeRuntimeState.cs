@@ -22,6 +22,8 @@ public sealed class BridgeRuntimeState
     private int maxQueuedSpeechRequests = 3;
     private PendingSpeechCandidate? pendingSpeechCandidate;
 
+    public SpeechProfileState SpeechProfiles { get; }
+
     public bool IsSpeaking
     {
         get
@@ -80,10 +82,12 @@ public sealed class BridgeRuntimeState
 
     public BridgeRuntimeState(
         SpeechHistoryStore? speechHistoryStore = null,
-        ProjectRegistryStore? projectRegistryStore = null)
+        ProjectRegistryStore? projectRegistryStore = null,
+        SpeechProfileState? speechProfiles = null)
     {
         this.speechHistoryStore = speechHistoryStore;
         this.projectRegistryStore = projectRegistryStore;
+        SpeechProfiles = speechProfiles ?? new SpeechProfileState();
 
         var snapshot = speechHistoryStore?.Load();
         if (snapshot is not null)
@@ -112,6 +116,8 @@ public sealed class BridgeRuntimeState
                 LastClient,
                 LastSpeechCandidate,
                 LastSpeechDecision,
+                SpeechProfiles.ActiveProfileName,
+                SpeechProfiles.LastProfileChange,
                 LastProviderError,
                 LastPlaybackError,
                 recentProjects.ToArray(),
@@ -194,6 +200,16 @@ public sealed class BridgeRuntimeState
             LastStatus = isEnabled
                 ? $"Bridge speech queue enabled. Limit: {maxQueuedRequests}."
                 : "Bridge speech queue disabled. Busy requests are rejected.";
+        }
+    }
+
+    public void DisableDemoMode()
+    {
+        lock (syncRoot)
+        {
+            SpeechProfiles.DisableDemoMode();
+            LastStatus = "Demo Mode ended from Desktop.";
+            AddRecentSpeechResult("Speech profile changed to Standard.");
         }
     }
 
@@ -500,6 +516,8 @@ public sealed record BridgeDiagnosticsSnapshot(
     string LastClient,
     string LastSpeechCandidate,
     string LastSpeechDecision,
+    string ActiveSpeechProfile,
+    string LastSpeechProfileChange,
     string LastProviderError,
     string LastPlaybackError,
     IReadOnlyList<string> RecentProjects,

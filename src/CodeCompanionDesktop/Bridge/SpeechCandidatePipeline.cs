@@ -14,26 +14,18 @@ public sealed partial class SpeechCandidatePipeline
     private readonly object syncRoot = new();
     private readonly HashSet<string> seenMessageIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> seenTextHashes = new(StringComparer.Ordinal);
+    private readonly SpeechProfileState speechProfiles;
+
+    public SpeechCandidatePipeline(SpeechProfileState? speechProfiles = null)
+    {
+        this.speechProfiles = speechProfiles ?? new SpeechProfileState();
+    }
 
     public SpeechCandidatePipelineResult Prepare(SpeechCandidatePipelineInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
 
-        if (!string.Equals(input.Kind.Trim(), "assistant-message", StringComparison.OrdinalIgnoreCase))
-        {
-            return SpeechCandidatePipelineResult.Ignored("unsupported_candidate_kind");
-        }
-
         var speechHint = NormalizeSpeechHint(input.SpeechHint);
-        if (!string.IsNullOrWhiteSpace(input.Phase)
-            && !string.Equals(input.Phase.Trim(), "final", StringComparison.OrdinalIgnoreCase))
-        {
-            if (!IsExplicitSpeechRequest(speechHint))
-            {
-                return SpeechCandidatePipelineResult.Ignored("non_final_candidate");
-            }
-        }
-
         var normalized = NormalizeForSpeech(input.Text);
         if (string.IsNullOrWhiteSpace(normalized))
         {
@@ -47,7 +39,36 @@ public sealed partial class SpeechCandidatePipeline
             return SpeechCandidatePipelineResult.Ignored("empty_after_privacy_filter");
         }
 
+        var profileCommand = ParseSpeechProfileCommand(filtered);
+        if (profileCommand is not SpeechProfileCommand.None)
+        {
+            if (!IsSupportedProfileCommandKind(input.Kind))
+            {
+                return SpeechCandidatePipelineResult.Ignored("unsupported_candidate_kind");
+            }
+
+            return PrepareProfileCommand(input.MessageId, profileCommand);
+        }
+
+        if (!IsSupportedSpeechCandidateKind(input.Kind))
+        {
+            return SpeechCandidatePipelineResult.Ignored("unsupported_candidate_kind");
+        }
+
         var reason = GetAcceptedReason(normalized, speechPolicyText, filtered, speechHint);
+        if (!string.IsNullOrWhiteSpace(input.Phase)
+            && !string.Equals(input.Phase.Trim(), "final", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!IsExplicitSpeechRequest(speechHint))
+            {
+                if (!speechProfiles.IsDemoModeActive())
+                {
+                    return SpeechCandidatePipelineResult.Ignored("non_final_candidate");
+                }
+
+                reason = "demo-mode-progress";
+            }
+        }
 
         if (filtered.Length > MaxSpeechTextLength)
         {
@@ -55,19 +76,58 @@ public sealed partial class SpeechCandidatePipeline
             reason = reason == "privacy_filtered" ? "privacy_filtered_truncated" : "truncated";
         }
 
-        var normalizedHash = HashNormalizedText(filtered);
+        return ReserveAccepted(input.MessageId, filtered, reason);
+    }
+
+    private SpeechCandidatePipelineResult PrepareProfileCommand(string messageId, SpeechProfileCommand command)
+    {
+        var speechText = command == SpeechProfileCommand.EnableDemoMode
+            ? "Demo Mode is on. I will speak more often during this session."
+            : "Demo Mode is off. Standard speech policy is restored.";
+        var reason = command == SpeechProfileCommand.EnableDemoMode
+            ? "demo-mode-enabled"
+            : "demo-mode-ended";
+
+        var result = ReserveAccepted(messageId, speechText, reason, dedupeText: false);
+        if (result.Decision != "accepted")
+        {
+            return result;
+        }
+
+        if (command == SpeechProfileCommand.EnableDemoMode)
+        {
+            speechProfiles.EnableDemoMode();
+        }
+        else
+        {
+            speechProfiles.DisableDemoMode();
+        }
+
+        return result;
+    }
+
+    private SpeechCandidatePipelineResult ReserveAccepted(
+        string messageId,
+        string speechText,
+        string reason,
+        bool dedupeText = true)
+    {
+        var normalizedHash = HashNormalizedText(speechText);
         lock (syncRoot)
         {
-            if (seenMessageIds.Contains(input.MessageId) || seenTextHashes.Contains(normalizedHash))
+            if (seenMessageIds.Contains(messageId) || (dedupeText && seenTextHashes.Contains(normalizedHash)))
             {
                 return SpeechCandidatePipelineResult.Duplicate("duplicate_candidate");
             }
 
-            var reservation = new SpeechCandidateReservation(input.MessageId, normalizedHash);
+            var reservation = new SpeechCandidateReservation(messageId, normalizedHash);
             seenMessageIds.Add(reservation.MessageId);
-            seenTextHashes.Add(reservation.NormalizedTextHash);
+            if (dedupeText)
+            {
+                seenTextHashes.Add(reservation.NormalizedTextHash);
+            }
 
-            return SpeechCandidatePipelineResult.Accepted(filtered, reason, reservation);
+            return SpeechCandidatePipelineResult.Accepted(speechText, reason, reservation);
         }
     }
 
@@ -147,6 +207,34 @@ public sealed partial class SpeechCandidatePipeline
         return speechHint is "voice-check-in" or "manual-speak-last" or "manual-desktop-candidate-test";
     }
 
+    private static bool IsSupportedSpeechCandidateKind(string kind)
+    {
+        return string.Equals(kind.Trim(), "assistant-message", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSupportedProfileCommandKind(string kind)
+    {
+        var normalized = kind.Trim();
+        return string.Equals(normalized, "assistant-message", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "user-message", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static SpeechProfileCommand ParseSpeechProfileCommand(string text)
+    {
+        var normalized = text.Trim();
+        if (string.Equals(normalized, "Demo Mode", StringComparison.OrdinalIgnoreCase))
+        {
+            return SpeechProfileCommand.EnableDemoMode;
+        }
+
+        if (string.Equals(normalized, "end demo", StringComparison.OrdinalIgnoreCase))
+        {
+            return SpeechProfileCommand.DisableDemoMode;
+        }
+
+        return SpeechProfileCommand.None;
+    }
+
     private static string? NormalizeSpeechHint(string? speechHint)
     {
         return string.IsNullOrWhiteSpace(speechHint)
@@ -187,6 +275,13 @@ public sealed partial class SpeechCandidatePipeline
 
     [GeneratedRegex(@"(?<![\w])/(?:mnt|var|home|tmp|etc|usr|opt|workspace|srv)/[^\s\])}>""']+")]
     private static partial Regex UnixPathRegex();
+}
+
+internal enum SpeechProfileCommand
+{
+    None,
+    EnableDemoMode,
+    DisableDemoMode
 }
 
 public sealed record SpeechCandidatePipelineInput(

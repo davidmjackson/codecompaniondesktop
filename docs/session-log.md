@@ -4,6 +4,47 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-17 Demo Mode Implementation
+
+### Current Milestone
+
+- Milestone 9: Public Release Packaging, with public publication deferred.
+- Milestone 10: Desktop UX And Onboarding Refresh includes the Demo Mode
+  speech-profile slice.
+
+### Changed
+
+- Added session-only `SpeechProfileState` with Standard and Demo profiles.
+- Updated `SpeechCandidatePipeline` so exact `Demo Mode` and `end demo`
+  candidates toggle the active Desktop speech profile.
+- Demo Mode now accepts non-final assistant progress candidates without a
+  speech hint, while Standard policy continues to ignore them.
+- Added active speech profile to bridge health, diagnostics, readiness text, and
+  the Status tab.
+- Added an `End Demo` Status tab action.
+- Added focused pipeline, runtime-state, bridge, and inbox tests.
+
+### Verified
+
+- `dotnet build CodeCompanionDesktop.sln` passed with the Windows SDK path.
+- `dotnet test CodeCompanionDesktop.sln --no-build` passed with the Windows SDK
+  path.
+- `git diff --check` passed.
+- Live smoke passed through the Desktop candidate inbox:
+  - startup health reported `speechProfile: "Standard"`;
+  - `Demo Mode` spoke and changed health to `speechProfile: "Demo"`;
+  - a non-final no-hint progress candidate spoke with reason
+    `demo-mode-progress`;
+  - `end demo` spoke and restored health to `speechProfile: "Standard"`.
+
+### Next
+
+- Confirm whether Code Companion Voice should forward explicit user messages in
+  a later slice so typed `Demo Mode` commands are not dependent on assistant
+  echoing or manual candidate paths.
+- Consider adding a visible `Start Demo` button if user-message forwarding is
+  deferred.
+
 ## 2026-05-17 Windows-Side Desktop Speech Checks
 
 ### Current Milestone

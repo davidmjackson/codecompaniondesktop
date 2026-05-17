@@ -28,6 +28,8 @@ public sealed class BridgeRuntimeStateTests
         Assert.Contains("Code Companion Voice", snapshot.LastClient, StringComparison.Ordinal);
         Assert.Contains("message-1", snapshot.LastSpeechCandidate, StringComparison.Ordinal);
         Assert.Equal("spoken (accepted)", snapshot.LastSpeechDecision);
+        Assert.Equal(nameof(SpeechProfile.Standard), snapshot.ActiveSpeechProfile);
+        Assert.Equal("Speech profile is Standard.", snapshot.LastSpeechProfileChange);
         Assert.Equal("provider unavailable", snapshot.LastProviderError);
         Assert.Equal("device unavailable", snapshot.LastPlaybackError);
         Assert.Contains(snapshot.RecentProjects, result => result.Contains("codecompaniondesktop", StringComparison.Ordinal));
@@ -43,6 +45,25 @@ public sealed class BridgeRuntimeStateTests
         var projectHistory = Assert.Single(state.LoadProjectSpeechHistoryDetails(8));
         Assert.Contains("Code Companion Desktop (codecompaniondesktop)", projectHistory, StringComparison.Ordinal);
         Assert.Contains("spoken/accepted", projectHistory, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DiagnosticsSnapshotIncludesDemoModeState()
+    {
+        var state = new BridgeRuntimeState();
+
+        state.SpeechProfiles.EnableDemoMode();
+        var demoSnapshot = state.GetDiagnosticsSnapshot();
+        state.DisableDemoMode();
+        var standardSnapshot = state.GetDiagnosticsSnapshot();
+
+        Assert.Equal(nameof(SpeechProfile.Demo), demoSnapshot.ActiveSpeechProfile);
+        Assert.Contains("Demo Mode enabled", demoSnapshot.LastSpeechProfileChange, StringComparison.Ordinal);
+        Assert.Equal(nameof(SpeechProfile.Standard), standardSnapshot.ActiveSpeechProfile);
+        Assert.Contains("Standard speech policy restored", standardSnapshot.LastSpeechProfileChange, StringComparison.Ordinal);
+        Assert.Contains(
+            standardSnapshot.RecentSpeechResults,
+            result => result.Contains("Speech profile changed to Standard.", StringComparison.Ordinal));
     }
 
     [Fact]
