@@ -7,6 +7,8 @@ obj/
 *.user
 *.suo
 *.cache
+*.lscache
 *.log
 TestResults/
 artifacts/
+/app/
