@@ -165,6 +165,7 @@ public partial class MainWindow : Window
             {
                 path = await textToSpeechClient.CreateSpeechAsync(apiKey, text, speechOptions);
                 bridgeRuntimeState.ClearProviderError();
+                OnSpeechProduced(text.Length);
             }
             catch (Exception ex)
             {
@@ -818,6 +819,7 @@ public partial class MainWindow : Window
             RefreshProjectRegistry();
             RefreshProjectSpeechHistory();
             RefreshClientPairing();
+            WireQuotaMeter();
             RefreshReadinessSummary();
         }
         finally
