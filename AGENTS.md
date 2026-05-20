@@ -81,6 +81,24 @@ this project unless the user explicitly asks to switch projects.
 - Treat git history as the technical source of truth and the session log as the
   human-readable project memory.
 
+## Diagnose Before Modifying
+
+Before adding any new file, extension, transport, or workaround in response to
+a "Code Companion is not working" report:
+
+1. Ask the user to run `Code Companion: Verify Install` from the command
+   palette and paste the output channel contents.
+2. Ask the user to run `Code Companion: Run Pipeline Self-Test` and report the
+   result.
+3. If both pass, the bug is not in the install or transport layer. Look at
+   candidate selection, speech policy, or Desktop playback configuration.
+4. If either fails, the failing check identifies the layer. Fix that layer.
+   Do not add new extensions, new transports, new bridge variants, or new
+   activation hacks.
+5. Adding a new VS Code extension is a last resort and must be approved by the
+   user in the chat before any code is written. The architecture has exactly
+   three extensions: voice, bridge, pack. ADR 0001.
+
 ## Communication
 
 - Keep updates concise and practical.
