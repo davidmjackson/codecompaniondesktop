@@ -225,26 +225,87 @@ public sealed class SpeechCandidatePipelineTests
     }
 
     [Fact]
-    public void DoesNotRewriteUrlsOrBridgeRoutes()
+    public void ReplacesBareUrlsWithASpokenPlaceholder()
     {
         var pipeline = new SpeechCandidatePipeline();
 
         var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
-            "message-route",
+            "message-url",
             "assistant-message",
             "final",
             null,
-            "Bridge health is at http://127.0.0.1:47321/health and candidates use /v1/speech/candidates."));
+            "Bridge health is at http://127.0.0.1:47321/health."));
 
         Assert.Equal("accepted", result.Decision);
-        Assert.Equal("accepted", result.Reason);
-        Assert.Equal(
-            "Bridge health is at http://127.0.0.1:47321/health and candidates use /v1/speech/candidates.",
-            result.SpeechText);
+        Assert.Equal("Bridge health is at a link.", result.SpeechText);
     }
 
     [Fact]
-    public void TruncatesLongFinalCandidatesWithinSpeechLimit()
+    public void ReplacesMarkdownLinksWithTheirVisibleLabel()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-md-link",
+            "assistant-message",
+            "final",
+            null,
+            "Confirmed - main CI is **green**. See [run 26160030582](https://github.com/davidmjackson/codecompanion/actions/runs/26160030582)."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Confirmed - main CI is green. See run 26160030582.", result.SpeechText);
+    }
+
+    [Fact]
+    public void StripsInlineCodeBackticksButKeepsTheWording()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-inline-code",
+            "assistant-message",
+            "final",
+            null,
+            "`npm ci` is clean - the `scrumpoker` service is the remaining step."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("npm ci is clean - the scrumpoker service is the remaining step.", result.SpeechText);
+    }
+
+    [Fact]
+    public void DropsFencedCodeBlocks()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-fenced",
+            "assistant-message",
+            "final",
+            null,
+            "Here is the fix:\n```\nsudo systemctl restart scrumpoker\n```\nThat should restore the service."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Here is the fix: That should restore the service.", result.SpeechText);
+    }
+
+    [Fact]
+    public void StripsEmphasisAndLineLeadingListMarkers()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-list",
+            "assistant-message",
+            "final",
+            null,
+            "Status:\n- **Done**: deploy verified\n- Pending: smoke test"));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Status: Done: deploy verified Pending: smoke test", result.SpeechText);
+    }
+
+    [Fact]
+    public void ShortensALongCandidateWithoutSentenceBreaksToAHardCut()
     {
         var pipeline = new SpeechCandidatePipeline();
         var longText = string.Join(" ", Enumerable.Repeat("website planning summary", 120));
@@ -257,9 +318,61 @@ public sealed class SpeechCandidatePipelineTests
             longText));
 
         Assert.Equal("accepted", result.Decision);
-        Assert.Equal("truncated", result.Reason);
+        Assert.Equal("shortened", result.Reason);
         Assert.NotNull(result.SpeechText);
-        Assert.True(result.SpeechText.Length <= SpeechCandidatePipeline.MaxSpeechTextLength);
+        Assert.True(result.SpeechText!.Length <= SpeechCandidatePipeline.MaxSpeechTextLength);
         Assert.EndsWith("...", result.SpeechText);
+    }
+
+    [Fact]
+    public void SpeaksOnlyTheOpeningSentencesOfALongFinalAnswer()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+        var longText =
+            "The deployment is complete and verified on production. " +
+            "All four pull requests are merged into the main branch. " +
+            "The systemd service is enabled and restarts automatically on boot. " +
+            "Access keys are now stored as salted hashes on disk. " +
+            "Smoke tests pass cleanly across every area that was checked.";
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-long-opening",
+            "assistant-message",
+            "final",
+            null,
+            longText));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("shortened", result.Reason);
+        Assert.NotNull(result.SpeechText);
+        Assert.True(result.SpeechText!.Length <= SpeechCandidatePipeline.MaxSpeechTextLength);
+        Assert.StartsWith("The deployment is complete and verified on production.", result.SpeechText);
+        Assert.EndsWith(".", result.SpeechText);
+        Assert.DoesNotContain("Smoke tests", result.SpeechText!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DropsMarkdownTables()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+        var text =
+            "Here is the summary of the work.\n" +
+            "\n" +
+            "| Phase | Outcome |\n" +
+            "|---|---|\n" +
+            "| **Review** | Full codebase review completed |\n" +
+            "| **Deploy** | Live on production |\n" +
+            "\n" +
+            "That wraps up the task.";
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-table",
+            "assistant-message",
+            "final",
+            null,
+            text));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Here is the summary of the work. That wraps up the task.", result.SpeechText);
     }
 }

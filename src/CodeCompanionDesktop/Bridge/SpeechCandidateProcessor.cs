@@ -33,7 +33,7 @@ public sealed class SpeechCandidateProcessor
             return SpeechCandidateProcessingResult.BadRequest(error);
         }
 
-        runtimeState.RecordSpeechCandidate(
+        var candidateContext = runtimeState.RecordSpeechCandidate(
             candidateRequest.Client,
             candidateRequest.Workspace,
             candidateRequest.Codex.MessageId,
@@ -48,14 +48,14 @@ public sealed class SpeechCandidateProcessor
 
         if (pipelineResult.Decision == "ignored" || pipelineResult.Decision == "duplicate")
         {
-            runtimeState.RecordSpeechCandidateDecision(pipelineResult.Decision, pipelineResult.Reason);
+            runtimeState.RecordSpeechCandidateDecision(candidateContext, pipelineResult.Decision, pipelineResult.Reason);
             return SpeechCandidateProcessingResult.Accepted(
                 new SpeechCandidateResponse("accepted", pipelineResult.Decision, pipelineResult.Reason, 0));
         }
 
         if (pipelineResult.SpeechText is null || pipelineResult.Reservation is null)
         {
-            runtimeState.RecordSpeechCandidateDecision("rejected", "invalid_pipeline_result");
+            runtimeState.RecordSpeechCandidateDecision(candidateContext, "rejected", "invalid_pipeline_result");
             return SpeechCandidateProcessingResult.InternalError(
                 new SpeechCandidateResponse("rejected", "rejected", "invalid_pipeline_result", 0));
         }
@@ -76,12 +76,12 @@ public sealed class SpeechCandidateProcessor
                 out var position))
             {
                 speechCandidatePipeline.Release(pipelineResult.Reservation);
-                runtimeState.RecordSpeechCandidateDecision("rejected", "queue_full");
+                runtimeState.RecordSpeechCandidateDecision(candidateContext, "rejected", "queue_full");
                 return SpeechCandidateProcessingResult.Conflict(
                     new SpeechCandidateResponse("rejected", "rejected", "queue_full", 0));
             }
 
-            runtimeState.RecordSpeechCandidateDecision("queued", pipelineResult.Reason);
+            runtimeState.RecordSpeechCandidateDecision(candidateContext, "queued", pipelineResult.Reason);
             return SpeechCandidateProcessingResult.Accepted(
                 new SpeechCandidateResponse("accepted", "queued", pipelineResult.Reason, position));
         }
@@ -89,16 +89,18 @@ public sealed class SpeechCandidateProcessor
         if (!runtimeState.TryBeginSpeaking())
         {
             speechCandidatePipeline.Release(pipelineResult.Reservation);
-            runtimeState.RecordSpeechCandidateDecision("rejected", "busy");
+            runtimeState.RecordSpeechCandidateDecision(candidateContext, "rejected", "busy");
             return SpeechCandidateProcessingResult.Conflict(
                 new SpeechCandidateResponse("rejected", "rejected", "busy", 0));
         }
+
+        runtimeState.RecordSpeechCandidatePlaybackStarted(candidateContext, pipelineResult.Reason);
 
         try
         {
             await speakAsync(pipelineResult.SpeechText);
             runtimeState.CompleteSpeaking();
-            runtimeState.RecordSpeechCandidateDecision("spoken", pipelineResult.Reason);
+            runtimeState.RecordSpeechCandidateDecision(candidateContext, "spoken", pipelineResult.Reason);
             return SpeechCandidateProcessingResult.Accepted(
                 new SpeechCandidateResponse("accepted", "spoken", pipelineResult.Reason, 0));
         }

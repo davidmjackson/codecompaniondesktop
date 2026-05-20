@@ -8,7 +8,10 @@ namespace CodeCompanionDesktop.Bridge;
 
 public sealed partial class SpeechCandidatePipeline
 {
-    public const int MaxSpeechTextLength = 1000;
+    // A spoken update is a short headline, not a recital: a long candidate is
+    // shortened to its opening sentence or two. This is the upper bound on that
+    // opening.
+    public const int MaxSpeechTextLength = 220;
     private const string TruncationSuffix = "...";
 
     private readonly object syncRoot = new();
@@ -26,7 +29,7 @@ public sealed partial class SpeechCandidatePipeline
         ArgumentNullException.ThrowIfNull(input);
 
         var speechHint = NormalizeSpeechHint(input.SpeechHint);
-        var normalized = NormalizeForSpeech(input.Text);
+        var normalized = NormalizeForSpeech(NormalizeMarkupForSpeech(input.Text));
         if (string.IsNullOrWhiteSpace(normalized))
         {
             return SpeechCandidatePipelineResult.Ignored("empty_candidate");
@@ -72,8 +75,8 @@ public sealed partial class SpeechCandidatePipeline
 
         if (filtered.Length > MaxSpeechTextLength)
         {
-            filtered = $"{filtered[..(MaxSpeechTextLength - TruncationSuffix.Length)].TrimEnd()}{TruncationSuffix}";
-            reason = reason == "privacy_filtered" ? "privacy_filtered_truncated" : "truncated";
+            filtered = ShortenToOpening(filtered);
+            reason = reason == "privacy_filtered" ? "privacy_filtered_shortened" : "shortened";
         }
 
         return ReserveAccepted(input.MessageId, filtered, reason);
@@ -145,6 +148,95 @@ public sealed partial class SpeechCandidatePipeline
     private static string NormalizeForSpeech(string text)
     {
         return WhitespaceRegex().Replace(text.Trim(), " ");
+    }
+
+    // Assistant messages are written in Markdown. Spoken verbatim, the syntax
+    // itself becomes noise: "**green**" is read as "asterisk asterisk green",
+    // a "[label](https://...)" link reads the whole URL aloud, and fenced code
+    // blocks are unintelligible. This rewrites Markdown into plain, speakable
+    // prose before the rest of the pipeline runs. It is environment-agnostic:
+    // the same cleanup applies to every project, Windows or WSL.
+    private static string NormalizeMarkupForSpeech(string text)
+    {
+        // Code is not worth speaking; drop fenced blocks entirely.
+        var result = FencedCodeBlockRegex().Replace(text, " ");
+
+        // A table linearised into speech is a meaningless run of cell text;
+        // drop the whole table block.
+        result = MarkdownTableRegex().Replace(result, " ");
+
+        // Keep the visible label of images and links, discard the target.
+        result = MarkdownImageRegex().Replace(result, "$1");
+        result = MarkdownLinkRegex().Replace(result, "$1");
+
+        // A bare URL read character by character is the worst offender.
+        result = UrlRegex().Replace(result, ReplaceUrlMatch);
+
+        // Inline code: keep the wording, drop the backticks.
+        result = InlineCodeRegex().Replace(result, "$1");
+
+        // Emphasis markers, then line-leading heading/quote/list markers.
+        result = AsteriskEmphasisRegex().Replace(result, "$1");
+        result = BlockMarkerRegex().Replace(result, string.Empty);
+
+        return result;
+    }
+
+    private static string ReplaceUrlMatch(Match match)
+    {
+        var value = match.Value;
+        var trailingPunctuation = string.Empty;
+
+        while (value.Length > 0 && IsPathTrailingPunctuation(value[^1]))
+        {
+            trailingPunctuation = value[^1] + trailingPunctuation;
+            value = value[..^1];
+        }
+
+        return $"a link{trailingPunctuation}";
+    }
+
+    // When a candidate runs long, speak only its opening - the first sentence
+    // or two - ending on a clean sentence boundary rather than mid-word. The
+    // full detail stays on screen for the user to read.
+    private static string ShortenToOpening(string text)
+    {
+        if (text.Length <= MaxSpeechTextLength)
+        {
+            return text;
+        }
+
+        var window = text[..MaxSpeechTextLength];
+        var boundary = LastSentenceBoundary(window);
+        if (boundary > 0)
+        {
+            return window[..boundary].TrimEnd();
+        }
+
+        // No sentence break in range: fall back to a hard, suffixed cut.
+        return $"{window[..(MaxSpeechTextLength - TruncationSuffix.Length)].TrimEnd()}{TruncationSuffix}";
+    }
+
+    // Index of the space just past the last sentence-ending punctuation - a
+    // ".", "!" or "?" followed by a space and the start of a new sentence.
+    // Requiring an uppercase letter (or end of text) next skips abbreviations
+    // such as "e.g.".
+    private static int LastSentenceBoundary(string text)
+    {
+        for (var index = text.Length - 1; index > 0; index--)
+        {
+            if (text[index] is not ' ' || text[index - 1] is not ('.' or '!' or '?'))
+            {
+                continue;
+            }
+
+            if (index + 1 >= text.Length || char.IsUpper(text[index + 1]))
+            {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     private static string RedactSensitiveText(string text)
@@ -251,6 +343,30 @@ public sealed partial class SpeechCandidatePipeline
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex WhitespaceRegex();
+
+    [GeneratedRegex(@"```[\s\S]*?```")]
+    private static partial Regex FencedCodeBlockRegex();
+
+    [GeneratedRegex(@"(?m)^[^\r\n]*\|[^\r\n]*\r?\n[ \t]*(?=[ \t:|-]*\|)(?=[ \t:|-]*-)[ \t:|-]+\r?\n(?:[^\r\n]*\|[^\r\n]*(?:\r?\n|$))*")]
+    private static partial Regex MarkdownTableRegex();
+
+    [GeneratedRegex(@"!\[([^\]]*)\]\([^)]*\)")]
+    private static partial Regex MarkdownImageRegex();
+
+    [GeneratedRegex(@"\[([^\]]+)\]\([^)]*\)")]
+    private static partial Regex MarkdownLinkRegex();
+
+    [GeneratedRegex(@"(?i)\b(?:https?://|www\.)\S+")]
+    private static partial Regex UrlRegex();
+
+    [GeneratedRegex(@"`([^`]+)`")]
+    private static partial Regex InlineCodeRegex();
+
+    [GeneratedRegex(@"\*{1,2}([^*\s](?:[^*]*[^*\s])?)\*{1,2}")]
+    private static partial Regex AsteriskEmphasisRegex();
+
+    [GeneratedRegex(@"(?m)^[ \t]*(?:#{1,6}[ \t]+|[-*+][ \t]+|\d+\.[ \t]+|>[ \t]+)")]
+    private static partial Regex BlockMarkerRegex();
 
     [GeneratedRegex(@"(?i)\b(authorization\s*:\s*)\S+(?:\s+\S+)?")]
     private static partial Regex AuthorizationHeaderRegex();

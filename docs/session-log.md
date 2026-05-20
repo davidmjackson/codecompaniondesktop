@@ -4,6 +4,446 @@ Use this log to preserve project context between work sessions. Keep entries
 concise: what changed, what was verified, decisions made, and the next useful
 options.
 
+## 2026-05-19 Smoke Section 2 UI Pass + Voice 0.0.52 (Remove Desktop Test Button)
+
+### Current Milestone
+
+- Milestone 10 / Testing pivot. First UI pass of the smoke checklist
+  (Section 2 — Voice extension pairing on Windows host), plus a small
+  cross-repo cleanup in Code Companion Voice that fell out of the test.
+
+### Changed
+
+- **Voice extension (cross-repo, `D:\Development\CodeCompanionVoice`):**
+  - Bumped to `0.0.52`.
+  - Removed the `Desktop Test` button from the webview panel
+    (`src/webview/voicePanel.ts`).
+  - Removed the `codeCompanionVoice.sendDesktopCandidateTest` command,
+    its method, and the panel-message plumbing that backed it
+    (`src/extension.ts`, `package.json`).
+  - Replaced the panel toolbar with explanatory text: Voice is a thin
+    client; all testing, voice configuration, provider setup, and pairing
+    approval live in Code Companion Desktop.
+  - Updated stale user-facing strings in `testVoice()` and `speakLast()`
+    that previously pointed users at the removed command.
+  - Reasoning: the button was easy to misread as a Voice → Desktop
+    round-trip test, but it depended on Voice's in-memory session token.
+    Whenever the Desktop bridge had been restarted, Voice's token was
+    stale and the button silently failed with a generic warning toast.
+    The smoke pass surfaced this exact confusion. Removing the surface
+    is cleaner than maintaining a button that misleads.
+- **Smoke checklist** (`docs/smoke-checklist.md`) was already updated
+  earlier in the day; Section 2's pairing wording still describes a
+  "Pair" command that does not exist. Flagged below as a follow-up.
+
+### Verified
+
+- Voice repo: `node_modules` reinstalled, TypeScript compile clean,
+  vitest reports **42/42 passing**.
+- New `code-companion-voice-0.0.52.vsix` (36.7 KB) packaged and
+  installed via `code --install-extension --force`.
+- Manual UI verification: after VS Code reload, the panel renders the
+  new explanatory text and the `Desktop Test` button is gone. The
+  command `Code Companion Voice: Send Desktop Candidate Test` no
+  longer appears in the Command Palette.
+- **Section 2A — Windows host pairing PASSED:**
+  - Backed up `client-trust.json` → `client-trust.json.smoke-backup-...`
+  - Cleared `Clients` array; restarted Desktop.
+  - After VS Code Reload Window, Voice sent a `hello` to the bridge.
+  - Desktop Status tab showed `Approve the pending VS Code Client`.
+  - User clicked Approve → status returned to green.
+  - `client-trust.json` re-populated with the Windows client
+    (ClientId `4b173702-...`, Authorization `allowed`, FirstSeen
+    18:37:36, LastSeen 18:38:32 after session token issuance).
+  - Recent bridge clients log shows new entry: `18:38:32 Code Companion
+    Voice from win32 for project codecompaniondesktop.`
+
+### Observations
+
+- Voice as a true thin client: the only user-visible affordance in VS
+  Code now is the status bar + the explanatory panel. Real activity is
+  driven by Voice tailing the local Codex session log and Desktop
+  presenting the result. Aligns with the "thin client" framing.
+- Desktop's "Play Test Sound" tray menu writes a candidate that
+  appears under `ClientName: Code Companion Voice` in
+  `RecentProjectSpeech` because it crafts a candidate that looks like
+  one from Voice. Worth noting for future testers who may be confused
+  by seeing "Code Companion Voice" entries when Voice isn't actually
+  paired.
+
+### Deferred
+
+- **Section 2B (WSL Remote pairing)** — the backup contained a WSL
+  client that is currently NOT re-paired. The user can either:
+  1. Open VS Code with WSL Remote and reload the window to trigger a
+     fresh pair flow, then approve from Desktop;
+  2. Or manually restore the WSL entry from
+     `client-trust.json.smoke-backup-1779211532791`.
+- **Section 5 (Notes tab content review)** — still needs human
+  eyeballs on the Desktop Notes tab to confirm the VS Code Extension
+  Setup section content.
+- **`docs/smoke-checklist.md` Section 2 wording fix** — describes a
+  non-existent "Pair" command. Update to match the actual flow:
+  reload Voice → it sends `hello` → Desktop shows pending → click
+  Approve. Update the same checklist Section 3 to expect both
+  `playing` and `spoken` history rows (already known from Fix 1).
+
+### Next
+
+- Restore WSL pairing (either by re-pair or backup restore) before any
+  WSL session work.
+- Run the deferred items above when convenient.
+- Voice repo: consider whether `0.0.52` warrants a tag / changelog
+  entry beyond the `CHANGELOG.md` line we added — currently lives only
+  on the working copy. If you want CI to pick it up, push to GitHub.
+
+## 2026-05-19 Finding 3 Fix — Per-Candidate Context Closes Cross-Attribution Race
+
+### Current Milestone
+
+- Milestone 10 / Testing pivot. Closes Finding 3 from the first smoke
+  pass — `Reason=truncated` was leaking onto short candidates because a
+  shared `pendingSpeechCandidate` field was being overwritten between
+  concurrent candidates.
+
+### Root cause
+
+`BridgeRuntimeState` held a single nullable instance field
+`pendingSpeechCandidate` that was set on `RecordSpeechCandidate` and read
+later by `AddRecentProjectSpeechResult`. When candidate A was mid-playback
+and candidate B arrived (rejected as busy), B's `RecordSpeechCandidate`
+overwrote the field. When A's playback finally completed and
+`RecordSpeechCandidateDecision("spoken", "truncated")` fired, it wrote a
+record using B's `MessageId` and `Preview` — but A's `reason`. The result
+was a row that appeared to say "the short candidate was spoken/truncated"
+when it had actually been the long one all along.
+
+Confirmed by reproducing: drop a 1500-char `final` candidate, wait for it
+to reach the `playing` event, then drop a short candidate. After the long
+one finished playback, the only `spoken` history row belonged to the
+SHORT candidate with `Reason=truncated`. The long candidate had no
+`spoken` row at all.
+
+### Changed
+
+- **`BridgeRuntimeState`**:
+  - Promoted the per-candidate metadata record `PendingSpeechCandidate`
+    (internal) to `SpeechCandidateContext` (public sealed record) at the
+    bottom of `BridgeRuntimeState.cs`.
+  - Removed the `pendingSpeechCandidate` instance field entirely.
+  - `RecordSpeechCandidate(...)` now returns `SpeechCandidateContext`
+    instead of mutating shared state.
+  - `RecordSpeechCandidateDecision` and `RecordSpeechCandidatePlaybackStarted`
+    now take `SpeechCandidateContext` as their first parameter.
+  - `AddRecentProjectSpeechResult` private helper now reads from the
+    passed-in context, with no fallback to instance state.
+- **`SpeechCandidateProcessor.ProcessAsync`**: captures the returned
+  context once at the top, threads it through every `RecordSpeechCandidate*`
+  call (six decision sites plus the playback-started call).
+- **Tests**:
+  - Existing tests updated to capture and pass the returned context.
+  - New regression test
+    `BridgeRuntimeStateTests.ConcurrentCandidatesEachAttributeToTheirOwnMessageId`
+    encodes the failing scenario as a deterministic unit test: A goes
+    `playing`, B is `rejected/busy`, A finishes `spoken` — each row must
+    carry the correct `MessageId`, `Preview`, and `Reason`.
+
+### Verified
+
+- `dotnet build` clean, 0 warnings, 0 errors.
+- `dotnet test` reports **49/49 passing** (was 48; new regression test
+  added).
+- **Live re-run of the same race scenario that exposed Finding 3:**
+  - LONG (1500 chars) dropped → entered `playing` at 18:10:37 → SHORT
+    dropped immediately after → SHORT got `rejected/busy` at 18:10:37 →
+    LONG finished `spoken/truncated` at 18:12:06.
+  - LONG history rows: `playing/truncated` and `spoken/truncated`, both
+    with LONG's `MessageId` and full Preview.
+  - SHORT history rows: only `rejected/busy`. No spurious `spoken` row.
+  - Cross-attribution gone.
+
+### Notes
+
+- Removing the `pendingSpeechCandidate` field also eliminates a class of
+  potential future bugs: any new call path that wants to write to
+  `RecentProjectSpeech` is now forced to plumb the context through
+  explicitly.
+- `LastSpeechCandidate` is still a single-value display field set by
+  `RecordSpeechCandidate` at call time. That field's "most recent only"
+  semantics are fine for diagnostics and don't suffer the same race.
+
+### Next
+
+- The smoke checklist still needs updating to expect both `playing` and
+  `spoken` entries per spoken candidate (small docs slice, deferred from
+  Fix 1).
+- The build-locks-EXE friction is now hit on every test cycle that
+  touches Bridge code; worth considering a small `Copy-On-Launch` script
+  or a separate Debug output path so the running app does not block
+  iterative builds. Not on the critical path yet.
+
+## 2026-05-19 Fix 1 — Early Playback-Started Event For Long Candidates
+
+### Current Milestone
+
+- Milestone 10 / Testing pivot. Addressing Finding 2 from the first smoke
+  pass — long candidates were invisible until playback completed, which
+  combined with the 40-entry history cap looked like data loss.
+
+### Changed
+
+- **`BridgeRuntimeState.RecordSpeechCandidatePlaybackStarted(reason)`** new
+  method. Locks `syncRoot`, sets `LastSpeechDecision = "playing (<reason>)"`,
+  appends `Candidate playing (<reason>).` to `RecentSpeechResults`, and
+  writes a `Decision="playing"` record to `RecentProjectSpeech` via
+  `AddRecentProjectSpeechResult`.
+- **`SpeechCandidateProcessor.ProcessAsync`** now calls that method right
+  after `TryBeginSpeaking` succeeds and before `await speakAsync`. The
+  existing `RecordSpeechCandidateDecision("spoken", reason)` still fires
+  after playback completes, so every candidate now produces two history
+  entries: `playing/<reason>` at start and `spoken/<reason>` at end.
+- **`MaxRecentProjectSpeech` bumped 40 -> 100.** Each candidate now writes
+  two entries instead of one, so the cap needed headroom to keep showing
+  meaningful history.
+- **New unit test**
+  `BridgeRuntimeStateTests.PlaybackStartedRecordsBeforeSpokenSoLongCandidatesAreObservableEarly`
+  asserts the ordering: `playing` first (visible mid-playback), `spoken`
+  second after the existing decision call, both carrying the same reason
+  and messageId.
+
+### Verified
+
+- `dotnet build` clean, 0 warnings, 0 errors.
+- `dotnet test --no-build` reports **48/48 passing** (was 47).
+- **Live verification against the Debug build (PID 3692):**
+  - Dropped a 1563-char `final` candidate at 17:56:38.
+  - `playing/truncated` history entry appeared at 17:56:38 + 444 ms.
+  - `spoken/truncated` history entry appeared at 17:58:05 (~87 s total).
+  - Both rows carry the same `MessageId` and `Reason=truncated`.
+- The original Finding 2 symptom (long candidate appears to vanish) is
+  resolved — observers see a record within ~500 ms now, regardless of
+  playback duration.
+
+### Build conflict noted
+
+- Desktop running locks `bin\Debug\net8.0-windows\CodeCompanionDesktop.exe`,
+  so `dotnet build` errors with MSB3027 unless Desktop is closed first.
+  Path forward each iteration: tray-icon Exit → build/test → relaunch the
+  Debug build directly. A separate slice could explore `bin\debug\new`
+  output paths or a copy-on-launch script to avoid the dance, but it is
+  not on the critical path right now.
+
+### Next
+
+- **Finding 3 still open.** Reproduce the `Reason=truncated` on a short
+  message by interleaving a long candidate and a short one; with the new
+  `playing` event we now have visibility into the exact moment each is
+  accepted, which should make the race (if any) much easier to spot.
+- Optional Fix 2 (uncapped audit JSONL) is still worth considering for
+  smoke/CI use, but the cap bump from 40 to 100 plus the early event
+  should be sufficient for day-to-day use.
+- Update `docs/smoke-checklist.md` Section 3 to expect both `playing` and
+  `spoken` entries per spoken candidate.
+
+## 2026-05-19 First Smoke Checklist Pass — Three Findings
+
+### Current Milestone
+
+- Milestone 10 / Testing pivot (Milestone 9 parked). First end-to-end pass
+  of the new `docs/smoke-checklist.md` against the running 0.1.2 build on
+  commit 8e10364.
+
+### Changed
+
+- No code changes. Documentation finding only: the smoke checklist mis-states
+  the speech-hint contract — see Findings below.
+
+### Verified (passing sections)
+
+- **0. Preconditions** — `dotnet build` and `dotnet test --no-build` both
+  green; 47/47 tests pass; clean inbox; bridge live.
+- **1. Bridge health** — all `/health` fields match expected values
+  (`status=ok`, `bridge=listening`, `speaking=false`,
+  `speechProfile=Standard`, `queued=0`). Caveat: not a true cold-start —
+  process had been running for ~4 hours.
+- **3. Standard pipeline** — non-final no-hint → `ignored/non_final_candidate`;
+  non-final + valid hint (`manual-desktop-candidate-test`) → `spoken`; final
+  → `spoken/accepted`; duplicate `messageId` re-submit → `duplicate/duplicate_candidate`.
+  Inbox-to-history latency ~450ms for ignored candidates.
+- **4. Demo Mode** — `"Demo Mode"` activated profile and updated `/health`;
+  in-Demo non-final no-hint candidate spoke as `demo-mode-progress`;
+  `"end demo"` restored Standard profile; post-exit non-final no-hint
+  candidate correctly re-ignored. All four sub-cases clean.
+- **6. File-level resilience** — malformed JSON, empty file, missing
+  `schemaVersion` all moved to `rejected/` without crashing the bridge.
+  `.txt` files left alone in the inbox (watcher only acts on `.json`).
+- **7. Diagnostics surface** — `/health` exposes `appVersion`,
+  `protocolVersion`, `speechProfile`, `queueLimit`. `speech-history.json`
+  surfaces grouped reasons across 40 recent entries.
+- **8. Teardown state** — inbox empty of unprocessed candidates,
+  `speech-history.json` parses as valid JSON, bridge port still listening
+  (real close-and-port-release check deferred to user).
+
+### Findings
+
+1. **Speech-hint contract is narrower than the checklist suggests.** Only
+   three exact `speechHint` values count as explicit speech requests:
+   `voice-check-in`, `manual-speak-last`,
+   `manual-desktop-candidate-test`. A hint of `"explicit"` was treated as no
+   hint at all, so a non-final candidate with `speechHint: "explicit"` was
+   ignored as `non_final_candidate`. The smoke checklist wording
+   "candidate with speech hint speaks regardless of finality" is too
+   permissive and should call out the allowed values explicitly. **Source:**
+   `SpeechCandidatePipeline.IsExplicitSpeechRequest`.
+
+2. **Large candidate (2474 chars) disappeared without trace.** A `final`
+   candidate with a 2474-char body, dropped via the file watcher, never
+   produced a `speech-history.json` entry, never appeared in
+   `candidate-inbox\rejected\`, and is not in the inbox. Three possibilities,
+   none yet confirmed: (a) Desktop crashed mid-processing and recovered
+   without recording the candidate; (b) the watcher consumed the file
+   before its content was flushed to disk by `Out-File`; (c) a long-running
+   speech got cancelled silently when a subsequent candidate took its slot.
+   **Reproduce target:** drop a 1500+ char `final` candidate while the
+   bridge is idle and confirm a history entry is produced. Should become
+   the first automated test from this run.
+
+3. **`truncated` reason recorded on a 61-char message.** History shows
+   `smoke-3e-1779208148752` with `Decision=spoken`, `Reason=truncated`, and
+   a `Preview` only 61 chars long. `SpeechCandidatePipeline.Prepare` only
+   assigns `truncated` when `filtered.Length > MaxSpeechTextLength` (1000),
+   so either the `Preview` field is misleading (different from the
+   processed text) or there is a state-leak between candidate evaluations.
+   **Reproduce target:** submit a short final candidate immediately after
+   a long one is processed and check whether the short one inherits
+   `truncated`.
+
+### Observations (not bugs)
+
+- **Busy bypass of duplicate detection.** When the bridge is mid-speech, a
+  new submission gets `rejected/busy` and its messageId reservation is
+  Released, so a resubmit of the same messageId is treated as fresh, not
+  duplicate. Sensible for retries but worth documenting if exactly-once
+  semantics matter for any flow.
+- **`.txt` files persist in the inbox.** The watcher only processes
+  `.json`, so any non-JSON file accumulates indefinitely. Minor housekeeping
+  consideration; not a correctness issue.
+- **Checklist mismatch on truncation length.** Checklist asks for
+  "3000+ char" string; the actual `MaxSpeechTextLength` constant is 1000.
+  Update the checklist to use a 1500-char text so we land safely above the
+  threshold.
+
+### Deferred to user
+
+- **Section 2 — Voice extension pairing** (Windows + WSL Remote): requires
+  driving the VS Code UI and approving the pending pair on the Status tab.
+- **Section 5 — Notes tab content**: requires looking at the Notes tab in
+  the running app to confirm the VS Code Extension Setup section content.
+- **Section 6 dangerous cases** — stopping the bridge, port-conflict, and
+  close-mid-speech. Skipped to keep this session's speech-enforcement hook
+  workable; needs a separate manual pass with Desktop restarts.
+- **Section 8 real teardown** — close Desktop, confirm port 47321 is
+  released. Deferred for the same reason.
+
+### Next
+
+- Reproduce Finding 2 (large candidate vanishes) deterministically and
+  open a focused fix. Likely the highest-impact item.
+- Investigate Finding 3 (`truncated` on short text) — read
+  `SpeechCandidatePipeline` more carefully looking for state mutation
+  across calls; add a unit test that interleaves long and short candidates
+  and asserts each retains its own `reason`.
+- Update `docs/smoke-checklist.md`:
+  - List the three allowed `speechHint` values explicitly in section 3.
+  - Change the truncation test from "3000+ chars" to "1500 chars".
+  - Add a note that `.txt` files are intentionally left alone.
+- Run the user-driven sections (2 and 5) and merge their findings into a
+  follow-up entry.
+
+## 2026-05-19 Claude Code Hardening, MCP Setup, And Speech Enforcement
+
+### Current Milestone
+
+- Workstation hardening alongside Milestone 10 work — Claude Code permission
+  rules, prompt-injection guard, MCP server setup, and speech-update
+  enforcement so Code Companion Desktop is used as designed.
+
+### Changed
+
+- **Global Claude Code permissions** (`~/.claude/settings.json`):
+  - Added 13 `ask` entries gating non-localhost network tools: `WebFetch`,
+    `WebSearch`, `curl`, `wget`, `Invoke-WebRequest`, `Invoke-RestMethod`,
+    `iwr`, `irm`, `nc`, `ncat` (Bash + PowerShell where applicable). Existing
+    narrow allow rules for `http://127.0.0.1:47321/` (the speech bridge) take
+    precedence so localhost calls stay auto-approved.
+  - Added 13 `deny` entries blocking Read/Edit/Write to `~/.ssh`, `~/.aws`,
+    `~/.gnupg`, `~/.kube`, and any `.env` file.
+- **Injection-guard hook** (`~/.claude/hooks/injection-guard.ps1`,
+  PreToolUse, matcher `Bash|PowerShell|mcp__.*`): scans tool inputs for
+  shapes that prefix-based permission rules miss — read-secret-then-pipe to
+  network, file-upload via `@path`, `curl|sh`, recursive force-deletes at
+  home/system roots, writes to ssh trust files, AWS credential overwrites,
+  git push to unrecognised hosts. MCP-specific patterns added later: cookie
+  or storage exfil in browser-eval (order-independent regex), cloud
+  metadata IPs (`169.254.169.254` etc.), `file://` paths inside secret
+  dirs, references to known credential files.
+- **Node.js + Claude Code CLI installed**:
+  - Node 24.15.0 via `winget install OpenJS.NodeJS.LTS`.
+  - `@anthropic-ai/claude-code` global npm install (after
+    `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` to unblock npm).
+- **MCP servers registered at user scope** (`claude mcp add`):
+  - `microsoft-docs` (HTTP, `https://learn.microsoft.com/api/mcp`) —
+    connected, tested with a DispatcherTimer search.
+  - `playwright` (stdio, `npx @playwright/mcp` after
+    `npm install -g @playwright/mcp` so `-y` isn't needed) — connected.
+  - GitHub MCP dropped: `https://api.githubcopilot.com/mcp/` requires a
+    Copilot OAuth token that VS Code supplies but Claude Code does not.
+    `gh` CLI plus the in-VS-Code Copilot MCP still cover that surface.
+- **Speech-update enforcement** (closes the loop on the
+  `spoken-progress-updates` memory note):
+  - `~/.claude/hooks/turn-start-marker.ps1` (UserPromptSubmit) writes
+    `~/.claude/state/turn-start-<sessionId>.txt` with an ISO timestamp.
+  - `~/.claude/hooks/check-speech-on-stop.ps1` (Stop) compares that marker
+    against the mtime of `%APPDATA%\CodeCompanionDesktop\speech-history.json`.
+    If no speech was sent during the turn, returns `decision: block` with
+    the exact command to run. Fails open when: no marker, bridge
+    unreachable, already blocked once this turn (loop guard via
+    `~/.claude/state/blocked-<sessionId>.txt`).
+  - Detection signal swapped late: initially used the `candidate-inbox\
+    manual-update-*.json` files but the bridge drains those almost
+    immediately. `speech-history.json` mtime is the reliable per-event
+    signal.
+- **Activity log automation** (in this entry's tail end):
+  - New `docs/activity-log.md` for auto-appended tool entries.
+  - `~/.claude/hooks/log-tool-call.ps1` (PostToolUse, matcher
+    `Write|Edit|Bash|PowerShell`) appends one line per write or command to
+    that file.
+
+### Verified
+
+- Pipe-tested `injection-guard.ps1` against benign, exfil, `curl|sh`, AWS
+  metadata IP, secret-file path, and cookie-exfil JS payloads. All four
+  attack shapes denied; benign passthrough silent.
+- Pipe-tested `check-speech-on-stop.ps1` across four scenarios: no marker
+  (allow), spoke this turn (allow), did not speak (block + reason), loop
+  guard (allow). All four behave as designed.
+- Pipe-tested `log-tool-call.ps1` against a Bash and an Edit synthetic
+  payload — log lines appended in expected format.
+- `claude mcp list` reports `microsoft-docs` and `playwright` both
+  connected.
+- `microsoft_docs_search` MCP call passed through the injection-guard
+  cleanly and returned 10 results.
+
+### Next
+
+- After next Claude Code restart, the new Stop hook and PostToolUse logger
+  become active. If either misfires on a legitimate turn, narrow the
+  pattern or matcher.
+- Pin `@playwright/mcp` to an explicit version once a stable one is chosen
+  (current is `@latest` resolving to whichever the npm registry serves).
+- Optional later: widen `injection-guard.ps1` MCP patterns once real attack
+  shapes are observed; current MCP coverage is conservative.
+
 ## 2026-05-17 Notes Tab Voice Extension Setup
 
 ### Current Milestone

@@ -16,8 +16,8 @@ public sealed class BridgeRuntimeStateTests
             "Code Companion Desktop",
             ["D:\\Development\\CodeCompanionDesktop"]);
         state.RecordClientSeen(client, workspace);
-        state.RecordSpeechCandidate(client, workspace, "message-1", "Speech diagnostics test.");
-        state.RecordSpeechCandidateDecision("spoken", "accepted");
+        var context = state.RecordSpeechCandidate(client, workspace, "message-1", "Speech diagnostics test.");
+        state.RecordSpeechCandidateDecision(context, "spoken", "accepted");
         state.RecordProviderError("provider unavailable");
         state.RecordPlaybackError("device unavailable");
 
@@ -45,6 +45,85 @@ public sealed class BridgeRuntimeStateTests
         var projectHistory = Assert.Single(state.LoadProjectSpeechHistoryDetails(8));
         Assert.Contains("Code Companion Desktop (codecompaniondesktop)", projectHistory, StringComparison.Ordinal);
         Assert.Contains("spoken/accepted", projectHistory, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PlaybackStartedRecordsBeforeSpokenSoLongCandidatesAreObservableEarly()
+    {
+        var state = new BridgeRuntimeState();
+        var client = new BridgeClient("test-client", "Code Companion Voice", "0.0.0", "windows", "windows");
+        var workspace = new BridgeWorkspace(
+            "codecompaniondesktop",
+            "Code Companion Desktop",
+            ["D:\\Development\\CodeCompanionDesktop"]);
+        state.RecordClientSeen(client, workspace);
+        var context = state.RecordSpeechCandidate(client, workspace, "long-message", "Long candidate body.");
+
+        state.RecordSpeechCandidatePlaybackStarted(context, "truncated");
+        var snapshotMid = state.GetDiagnosticsSnapshot();
+
+        state.RecordSpeechCandidateDecision(context, "spoken", "truncated");
+        var snapshotEnd = state.GetDiagnosticsSnapshot();
+
+        var playingEntry = Assert.Single(
+            snapshotMid.RecentProjectSpeech.Where(r => r.Decision == "playing"));
+        Assert.Equal("truncated", playingEntry.Reason);
+        Assert.Equal("long-message", playingEntry.MessageId);
+        Assert.Equal("playing (truncated)", snapshotMid.LastSpeechDecision);
+        Assert.Contains(
+            snapshotMid.RecentSpeechResults,
+            result => result.Contains("Candidate playing (truncated).", StringComparison.Ordinal));
+
+        Assert.Equal("spoken", snapshotEnd.RecentProjectSpeech[0].Decision);
+        Assert.Equal("truncated", snapshotEnd.RecentProjectSpeech[0].Reason);
+        Assert.Equal("playing", snapshotEnd.RecentProjectSpeech[1].Decision);
+        Assert.Equal("truncated", snapshotEnd.RecentProjectSpeech[1].Reason);
+        Assert.Equal("long-message", snapshotEnd.RecentProjectSpeech[0].MessageId);
+        Assert.Equal("long-message", snapshotEnd.RecentProjectSpeech[1].MessageId);
+    }
+
+    [Fact]
+    public void ConcurrentCandidatesEachAttributeToTheirOwnMessageId()
+    {
+        // Regression for Finding 3: when a long candidate is mid-playback and a second
+        // candidate arrives, the second one was overwriting a shared pendingSpeechCandidate
+        // field, so the first one's "spoken" record ended up with the second one's MessageId
+        // and Preview while still carrying the first one's reason (e.g. "truncated").
+        // The fix routes a per-candidate context through every record call.
+        var state = new BridgeRuntimeState();
+        var client = new BridgeClient("test-client", "Code Companion Voice", "0.0.0", "windows", "windows");
+        var workspace = new BridgeWorkspace(
+            "codecompaniondesktop",
+            "Code Companion Desktop",
+            ["D:\\Development\\CodeCompanionDesktop"]);
+        state.RecordClientSeen(client, workspace);
+
+        // A: long candidate arrives and starts playing.
+        var contextA = state.RecordSpeechCandidate(client, workspace, "candidate-A-long", "Long A text body simulating a truncated final message.");
+        state.RecordSpeechCandidatePlaybackStarted(contextA, "truncated");
+
+        // B: short candidate arrives while A is still playing — rejected as busy.
+        var contextB = state.RecordSpeechCandidate(client, workspace, "candidate-B-short", "Short B interloper text.");
+        state.RecordSpeechCandidateDecision(contextB, "rejected", "busy");
+
+        // A finally finishes playback — must attribute to A, not B.
+        state.RecordSpeechCandidateDecision(contextA, "spoken", "truncated");
+
+        var snap = state.GetDiagnosticsSnapshot();
+
+        var spoken = Assert.Single(snap.RecentProjectSpeech.Where(r => r.Decision == "spoken"));
+        Assert.Equal("candidate-A-long", spoken.MessageId);
+        Assert.StartsWith("Long A", spoken.Preview);
+        Assert.Equal("truncated", spoken.Reason);
+
+        var rejected = Assert.Single(snap.RecentProjectSpeech.Where(r => r.Decision == "rejected"));
+        Assert.Equal("candidate-B-short", rejected.MessageId);
+        Assert.StartsWith("Short B", rejected.Preview);
+        Assert.Equal("busy", rejected.Reason);
+
+        var playing = Assert.Single(snap.RecentProjectSpeech.Where(r => r.Decision == "playing"));
+        Assert.Equal("candidate-A-long", playing.MessageId);
+        Assert.Equal("truncated", playing.Reason);
     }
 
     [Fact]
