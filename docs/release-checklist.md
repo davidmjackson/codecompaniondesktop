@@ -34,6 +34,15 @@ Before packaging:
   - `publisher` is `local`.
   - `private` is `true`.
 
+## Release Ordering
+
+Build and release the Desktop side before the Voice side. Reliability spec
+Tasks 4 (pipeline self-test) and 5 (candidate inbox fallback) span both
+repositories: the Voice side talks to a Desktop that must already understand
+the new behaviour - the `self-test` candidate kind and the `inbox` delivery
+path. Build the Desktop changes locally first - or release Desktop first - so
+the Voice extension always has a compatible Desktop to reach.
+
 ## Desktop Release Build
 
 From PowerShell in `D:\Development\CodeCompanionDesktop`:
