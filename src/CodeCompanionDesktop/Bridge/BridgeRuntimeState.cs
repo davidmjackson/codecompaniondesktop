@@ -268,7 +268,8 @@ public sealed class BridgeRuntimeState
         BridgeClient client,
         BridgeWorkspace workspace,
         string messageId,
-        string text)
+        string text,
+        string source = "bridge")
     {
         lock (syncRoot)
         {
@@ -280,9 +281,12 @@ public sealed class BridgeRuntimeState
                 client.Name,
                 client.Environment,
                 messageId,
-                preview);
+                preview,
+                source);
             LastSpeechCandidate = $"{client.Environment} project {workspace.ProjectId} message {messageId}: {preview}";
-            LastStatus = "Bridge speech candidate received.";
+            LastStatus = source == "inbox"
+                ? "Bridge speech candidate received from the inbox."
+                : "Bridge speech candidate received.";
             return context;
         }
     }
@@ -453,7 +457,8 @@ public sealed class BridgeRuntimeState
             MessageId = context.MessageId,
             Preview = context.Preview,
             Decision = decision,
-            Reason = reason
+            Reason = reason,
+            Source = context.Source
         });
         if (recentProjectSpeech.Count > MaxRecentProjectSpeech)
         {
@@ -519,7 +524,7 @@ public sealed class BridgeRuntimeState
             .OrderByDescending(record => record.TimestampUtc)
             .Take(8)
             .Select(record =>
-                $"  - {FormatTimestamp(record.TimestampUtc)} {record.Decision}/{record.Reason} {record.Environment} {record.MessageId}: {record.Preview}");
+                $"  - {FormatTimestamp(record.TimestampUtc)} {record.Decision}/{record.Reason} via {record.Source} {record.Environment} {record.MessageId}: {record.Preview}");
 
         return string.Join(
             Environment.NewLine,
@@ -541,7 +546,8 @@ public sealed record SpeechCandidateContext(
     string ClientName,
     string Environment,
     string MessageId,
-    string Preview);
+    string Preview,
+    string Source);
 
 public sealed record BridgeDiagnosticsSnapshot(
     bool IsSpeaking,

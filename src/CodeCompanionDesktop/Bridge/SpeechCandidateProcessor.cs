@@ -23,7 +23,11 @@ public sealed class SpeechCandidateProcessor
         this.speechCandidatePipeline = speechCandidatePipeline ?? new SpeechCandidatePipeline(runtimeState.SpeechProfiles);
     }
 
-    public async Task<SpeechCandidateProcessingResult> ProcessAsync(SpeechCandidateRequest candidateRequest)
+    // source is the delivery channel: "bridge" for the live HTTP path,
+    // "inbox" for the candidate-inbox fallback (Reliability spec, Task 5).
+    public async Task<SpeechCandidateProcessingResult> ProcessAsync(
+        SpeechCandidateRequest candidateRequest,
+        string source = "bridge")
     {
         ArgumentNullException.ThrowIfNull(candidateRequest);
 
@@ -37,7 +41,8 @@ public sealed class SpeechCandidateProcessor
             candidateRequest.Client,
             candidateRequest.Workspace,
             candidateRequest.Codex.MessageId,
-            candidateRequest.Candidate.Text);
+            candidateRequest.Candidate.Text,
+            source);
 
         var pipelineResult = speechCandidatePipeline.Prepare(new SpeechCandidatePipelineInput(
             candidateRequest.Codex.MessageId,

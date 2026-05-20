@@ -93,4 +93,10 @@ public sealed class ProjectSpeechHistoryRecord
     public string Reason { get; set; } = string.Empty;
 
     public string Preview { get; set; } = string.Empty;
+
+    // Delivery channel the candidate arrived through: "bridge" for the live
+    // HTTP path, "inbox" for the candidate-inbox fallback (Reliability spec,
+    // Task 5). Defaults to "bridge" so history written before this field
+    // existed reads as a normal bridge delivery.
+    public string Source { get; set; } = "bridge";
 }

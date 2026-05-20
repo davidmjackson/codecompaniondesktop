@@ -75,7 +75,7 @@ public sealed class SpeechCandidateInboxWatcher : IDisposable
             return SpeechCandidateProcessingResult.BadRequest("invalid_candidate_inbox_file");
         }
 
-        var result = await speechCandidateProcessor.ProcessAsync(request);
+        var result = await speechCandidateProcessor.ProcessAsync(request, source: "inbox");
         if (result.StatusCode == System.Net.HttpStatusCode.Accepted)
         {
             DeleteQuietly(path);

@@ -146,6 +146,28 @@ without waiting for an assistant message.
       `[self-test] FAIL, <reason>.` with a reason matching Verify Install
 - [ ] The self-test setting persists across a Desktop restart (`settings.json`)
 
+### Candidate inbox as a first-class fallback (Reliability Task 5)
+
+When the live HTTP path is down, the bridge saves the candidate to the inbox
+so milestone updates are not lost.
+
+- [ ] **Stop-Desktop-then-restart** — close Desktop, trigger an assistant
+      update (or run the self-test), then restart Desktop:
+  - [ ] The Voice output channel shows an `inbox` outcome for the candidate
+  - [ ] A `<timestamp>-<messageId>.json` file appears in
+        `%APPDATA%\CodeCompanionDesktop\candidate-inbox\`
+  - [ ] On restart, Desktop picks the file up within ~1s and speaks it
+  - [ ] Speech History tags the entry `via inbox` (distinct from `via bridge`)
+  - [ ] The inbox file is deleted after it is accepted
+- [ ] **Distinct from delivered** — the status bar / output `inbox` outcomes
+      read differently from live `delivered` outcomes
+- [ ] **One write per candidate** — the same candidate is not written to the
+      inbox twice (same `messageId`)
+- [ ] **Fallback disabled** — set
+      `codeCompanionVoice.desktopBridge.inboxFallback.enabled` to `false`;
+      with Desktop down, a candidate now surfaces as a plain failure and **no**
+      inbox file is written
+
 ---
 
 ## 3. Speech pipeline — Standard profile

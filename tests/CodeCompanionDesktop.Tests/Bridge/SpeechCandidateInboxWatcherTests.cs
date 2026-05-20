@@ -35,6 +35,21 @@ public sealed class SpeechCandidateInboxWatcherTests
     }
 
     [Fact]
+    public async Task ProcessedInboxCandidateIsTaggedWithTheInboxSource()
+    {
+        using var fixture = await InboxFixture.CreateAsync();
+        var candidatePath = await fixture.WriteCandidateAsync("message-inbox-source", "An inbox-sourced milestone update.");
+
+        await fixture.Watcher.ProcessFileAsync(candidatePath);
+
+        var records = fixture.RuntimeState.GetDiagnosticsSnapshot().RecentProjectSpeech
+            .Where(entry => entry.MessageId == "message-inbox-source")
+            .ToList();
+        Assert.NotEmpty(records);
+        Assert.All(records, entry => Assert.Equal("inbox", entry.Source));
+    }
+
+    [Fact]
     public async Task ProcessFileCanEnableDemoMode()
     {
         using var fixture = await InboxFixture.CreateAsync();

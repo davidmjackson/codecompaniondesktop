@@ -48,6 +48,33 @@ public sealed class BridgeRuntimeStateTests
     }
 
     [Fact]
+    public void TagsProjectSpeechHistoryWithTheDeliverySource()
+    {
+        var state = new BridgeRuntimeState();
+        var client = new BridgeClient("test-client", "Code Companion Voice", "0.0.0", "windows", "windows");
+        var workspace = new BridgeWorkspace(
+            "codecompaniondesktop",
+            "Code Companion Desktop",
+            ["D:\\Development\\CodeCompanionDesktop"]);
+
+        var bridgeContext = state.RecordSpeechCandidate(client, workspace, "message-bridge", "Live bridge delivery.");
+        state.RecordSpeechCandidateDecision(bridgeContext, "spoken", "accepted");
+        var inboxContext = state.RecordSpeechCandidate(client, workspace, "message-inbox", "Inbox delivery.", "inbox");
+        state.RecordSpeechCandidateDecision(inboxContext, "spoken", "accepted");
+
+        var snapshot = state.GetDiagnosticsSnapshot();
+        var bridgeRecord = snapshot.RecentProjectSpeech.Single(record => record.MessageId == "message-bridge");
+        var inboxRecord = snapshot.RecentProjectSpeech.Single(record => record.MessageId == "message-inbox");
+
+        Assert.Equal("bridge", bridgeRecord.Source);
+        Assert.Equal("inbox", inboxRecord.Source);
+
+        var projectHistory = Assert.Single(state.LoadProjectSpeechHistoryDetails(8));
+        Assert.Contains("via inbox", projectHistory, StringComparison.Ordinal);
+        Assert.Contains("via bridge", projectHistory, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void PlaybackStartedRecordsBeforeSpokenSoLongCandidatesAreObservableEarly()
     {
         var state = new BridgeRuntimeState();
