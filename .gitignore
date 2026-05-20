@@ -10,3 +10,8 @@ obj/
 *.log
 TestResults/
 artifacts/
+
+# Claude Code spoken-update hooks: machine-specific dev tooling (hardcoded
+# paths, local speech bridge), not part of the shipped product.
+# See the Spoken Update Convention in docs/architecture.md if recreating.
+.claude/

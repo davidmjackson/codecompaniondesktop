@@ -129,7 +129,10 @@ locations.
 Code Companion uses two separate installs:
 
 - Code Companion Desktop is installed separately as a Windows app.
-- The VS Code extension is installed separately into VS Code.
+- The Code Companion VS Code extension pack is installed separately into VS
+  Code. The pack contains Code Companion Voice (the workspace-side observer of
+  Codex and Claude Code activity) and Code Companion Bridge (the Windows-side
+  bridge to the Desktop app).
 
 The VS Code extension owns VS Code commands, workspace context, Codex log
 watching, and calls to the local desktop bridge. The Windows app owns
@@ -256,17 +259,14 @@ Preferred path after building an installer:
    shortcut.
 3. Confirm the app opens with the Code Companion icon and the tray icon appears.
 4. Save or confirm the ElevenLabs API key in the desktop app.
-5. Install or reload Code Companion Voice in the active VS Code extension host.
-6. Run `Code Companion Voice: Open Panel`, click `Desktop Test`, then approve
-   the pending VS Code client in the Desktop Client Pairing panel.
-7. Click `Desktop Test` again and confirm Code Companion Desktop speaks.
-8. Run `Code Companion Voice: Open Panel` and confirm
-   the panel shows `Desktop Test` and bridge diagnostics, not VS Code-owned
-   audio controls.
-9. In the Startup section, enable `Start hidden to tray` if you want the app to
+5. Install the Code Companion extension pack into VS Code, then reload VS Code.
+6. Open a project and use Codex or Claude Code. On the first speech candidate,
+   approve the pending VS Code client in the Desktop Client Pairing panel.
+7. Confirm Code Companion Desktop speaks the assistant's next final answer.
+8. In the Startup section, enable `Start hidden to tray` if you want the app to
    stay out of the way after launch.
-10. Enable `Start with Windows sign-in` from the installed app.
-11. Click `Refresh Diagnostics` and confirm the registered executable path points
+9. Enable `Start with Windows sign-in` from the installed app.
+10. Click `Refresh Diagnostics` and confirm the registered executable path points
    to `%LOCALAPPDATA%\Programs\Code Companion Desktop\CodeCompanionDesktop.exe`.
 
 For developer testing, the published folder can still be used as a portable
