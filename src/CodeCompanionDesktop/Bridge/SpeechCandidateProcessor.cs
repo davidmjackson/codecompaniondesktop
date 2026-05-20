@@ -60,6 +60,18 @@ public sealed class SpeechCandidateProcessor
                 new SpeechCandidateResponse("rejected", "rejected", "invalid_pipeline_result", 0));
         }
 
+        // A self-test candidate has now cleared the full pipeline - validation,
+        // normalization, policy, and reservation. When self-test playback is
+        // Silent, accept it without speaking; the user confirms it arrived via
+        // the Speech History panel instead (Reliability spec, Task 4).
+        if (SpeechCandidatePipeline.IsSelfTestKind(candidateRequest.Candidate.Kind)
+            && runtimeState.SelfTestPlaybackSilent)
+        {
+            runtimeState.RecordSpeechCandidateDecision(candidateContext, "silent", pipelineResult.Reason);
+            return SpeechCandidateProcessingResult.Accepted(
+                new SpeechCandidateResponse("accepted", "silent", pipelineResult.Reason, 0));
+        }
+
         if (runtimeState.QueueBridgeSpeechRequests)
         {
             if (!speechQueue.TryEnqueue(

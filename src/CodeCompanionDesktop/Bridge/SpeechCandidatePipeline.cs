@@ -58,7 +58,12 @@ public sealed partial class SpeechCandidatePipeline
             return SpeechCandidatePipelineResult.Ignored("unsupported_candidate_kind");
         }
 
-        var reason = GetAcceptedReason(normalized, speechPolicyText, filtered, speechHint);
+        // A self-test candidate runs the same path as a real candidate but is
+        // tagged distinctly so the user can spot it in Speech History
+        // (Reliability spec, Task 4).
+        var reason = IsSelfTestKind(input.Kind)
+            ? "self-test"
+            : GetAcceptedReason(normalized, speechPolicyText, filtered, speechHint);
         if (!string.IsNullOrWhiteSpace(input.Phase)
             && !string.Equals(input.Phase.Trim(), "final", StringComparison.OrdinalIgnoreCase))
         {
@@ -301,7 +306,16 @@ public sealed partial class SpeechCandidatePipeline
 
     private static bool IsSupportedSpeechCandidateKind(string kind)
     {
-        return string.Equals(kind.Trim(), "assistant-message", StringComparison.OrdinalIgnoreCase);
+        var normalized = kind.Trim();
+        return string.Equals(normalized, "assistant-message", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "self-test", StringComparison.OrdinalIgnoreCase);
+    }
+
+    // A pipeline self-test candidate (Reliability spec, Task 4). It proves the
+    // pipeline end to end without waiting for an assistant message.
+    public static bool IsSelfTestKind(string kind)
+    {
+        return string.Equals(kind?.Trim(), "self-test", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsSupportedProfileCommandKind(string kind)

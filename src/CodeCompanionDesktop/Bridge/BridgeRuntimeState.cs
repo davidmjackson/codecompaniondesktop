@@ -18,6 +18,7 @@ public sealed class BridgeRuntimeState
     private readonly List<ProjectSpeechHistoryRecord> recentProjectSpeech = new();
     private bool isSpeaking;
     private bool queueBridgeSpeechRequests;
+    private bool selfTestPlaybackSilent;
     private int pendingSpeechRequests;
     private int maxQueuedSpeechRequests = 3;
 
@@ -41,6 +42,19 @@ public sealed class BridgeRuntimeState
             lock (syncRoot)
             {
                 return queueBridgeSpeechRequests;
+            }
+        }
+    }
+
+    // True when pipeline self-test candidates run the full pipeline but skip
+    // audio playback (Reliability spec, Task 4).
+    public bool SelfTestPlaybackSilent
+    {
+        get
+        {
+            lock (syncRoot)
+            {
+                return selfTestPlaybackSilent;
             }
         }
     }
@@ -199,6 +213,16 @@ public sealed class BridgeRuntimeState
             LastStatus = isEnabled
                 ? $"Bridge speech queue enabled. Limit: {maxQueuedRequests}."
                 : "Bridge speech queue disabled. Busy requests are rejected.";
+        }
+    }
+
+    // Apply the "Pipeline self-test playback" setting. When silent, a
+    // self-test candidate still runs the whole pipeline but is not spoken.
+    public void ConfigureSelfTestPlayback(bool isSilent)
+    {
+        lock (syncRoot)
+        {
+            selfTestPlaybackSilent = isSilent;
         }
     }
 

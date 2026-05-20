@@ -375,4 +375,45 @@ public sealed class SpeechCandidatePipelineTests
         Assert.Equal("accepted", result.Decision);
         Assert.Equal("Here is the summary of the work. That wraps up the task.", result.SpeechText);
     }
+
+    [Fact]
+    public void AcceptsSelfTestCandidateKindAndTagsItDistinctly()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "self-test-message",
+            "self-test",
+            "final",
+            null,
+            "Code Companion pipeline self-test."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("self-test", result.Reason);
+        Assert.Equal("Code Companion pipeline self-test.", result.SpeechText);
+    }
+
+    [Fact]
+    public void IdentifiesSelfTestCandidateKind()
+    {
+        Assert.True(SpeechCandidatePipeline.IsSelfTestKind("self-test"));
+        Assert.True(SpeechCandidatePipeline.IsSelfTestKind("  Self-Test  "));
+        Assert.False(SpeechCandidatePipeline.IsSelfTestKind("assistant-message"));
+    }
+
+    [Fact]
+    public void RejectsAnUnknownCandidateKind()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-unknown-kind",
+            "diagnostic",
+            "final",
+            null,
+            "An unknown kind should not be spoken."));
+
+        Assert.Equal("ignored", result.Decision);
+        Assert.Equal("unsupported_candidate_kind", result.Reason);
+    }
 }

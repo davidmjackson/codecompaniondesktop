@@ -10,11 +10,18 @@ public sealed class AppSettings
     public const int MinQueuedBridgeSpeechRequests = 1;
     public const int MaxQueuedBridgeSpeechRequestLimit = 10;
 
+    // Pipeline self-test playback (Reliability spec, Task 4): whether a
+    // self-test candidate is spoken aloud or accepted silently.
+    public const string SelfTestPlaybackSpeak = "Speak";
+    public const string SelfTestPlaybackSilent = "Silent";
+
     public bool StartHiddenToTray { get; set; }
 
     public bool QueueBridgeSpeechRequests { get; set; }
 
     public int MaxQueuedBridgeSpeechRequests { get; set; } = DefaultMaxQueuedBridgeSpeechRequests;
+
+    public string SelfTestPlayback { get; set; } = SelfTestPlaybackSpeak;
 
     public string SpeechProvider { get; set; } = ElevenLabsProvider;
 
@@ -30,6 +37,10 @@ public sealed class AppSettings
             MaxQueuedBridgeSpeechRequests,
             MinQueuedBridgeSpeechRequests,
             MaxQueuedBridgeSpeechRequestLimit);
+
+        SelfTestPlayback = string.Equals(SelfTestPlayback?.Trim(), SelfTestPlaybackSilent, StringComparison.OrdinalIgnoreCase)
+            ? SelfTestPlaybackSilent
+            : SelfTestPlaybackSpeak;
 
         SpeechProvider = string.Equals(SpeechProvider?.Trim(), ElevenLabsProvider, StringComparison.OrdinalIgnoreCase)
             ? ElevenLabsProvider
