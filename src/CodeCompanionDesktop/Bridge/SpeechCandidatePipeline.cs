@@ -9,9 +9,9 @@ namespace CodeCompanionDesktop.Bridge;
 public sealed partial class SpeechCandidatePipeline
 {
     // A spoken update is a short headline, not a recital: a long candidate is
-    // shortened to its opening sentence or two. This is the upper bound on that
+    // shortened to its opening few sentences. This is the upper bound on that
     // opening.
-    public const int MaxSpeechTextLength = 220;
+    public const int MaxSpeechTextLength = 500;
     private const string TruncationSuffix = "...";
 
     private readonly object syncRoot = new();

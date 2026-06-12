@@ -333,6 +333,10 @@ public sealed class SpeechCandidatePipelineTests
             "All four pull requests are merged into the main branch. " +
             "The systemd service is enabled and restarts automatically on boot. " +
             "Access keys are now stored as salted hashes on disk. " +
+            "The database migration ran cleanly with no manual steps required. " +
+            "Monitoring dashboards were updated to track the new endpoints. " +
+            "Rollback instructions are documented in the runbook for the team. " +
+            "Load testing showed stable latency under the expected peak traffic. " +
             "Smoke tests pass cleanly across every area that was checked.";
 
         var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
