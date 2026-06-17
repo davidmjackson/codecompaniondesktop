@@ -6,21 +6,30 @@ namespace CodeCompanionDesktop.Bridge;
 
 public sealed class SpeechCandidateProcessor
 {
+    // A safety net for the synchronous (non-queued) speak path. Playback of a
+    // 500-character opening is well under a minute; this only trips if a speak
+    // hangs and never returns, which must not be allowed to latch isSpeaking
+    // and reject every later message as "busy".
+    private static readonly TimeSpan DefaultSpeakTimeout = TimeSpan.FromMinutes(3);
+
     private readonly Func<string, Task> speakAsync;
     private readonly BridgeRuntimeState runtimeState;
     private readonly BridgeSpeechQueue speechQueue;
     private readonly SpeechCandidatePipeline speechCandidatePipeline;
+    private readonly TimeSpan speakTimeout;
 
     public SpeechCandidateProcessor(
         Func<string, Task> speakAsync,
         BridgeRuntimeState runtimeState,
         BridgeSpeechQueue speechQueue,
-        SpeechCandidatePipeline? speechCandidatePipeline = null)
+        SpeechCandidatePipeline? speechCandidatePipeline = null,
+        TimeSpan? speakTimeout = null)
     {
         this.speakAsync = speakAsync;
         this.runtimeState = runtimeState;
         this.speechQueue = speechQueue;
         this.speechCandidatePipeline = speechCandidatePipeline ?? new SpeechCandidatePipeline(runtimeState.SpeechProfiles);
+        this.speakTimeout = speakTimeout ?? DefaultSpeakTimeout;
     }
 
     // source is the delivery channel: "bridge" for the live HTTP path,
@@ -115,11 +124,19 @@ public sealed class SpeechCandidateProcessor
 
         try
         {
-            await speakAsync(pipelineResult.SpeechText);
+            await speakAsync(pipelineResult.SpeechText).WaitAsync(speakTimeout);
             runtimeState.CompleteSpeaking();
             runtimeState.RecordSpeechCandidateDecision(candidateContext, "spoken", pipelineResult.Reason);
             return SpeechCandidateProcessingResult.Accepted(
                 new SpeechCandidateResponse("accepted", "spoken", pipelineResult.Reason, 0));
+        }
+        catch (TimeoutException)
+        {
+            speechCandidatePipeline.Release(pipelineResult.Reservation);
+            runtimeState.FailSpeaking("speech_timeout");
+            runtimeState.RecordSpeechCandidateDecision(candidateContext, "rejected", "speech_timeout");
+            return SpeechCandidateProcessingResult.InternalError(
+                new SpeechCandidateResponse("rejected", "rejected", "speech_timeout", 0));
         }
         catch (Exception ex)
         {

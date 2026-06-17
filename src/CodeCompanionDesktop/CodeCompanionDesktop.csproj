@@ -15,6 +15,9 @@
     <InformationalVersion>0.1.2</InformationalVersion>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="CodeCompanionDesktop.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="Assets\app.ico" />
     <Resource Include="Assets\app.png" />
     <Resource Include="Assets\icon-128.png" />
