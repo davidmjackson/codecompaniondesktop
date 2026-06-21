@@ -35,7 +35,7 @@ public sealed partial class SpeechCandidatePipeline
             return SpeechCandidatePipelineResult.Ignored("empty_candidate");
         }
 
-        var speechPolicyText = ReplaceDirectoryPaths(normalized);
+        var speechPolicyText = ReplaceCommitIdentifiers(ReplaceDirectoryPaths(normalized));
         var filtered = RedactSensitiveText(speechPolicyText);
         if (string.IsNullOrWhiteSpace(filtered))
         {
@@ -254,6 +254,30 @@ public sealed partial class SpeechCandidatePipeline
         return filtered;
     }
 
+    // A commit identifier read aloud is a meaningless run of letters and digits
+    // ("two-nine-a-e-one-seven-d"). Keep the word that frames it ("commit",
+    // "SHA", ...) but drop the hash itself, and drop a bare hash together with
+    // any preposition that introduces it ("as 29ae17d") so the sentence still
+    // reads. A hash is 7-40 hex characters; a *bare* hash must contain BOTH a
+    // digit and a hex letter so plain numbers (run IDs, PR numbers, counts) and
+    // ordinary words are left untouched. Like path and URL rewriting, this is
+    // environment-agnostic - it applies to every project the bridge speaks for.
+    private static string ReplaceCommitIdentifiers(string text)
+    {
+        // "commit <hash>" / "SHA: <hash>" -> keep the framing word, drop the hash.
+        var result = CommitKeywordHashRegex().Replace(text, "$1");
+
+        // "as/in/at/to/from <hash>" -> drop the connector and the hash together.
+        result = PrepositionHashRegex().Replace(result, " ");
+
+        // Any remaining bare hash -> drop it.
+        result = BareCommitHashRegex().Replace(result, " ");
+
+        // Tidy up the gaps the removals leave behind.
+        result = SpaceBeforePunctuationRegex().Replace(result, "$1");
+        return NormalizeForSpeech(result);
+    }
+
     private static string ReplaceDirectoryPaths(string text)
     {
         var filtered = UncPathRegex().Replace(text, ReplacePathMatch);
@@ -396,6 +420,18 @@ public sealed partial class SpeechCandidatePipeline
 
     [GeneratedRegex(@"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", RegexOptions.IgnoreCase)]
     private static partial Regex EmailRegex();
+
+    [GeneratedRegex(@"(?i)\b(commit|commits|sha|revision|rev|changeset|hash)\b(?:\s+id)?[\s:#]+[0-9a-f]{7,40}\b")]
+    private static partial Regex CommitKeywordHashRegex();
+
+    [GeneratedRegex(@"(?i)\b(?:as|in|at|to|from)\s+(?=[0-9a-f]*[0-9])(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b")]
+    private static partial Regex PrepositionHashRegex();
+
+    [GeneratedRegex(@"(?i)\b(?=[0-9a-f]*[0-9])(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b")]
+    private static partial Regex BareCommitHashRegex();
+
+    [GeneratedRegex(@"\s+([.,;:!?])")]
+    private static partial Regex SpaceBeforePunctuationRegex();
 
     [GeneratedRegex(@"(?<![\w])(?:[A-Za-z]:[\\/][^\s""<>|]+)")]
     private static partial Regex WindowsPathRegex();

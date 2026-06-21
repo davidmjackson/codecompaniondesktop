@@ -225,6 +225,72 @@ public sealed class SpeechCandidatePipelineTests
     }
 
     [Fact]
+    public void KeepsTheCommitWordButDropsTheCommitHash()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-commit-keyword",
+            "assistant-message",
+            "final",
+            null,
+            "See commit a70c970 for the cap change."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("speech_rewritten", result.Reason);
+        Assert.Equal("See commit for the cap change.", result.SpeechText);
+    }
+
+    [Fact]
+    public void DropsABareCommitHashAndItsLeadingPreposition()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-commit-bare",
+            "assistant-message",
+            "final",
+            null,
+            "I committed the fix as 29ae17d and pushed it."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("speech_rewritten", result.Reason);
+        Assert.Equal("I committed the fix and pushed it.", result.SpeechText);
+    }
+
+    [Fact]
+    public void DropsAnUppercaseCommitHashRegardlessOfCase()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-commit-upper",
+            "assistant-message",
+            "final",
+            null,
+            "Pushed as 9F8E7D6 to origin."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Pushed to origin.", result.SpeechText);
+    }
+
+    [Fact]
+    public void LeavesPlainNumbersThatAreNotCommitHashesUntouched()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-not-a-hash",
+            "assistant-message",
+            "final",
+            null,
+            "The run 26160030582 finished with 14 checks."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("The run 26160030582 finished with 14 checks.", result.SpeechText);
+    }
+
+    [Fact]
     public void ReplacesBareUrlsWithASpokenPlaceholder()
     {
         var pipeline = new SpeechCandidatePipeline();
