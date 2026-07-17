@@ -22,7 +22,7 @@ suite.
 - [ ] Clean state: no stale candidates in `%APPDATA%\CodeCompanionDesktop\candidate-inbox\`
 - [ ] `speech-history.json` mtime noted (for later before/after checks)
 - [ ] VS Code closed (so a clean pairing exercise can run from cold)
-- [ ] Code Companion Voice VSIX available at `D:\Development\CodeCompanionVoice` (built via `npm run package:vsix` if needed)
+- [ ] Code Companion Voice VSIXs available at `D:\Development\CodeCompanionVoice` (if needed, build with `npm run compile` then `npx vsce package --no-dependencies` in each of `extensions/bridge`, `extensions/voice`, `extensions/pack`)
 - [ ] Audio output device working — play any system sound to confirm
 - [ ] Solution builds clean:
   - [ ] `dotnet build CodeCompanionDesktop.sln` exits 0
@@ -226,7 +226,7 @@ so milestone updates are not lost.
 - [ ] Notes tab is reachable from the main nav
 - [ ] `VS Code Extension Setup` section is present and rendered
 - [ ] Section mentions both Windows host and WSL Remote host as separate installs
-- [ ] Local VSIX path (`D:\Development\CodeCompanionVoice` + `npm run package:vsix`) is described
+- [ ] Local VSIX path (`D:\Development\CodeCompanionVoice` + per-extension `npx vsce package --no-dependencies`) is described
 - [ ] Marketplace wording is still described as "future" (Milestone 9 parked)
 - [ ] All hyperlinks render and click through (or are deliberately plain text)
 

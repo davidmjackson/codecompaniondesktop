@@ -80,7 +80,7 @@ Definition of Done
 
 Compiles cleanly: npm run compile.
 Tests pass: npm test.
-VSIX rebuilt: npm run package:vsix (or per-extension vsce package).
+VSIXs rebuilt: npx vsce package --no-dependencies in each of extensions/bridge, extensions/voice, extensions/pack.
 Manual run in fresh project, three states tested:
 
 Desktop running, paired, PASS.

@@ -795,10 +795,14 @@ Local install model:
     `.\scripts\build-installer.ps1 -AppVersion <version>`.
   - Local portable publish artifact created by `.\scripts\publish-release.ps1`.
 - Current development source for Code Companion Voice:
-  - Local VSIX artifact created by `npm run package:vsix`.
-  - Installed into the Windows VS Code profile with Windows `code.cmd`.
-  - Installed into the WSL VS Code server with WSL `code` when testing WSL
-    workspaces.
+  - Three local VSIX artifacts created by running `npm run compile`, then
+    `npx vsce package --no-dependencies` in each of `extensions/bridge`,
+    `extensions/voice`, and `extensions/pack`.
+  - Installed into the Windows VS Code profile with Windows `code.cmd`, members
+    before the pack.
+  - `code-companion-voice` is additionally installed into the WSL VS Code server
+    with WSL `code` when testing WSL workspaces. `code-companion-bridge` is
+    `extensionKind: ui` and stays on the Windows host.
 - Public GitHub Release and VS Code Marketplace publication are explicitly
   deferred to Milestone 9.
 

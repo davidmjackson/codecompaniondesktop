@@ -117,23 +117,36 @@ From `D:\Development\CodeCompanionVoice`:
 npm install
 npm run compile
 npm test
-find dist -name '*.js' -print0 | xargs -0 -n1 node --check
+find extensions/*/dist -name '*.js' -print0 | xargs -0 -n1 node --check
 git diff --check
 npm audit --omit=dev
-npm run package:vsix
+```
+
+Then package each extension. The Voice repository is an npm monorepo that
+produces three VSIXs, so package from each extension folder:
+
+```bash
+(cd extensions/bridge && npx vsce package --no-dependencies)
+(cd extensions/voice && npx vsce package --no-dependencies)
+(cd extensions/pack && npx vsce package --no-dependencies)
 ```
 
 Expected output:
 
 ```text
-code-companion-voice-<version>.vsix
+extensions/bridge/code-companion-bridge-<version>.vsix
+extensions/voice/code-companion-voice-<version>.vsix
+extensions/pack/code-companion-<version>.vsix
 ```
 
-Required checks:
+Required checks — apply these to all three extension `package.json` files
+(`extensions/bridge`, `extensions/voice`, `extensions/pack`):
 
-- Package version matches the intended extension release.
-- `package.json` uses the real Marketplace publisher.
-- `package.json` is not marked `private` for a public Marketplace release.
+- Package versions match the intended extension release, and the pack's member
+  versions match the members being shipped.
+- Each `package.json` uses the real Marketplace publisher.
+- No `package.json` is marked `private` for a public Marketplace release.
+- `extensionKind` is unchanged: `voice` is `workspace`, `bridge` is `ui`.
 - Extension README points users to Code Companion Desktop for provider keys.
 - The default `desktopBridge.installUrl` points to the Desktop GitHub Releases
   latest URL.
