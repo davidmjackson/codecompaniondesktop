@@ -11,12 +11,21 @@ namespace CodeCompanionDesktop;
 public partial class MainWindow
 {
     private const int SpeechesBetweenServerReconcile = 5;
+    private const int UsageFallbackWindowDays = 30;
 
     private readonly QuotaTracker quotaTracker = new();
     private readonly ElevenLabsAccountClient elevenLabsAccountClient = new();
+    private readonly ElevenLabsUsageClient elevenLabsUsageClient = new();
     private int speechesUntilReconcile = SpeechesBetweenServerReconcile;
     private bool isRefreshingQuota;
     private bool quotaWired;
+
+    // Non-null means the key cannot read /v1/user/subscription. Held as explicit
+    // state rather than decided inside the catch, because QuotaTracker.StateChanged
+    // repaints via Dispatcher.InvokeAsync and would otherwise race the fallback
+    // and overwrite it.
+    private string? quotaAccessDeniedMessage;
+    private long? quotaUsageOnlyCharacters;
 
     private void WireQuotaMeter()
     {
@@ -28,9 +37,7 @@ public partial class MainWindow
         }
 
         ShowQuotaMeterCheckBox.IsChecked = settings.ShowElevenLabsQuotaMeter;
-        QuotaMeterCompactCard.Visibility = settings.ShowElevenLabsQuotaMeter
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+        ApplyQuotaCardVisibility();
 
         RestoreQuotaSnapshotFromSettings();
         UpdateQuotaUiFromTracker();
@@ -55,6 +62,17 @@ public partial class MainWindow
             QuotaSnapshotSource.Server);
 
         quotaTracker.RestoreFromPersisted(snapshot);
+    }
+
+    /// <summary>
+    /// The compact card is a percentage bar. Without a limit there is no
+    /// denominator to draw, so it stays hidden while access is denied however the
+    /// user has set the toggle. The toggle setting itself is never overwritten.
+    /// </summary>
+    private void ApplyQuotaCardVisibility()
+    {
+        var canShow = settings.ShowElevenLabsQuotaMeter && quotaAccessDeniedMessage is null;
+        QuotaMeterCompactCard.Visibility = canShow ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void OnSpeechProduced(int characters)
@@ -117,20 +135,52 @@ public partial class MainWindow
             RefreshQuotaButton.IsEnabled = false;
 
             var subscription = await elevenLabsAccountClient.GetSubscriptionAsync(apiKey);
+
+            quotaAccessDeniedMessage = null;
+            quotaUsageOnlyCharacters = null;
             quotaTracker.UpdateFromSubscription(subscription, DateTimeOffset.UtcNow);
             SaveQuotaToSettings();
             speechesUntilReconcile = SpeechesBetweenServerReconcile;
 
+            ApplyQuotaCardVisibility();
             QuotaDetailStatusText.Text = $"Refreshed at {DateTimeOffset.Now:t}.";
+        }
+        catch (ElevenLabsAccountAccessDeniedException ex)
+        {
+            // The key speaks but cannot read the account. Recorded whether or not
+            // this refresh was quiet, because the meter must hide itself either way.
+            quotaAccessDeniedMessage = ex.Message;
+            quotaUsageOnlyCharacters = await TryGetUsageOnlyCharactersAsync(apiKey);
+            RenderQuotaAccessDenied();
         }
         catch (Exception ex)
         {
-            QuotaDetailStatusText.Text = $"Refresh failed: {ex.Message}";
+            // A background refresh must not splash errors into the UI.
+            if (!quiet)
+            {
+                QuotaDetailStatusText.Text = $"Refresh failed: {ex.Message}";
+            }
         }
         finally
         {
             isRefreshingQuota = false;
             RefreshQuotaButton.IsEnabled = true;
+        }
+    }
+
+    private async Task<long?> TryGetUsageOnlyCharactersAsync(string apiKey)
+    {
+        try
+        {
+            var end = DateTimeOffset.UtcNow;
+            var start = end.AddDays(-UsageFallbackWindowDays);
+            return await elevenLabsUsageClient.GetCharactersUsedAsync(apiKey, start, end);
+        }
+        catch (Exception)
+        {
+            // Usage is a fallback for a fallback. Losing it leaves the
+            // unavailable state, which is still honest.
+            return null;
         }
     }
 
@@ -160,6 +210,12 @@ public partial class MainWindow
 
     private void UpdateQuotaUiFromTracker()
     {
+        if (quotaAccessDeniedMessage is not null)
+        {
+            RenderQuotaAccessDenied();
+            return;
+        }
+
         var snapshot = quotaTracker.Snapshot;
 
         if (snapshot is null || snapshot.CharacterLimit <= 0)
@@ -204,6 +260,34 @@ public partial class MainWindow
         QuotaDetailAsOfText.Text = $"As of {asOfLocal:d MMM yyyy h:mm tt}{stalenessHint}";
     }
 
+    private void RenderQuotaAccessDenied()
+    {
+        ApplyQuotaCardVisibility();
+        QuotaCompactProgressBar.Visibility = Visibility.Collapsed;
+        QuotaCompactDetailText.Text = string.Empty;
+
+        QuotaDetailTierText.Text = "Tier: unknown";
+        QuotaDetailRemainingText.Text = "Remaining: unknown";
+        QuotaDetailResetText.Text = "Resets: unknown";
+
+        if (quotaUsageOnlyCharacters is long used)
+        {
+            var summary = $"{used:N0} characters used (last {UsageFallbackWindowDays} days)";
+            QuotaCompactSummaryText.Text = summary;
+            QuotaDetailCharactersText.Text = $"Used: {summary}";
+            QuotaDetailAsOfText.Text = $"As of {DateTimeOffset.Now:d MMM yyyy h:mm tt}";
+            QuotaDetailStatusText.Text =
+                $"{quotaAccessDeniedMessage} Add the user_read permission to your ElevenLabs API key to show your limit and percentage.";
+        }
+        else
+        {
+            QuotaCompactSummaryText.Text = "Quota unavailable.";
+            QuotaDetailCharactersText.Text = "Used: -";
+            QuotaDetailAsOfText.Text = "No data yet.";
+            QuotaDetailStatusText.Text = quotaAccessDeniedMessage ?? string.Empty;
+        }
+    }
+
     private async void RefreshQuotaButton_Click(object sender, RoutedEventArgs e)
     {
         await RefreshQuotaAsync(quiet: false);
@@ -217,9 +301,7 @@ public partial class MainWindow
         }
 
         settings.ShowElevenLabsQuotaMeter = ShowQuotaMeterCheckBox.IsChecked == true;
-        QuotaMeterCompactCard.Visibility = settings.ShowElevenLabsQuotaMeter
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+        ApplyQuotaCardVisibility();
 
         try
         {
