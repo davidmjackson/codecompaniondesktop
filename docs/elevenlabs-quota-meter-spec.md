@@ -7,7 +7,9 @@ Status: design approved, implementation pending
 ## Purpose
 
 Finish and merge the ElevenLabs quota meter, which shows how much of the
-ElevenLabs character allowance the current billing period has consumed.
+ElevenLabs character allowance has been consumed — as a percentage of the plan
+limit when the API key permits reading it, and as a plain characters-used figure
+for the last 30 days when it does not.
 
 The feature was built in May 2026 and parked. This spec records why it was
 parked, and what must change before it can ship.
@@ -65,12 +67,56 @@ path are correct: `OnSpeechProduced(text.Length)` is called with the same `text`
 passed to `CreateSpeechAsync`, and only after that call succeeds, so failed
 provider calls do not consume quota.
 
-## Prerequisite (user action)
+## Two data sources, and why both are needed
 
-The `user_read` permission must be granted to the ElevenLabs API key. The
-feature cannot show real numbers without it. If the permission cannot be
-granted, the meter will correctly and permanently show the explanation described
-below instead of numbers.
+The meter's four fields do not come from one place. This is structural, not a
+quirk, and it drives the whole design.
+
+| Field | `GET /v1/usage/character-stats` | `GET /v1/user/subscription` |
+| --- | --- | --- |
+| characters used | **yes** | yes |
+| character limit | no | **yes** |
+| tier | no | **yes** |
+| next reset | no | **yes** |
+| scope required | none beyond the TTS key | `user_read` |
+
+Verified on 2026-07-17 with the current TTS-only key:
+
+- `GET /v1/usage/character-stats?start_unix={ms}&end_unix={ms}` → **200**, with
+  real daily usage. Over 31 days it returned 247,631 characters across 22 active
+  days. **No `user_read` needed.**
+- The window parameters are **unix milliseconds**. Passing seconds returns
+  `{"time":[...],"usage":{}}` — a silent empty result, not an error. This is a
+  trap: seconds look valid and fail quietly.
+- Response shape: `{"time":[unix_ms,...],"usage":{"All":[chars,...]}}` — daily
+  buckets, parallel arrays.
+
+`character_limit` has exactly one source in the API. These all return **404**;
+there is no workspace-level quota endpoint:
+
+```text
+/v1/workspace/subscription   404
+/v1/workspace/usage          404
+/v1/usage/subscription       404
+/v1/subscription/info        404
+```
+
+Service accounts do not solve this: they are documented as multi-seat-only
+(Scale/Business/Enterprise), and the docs are silent on what the user-scoped
+`/v1/user/subscription` returns for a non-user identity. Scope configuration is
+available on personal keys too, so a personal key with `user_read` is the
+supported route.
+
+## Prerequisite (user action, optional)
+
+Granting `user_read` unlocks the limit, tier, and reset date — the percentage.
+Simplest route: create a new personal API key with `user_read` **and**
+`text_to_speech` selected, then save it in Speech Provider. The existing key
+shows no scope toggle, which the ElevenLabs docs do not explain (possibly a
+legacy key predating their August 2024 permissions feature).
+
+The feature ships useful **without** this: it falls back to real usage from
+`character-stats`. The prerequisite buys the denominator, not the feature.
 
 ## Design
 
@@ -100,26 +146,49 @@ Rules:
   `catch (InvalidOperationException)`.
 - The client remains the only component that knows about HTTP status codes.
 
-### 2. UI shows the provider's message plus the fix
+### 2. Degrade to usage-only instead of failing
 
-In `MainWindow.QuotaMeter.cs`, `RefreshQuotaAsync` catches
-`ElevenLabsAccountAccessDeniedException` separately and renders:
+On `ElevenLabsAccountAccessDeniedException`, do **not** give up. Fall back to
+`GET /v1/usage/character-stats` for the current billing window and show real
+characters used, with no percentage.
 
-- the provider's message, verbatim; and
-- one short line stating the fix: the API key needs the named permission added
-  in the ElevenLabs dashboard.
+A new `ElevenLabsUsageClient` owns that endpoint:
 
-No invented scope labels, and no raw `Refresh failed: ...401...`.
+- `GetCharactersUsedAsync(apiKey, startUtc, endUtc)` returns the summed `usage.All`.
+- It converts the window to **unix milliseconds**. Seconds return an empty
+  `usage` object with a 200, so a seconds bug would silently report zero usage —
+  the client must never pass seconds.
+- It sums `usage.All` defensively: missing `usage`, missing `All`, a
+  `time`/`usage` length mismatch, or non-numeric entries must yield a usable
+  number rather than throw.
 
-### 3. Hide rather than mislead
+Without `user_read` there is no reset date, so the fallback window is the
+trailing 30 days and must be labelled as such ("last 30 days") — never implied
+to be a billing period.
 
-On access-denied, the compact meter is hidden even when
-`settings.ShowElevenLabsQuotaMeter` is true. A blank or stale meter is worse
-than no meter. The explanation lives in the Speech Provider detail area.
+`QuotaTracker` is unchanged. The fallback does not produce a `QuotaSnapshot`
+(there is no limit, so `FractionUsed` would be meaningless); it is presented as
+a separate usage-only state.
 
-The user's toggle setting is not overwritten — only the visibility is
-suppressed while access is denied. If the permission is later granted, the next
-successful refresh restores the meter with no settings change.
+### 3. Show the state honestly
+
+Three display states, chosen by what the data supports:
+
+1. **Full** — `/v1/user/subscription` succeeded: meter with percentage, tier,
+   reset date. Current behaviour.
+2. **Usage-only** — access denied but `character-stats` succeeded: characters
+   used over the last 30 days, no bar, plus the provider's message and one line
+   on granting `user_read` to unlock the percentage.
+3. **Unavailable** — both failed: the provider's message only.
+
+In usage-only and unavailable states the compact meter (a percentage bar) stays
+hidden even when `settings.ShowElevenLabsQuotaMeter` is true, because there is
+no denominator to draw. A bar with no limit is a lie. The usage number lives in
+the Speech Provider detail area.
+
+The user's toggle setting is never overwritten — only visibility is suppressed.
+If `user_read` is later granted, the next successful refresh restores the full
+meter with no settings change.
 
 ### 4. Fix the quiet-flag bug
 
@@ -135,7 +204,9 @@ hide itself in both paths.
 ## Testing
 
 Unit tests, using the existing `StubHandler` pattern in
-`ElevenLabsAccountClientTests`:
+`ElevenLabsAccountClientTests`.
+
+`ElevenLabsAccountClient`:
 
 - 401 throws `ElevenLabsAccountAccessDeniedException`.
 - 403 throws `ElevenLabsAccountAccessDeniedException`.
@@ -147,28 +218,51 @@ Unit tests, using the existing `StubHandler` pattern in
   it asserts `InvalidOperationException`, and xUnit's `Assert.ThrowsAsync<T>`
   matches the exact type, so it will fail against the new exception.
 
-`QuotaTracker` is untouched; its existing tests stand.
+`ElevenLabsUsageClient`:
 
-Live verification, once `user_read` is granted:
+- Sends `xi-api-key`, hits `/v1/usage/character-stats`, and passes the window as
+  **milliseconds** — assert the actual query values, since seconds fail silently
+  rather than erroring. This is the highest-value test here.
+- Sums `usage.All` across buckets.
+- Tolerates missing `usage`, missing `All`, non-numeric entries, and a
+  `time`/`usage` length mismatch without throwing.
+- Returns zero for an empty `usage` object (the seconds-window response shape).
+
+`QuotaTracker` is untouched; its existing 9 tests stand.
+
+Live verification with the current TTS-only key (possible today):
+
+- Startup shows usage-only: real characters for the last 30 days, no bar, no
+  error splash.
+- Manual **Refresh** shows the provider's message plus the unlock line.
+
+Live verification once `user_read` is granted:
 
 - Manual **Refresh** populates tier, used, limit, and reset date.
 - Speaking decrements the meter, and every fifth speech reconciles against the
   server.
-- Revoking the permission again shows the explanation rather than a raw error.
+- Reverting to the TTS-only key degrades to usage-only rather than erroring.
 
 ## Out of scope (YAGNI)
 
 - No retry or backoff on quota refresh.
 - No caching layer beyond the existing persisted snapshot.
 - No changes to `QuotaTracker` or its computed fields.
+- No persistence of the usage-only figure; it is fetched per refresh.
+- No charting of the daily usage series. `character-stats` returns per-day
+  buckets and the temptation to draw a graph is real, but the feature is a
+  meter. Only the summed total is used.
 - No handling for `voices_read`; the app calls no other account endpoint.
-  `/v1/user/subscription` is the only blocked endpoint the app touches.
+- No service-account support: multi-seat plans only, and it would not supply
+  `character_limit` anyway.
 
 ## Definition of done
 
 - `dotnet build CodeCompanionDesktop.sln` — 0 errors, 0 warnings.
 - `dotnet test CodeCompanionDesktop.sln` — all green, including new tests.
-- With a TTS-only key: the meter hides and shows the provider's explanation; no
-  raw 401 text; no error splash on startup.
-- With a `user_read` key: the meter shows real numbers and decrements on speech.
+- With a TTS-only key: usage-only state shows real characters for the last 30
+  days, no bar, no raw 401 text, no error splash on startup.
+- With a `user_read` key: the full meter shows real numbers and decrements on
+  speech.
+- With no network: the unavailable state, no crash.
 - Branch merged to `main`.
