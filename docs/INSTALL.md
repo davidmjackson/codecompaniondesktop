@@ -34,11 +34,20 @@ Setup install locations.
 
 ## 2. Clone
 
-This repository is **private**, so authenticate first. With the GitHub CLI:
+This repository is **private**, so the clone must be authenticated. Sign in to
+the GitHub CLI first, then clone over HTTPS:
 
 ```powershell
-gh repo clone davidmjackson/codecompaniondesktop D:\Development\CodeCompanionDesktop
+gh auth login
+git clone https://github.com/davidmjackson/codecompaniondesktop.git D:\Development\CodeCompanionDesktop
 ```
+
+`gh auth login` installs a git credential helper, which supplies the token for
+the HTTPS clone. Use HTTPS rather than SSH: an SSH clone only succeeds if the
+key offered to `github.com` belongs to an account with access to this private
+repository. A per-repository **deploy key** for a different repository will
+authenticate to GitHub successfully and still be refused here, which surfaces as
+a misleading `Could not read from remote repository` error.
 
 The default branch is `main`, which always holds the current app.
 
