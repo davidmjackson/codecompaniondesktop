@@ -265,13 +265,11 @@ Create `tests/CodeCompanionDesktop.Tests/ElevenLabs/ElevenLabsUsageClientTests.c
 
 ```csharp
 using System;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 using CodeCompanionDesktop.ElevenLabs;
 
 namespace CodeCompanionDesktop.Tests.ElevenLabs;
@@ -353,9 +351,9 @@ public sealed class ElevenLabsUsageClientTests
         Assert.Equal("/v1/usage/character-stats", capturedUri!.AbsolutePath);
         Assert.Equal("test-key", capturedHeader);
 
-        NameValueCollection query = HttpUtility.ParseQueryString(capturedUri.Query);
-        Assert.Equal("1700000000000", query["start_unix"]);
-        Assert.Equal("1700086400000", query["end_unix"]);
+        // Milliseconds, not seconds. 1700000000 seconds -> 1700000000000 ms.
+        Assert.Contains("start_unix=1700000000000", capturedUri.Query);
+        Assert.Contains("end_unix=1700086400000", capturedUri.Query);
     }
 
     [Fact]
@@ -400,20 +398,8 @@ public sealed class ElevenLabsUsageClientTests
 }
 ```
 
-`System.Web.HttpUtility` needs a reference. If the test project does not compile because `System.Web` is missing, add this to `tests/CodeCompanionDesktop.Tests/CodeCompanionDesktop.Tests.csproj` inside the existing `<Project>` element:
-
-```xml
-  <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
-```
-
-If that is unavailable, replace the two query assertions with direct string checks instead and drop the `System.Web` and `System.Collections.Specialized` usings:
-
-```csharp
-        Assert.Contains("start_unix=1700000000000", capturedUri.Query);
-        Assert.Contains("end_unix=1700086400000", capturedUri.Query);
-```
+No new project references are needed: the query is asserted as a plain string, so
+`System.Web` is not used.
 
 - [ ] **Step 2: Run tests to verify they fail**
 
