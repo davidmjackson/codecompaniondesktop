@@ -31,6 +31,10 @@ public sealed class AppSettings
 
     public string ElevenLabsOutputFormat { get; set; } = DefaultElevenLabsOutputFormat;
 
+    public bool ShowElevenLabsQuotaMeter { get; set; } = true;
+
+    public ElevenLabsQuotaSnapshotData? LastKnownElevenLabsQuota { get; set; }
+
     public void Normalize()
     {
         MaxQueuedBridgeSpeechRequests = Math.Clamp(

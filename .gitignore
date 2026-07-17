@@ -7,9 +7,11 @@ obj/
 *.user
 *.suo
 *.cache
+*.lscache
 *.log
 TestResults/
 artifacts/
+/app/
 
 # Claude Code spoken-update hooks: machine-specific dev tooling (hardcoded
 # paths, local speech bridge), not part of the shipped product.
