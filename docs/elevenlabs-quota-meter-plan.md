@@ -537,7 +537,12 @@ public sealed class ElevenLabsUsageClient
         try
         {
             using var document = JsonDocument.Parse(json);
-            if (!document.RootElement.TryGetProperty("usage", out var usage) ||
+            var root = document.RootElement;
+
+            // TryGetProperty throws InvalidOperationException (not JsonException)
+            // when the element is not an object, so guard the kind first.
+            if (root.ValueKind != JsonValueKind.Object ||
+                !root.TryGetProperty("usage", out var usage) ||
                 usage.ValueKind != JsonValueKind.Object)
             {
                 return 0;
@@ -559,8 +564,15 @@ public sealed class ElevenLabsUsageClient
 
             return 0;
         }
-        catch (JsonException)
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or ArgumentException)
         {
+            // Best-effort by contract: this must never throw, whatever the body
+            // contains. System.Text.Json signals failure with three different types
+            // here — JsonException (not JSON), InvalidOperationException (wrong
+            // element kind), and ArgumentException (Parse transcoding an already
+            // ill-formed UTF-16 string). Catching the category rather than each site
+            // stops this becoming whack-a-mole. It stays a filter rather than a bare
+            // catch so genuine faults like OutOfMemoryException still propagate.
             return 0;
         }
     }
@@ -570,8 +582,11 @@ public sealed class ElevenLabsUsageClient
         long total = 0;
         foreach (var entry in array.EnumerateArray())
         {
+            // IsFinite matters: 1e400 reads as +Infinity and (long)Math.Round of
+            // that is long.MinValue, which would turn the sum sharply negative.
             if (entry.ValueKind == JsonValueKind.Number &&
                 entry.TryGetDouble(out var value) &&
+                double.IsFinite(value) &&
                 value > 0)
             {
                 total += (long)Math.Round(value);
@@ -853,7 +868,7 @@ Expected: `Build succeeded.` with `0 Warning(s)` and `0 Error(s)`.
 dotnet test CodeCompanionDesktop.sln --no-build
 ```
 
-Expected: PASS, 0 failed. Baseline was 87; Task 1 nets +9 (6 → 15, including the 5 `[Theory]` cases) and Task 2 adds +9, so expect **105** tests.
+Expected: PASS, 0 failed. Baseline was 87; Task 1 takes the account-client file 6 → 16 (+10) and Task 2 adds 16, so expect **113** tests.
 
 - [ ] **Step 6: Verify live against the real app**
 
