@@ -12,6 +12,8 @@ public partial class MainWindow
 {
     private const int SpeechesBetweenServerReconcile = 5;
     private const int UsageFallbackWindowDays = 30;
+    private const string QuotaSubtitleBillingPeriod =
+        "Live ElevenLabs character usage for the current billing period.";
 
     private readonly QuotaTracker quotaTracker = new();
     private readonly ElevenLabsAccountClient elevenLabsAccountClient = new();
@@ -216,6 +218,8 @@ public partial class MainWindow
             return;
         }
 
+        QuotaDetailSubtitleText.Text = QuotaSubtitleBillingPeriod;
+
         var snapshot = quotaTracker.Snapshot;
 
         if (snapshot is null || snapshot.CharacterLimit <= 0)
@@ -272,6 +276,8 @@ public partial class MainWindow
 
         if (quotaUsageOnlyCharacters is long used)
         {
+            QuotaDetailSubtitleText.Text =
+                $"ElevenLabs character usage for the last {UsageFallbackWindowDays} days. Your plan limit is not readable with this API key.";
             var summary = $"{used:N0} characters used (last {UsageFallbackWindowDays} days)";
             QuotaCompactSummaryText.Text = summary;
             QuotaDetailCharactersText.Text = $"Used: {summary}";
@@ -281,6 +287,7 @@ public partial class MainWindow
         }
         else
         {
+            QuotaDetailSubtitleText.Text = "ElevenLabs quota is unavailable with this API key.";
             QuotaCompactSummaryText.Text = "Quota unavailable.";
             QuotaDetailCharactersText.Text = "Used: -";
             QuotaDetailAsOfText.Text = "No data yet.";
