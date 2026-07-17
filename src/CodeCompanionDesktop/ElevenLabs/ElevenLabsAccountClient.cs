@@ -151,15 +151,17 @@ public sealed class ElevenLabsAccountClient
                 }
             }
         }
-        catch (JsonException)
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or ArgumentException)
         {
-            // Not JSON. Fall through and show the raw body.
-        }
-        catch (InvalidOperationException)
-        {
-            // The body parsed, but a value would not decode — detail.message
-            // holding an unpaired UTF-16 surrogate is the known case, which
-            // GetString() refuses. Fall through and show the raw body.
+            // Best-effort by contract: this turns an untrusted body into a display
+            // string and must never throw, whatever the body contains. System.Text.Json
+            // signals failure with three different types here — JsonException (not
+            // JSON), InvalidOperationException (wrong element kind, or a value that
+            // will not decode), and ArgumentException (Parse transcoding a body that
+            // is already ill-formed UTF-16). Catching the category rather than each
+            // site stops this becoming whack-a-mole. It stays a filter rather than a
+            // bare catch so genuine faults like OutOfMemoryException still propagate.
+            return TrimError(body);
         }
 
         return TrimError(body);
