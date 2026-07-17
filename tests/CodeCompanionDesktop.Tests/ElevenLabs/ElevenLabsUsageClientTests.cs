@@ -115,6 +115,36 @@ public sealed class ElevenLabsUsageClientTests
             client.GetCharactersUsedAsync("   ", DateTimeOffset.UtcNow.AddDays(-30), DateTimeOffset.UtcNow));
     }
 
+    [Theory]
+    [InlineData("null")]
+    [InlineData("5")]
+    [InlineData("true")]
+    [InlineData("[1,2,3]")]
+    [InlineData("\"just a string\"")]
+    public void SumUsageToleratesNonObjectJsonRoot(string json)
+    {
+        // TryGetProperty throws InvalidOperationException on a non-object root.
+        Assert.Equal(0L, ElevenLabsUsageClient.SumUsage(json));
+    }
+
+    [Fact]
+    public void SumUsageToleratesIllFormedUtf16()
+    {
+        // A real unpaired surrogate CHAR (not a \u escape). JsonDocument.Parse
+        // throws ArgumentException transcoding it to UTF-8.
+        var json = "{\"usage\":{\"All\":[1.0]},\"x\":\"\ud800\"}";
+
+        Assert.Equal(0L, ElevenLabsUsageClient.SumUsage(json));
+    }
+
+    [Fact]
+    public void SumUsageIgnoresNonFiniteNumbers()
+    {
+        // 1e400 parses to +Infinity, and (long)Math.Round(Infinity) is long.MinValue,
+        // which would turn the sum sharply negative rather than skipping the entry.
+        Assert.Equal(3L, ElevenLabsUsageClient.SumUsage("""{"usage":{"All":[1e400,3.0]}}"""));
+    }
+
     private sealed class StubHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler;

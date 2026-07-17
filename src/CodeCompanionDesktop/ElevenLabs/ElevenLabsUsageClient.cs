@@ -87,7 +87,12 @@ public sealed class ElevenLabsUsageClient
         try
         {
             using var document = JsonDocument.Parse(json);
-            if (!document.RootElement.TryGetProperty("usage", out var usage) ||
+            var root = document.RootElement;
+
+            // TryGetProperty throws InvalidOperationException (not JsonException)
+            // when the element is not an object, so guard the kind first.
+            if (root.ValueKind != JsonValueKind.Object ||
+                !root.TryGetProperty("usage", out var usage) ||
                 usage.ValueKind != JsonValueKind.Object)
             {
                 return 0;
@@ -109,8 +114,15 @@ public sealed class ElevenLabsUsageClient
 
             return 0;
         }
-        catch (JsonException)
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or ArgumentException)
         {
+            // Best-effort by contract: this must never throw, whatever the body
+            // contains. System.Text.Json signals failure with three different types
+            // here — JsonException (not JSON), InvalidOperationException (wrong
+            // element kind), and ArgumentException (Parse transcoding an already
+            // ill-formed UTF-16 string). Catching the category rather than each site
+            // stops this becoming whack-a-mole. It stays a filter rather than a bare
+            // catch so genuine faults like OutOfMemoryException still propagate.
             return 0;
         }
     }
@@ -122,6 +134,7 @@ public sealed class ElevenLabsUsageClient
         {
             if (entry.ValueKind == JsonValueKind.Number &&
                 entry.TryGetDouble(out var value) &&
+                double.IsFinite(value) &&
                 value > 0)
             {
                 total += (long)Math.Round(value);
