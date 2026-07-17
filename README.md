@@ -7,6 +7,20 @@ Windows desktop companion app for Code Companion Voice.
 The first proof of concept is a small WPF tray app that can play a generated
 local WAV test tone through normal Windows audio.
 
+## Related repositories
+
+Code Companion is two installs from two repositories:
+
+| Component | Repository | Installed as |
+| --- | --- | --- |
+| Code Companion Desktop (this repo) | <https://github.com/davidmjackson/codecompaniondesktop> | Windows app |
+| Code Companion Voice + Bridge | <https://github.com/davidmjackson/codecompanion> | VS Code extension pack |
+
+Rebuilding either side from scratch: **[docs/INSTALL.md](docs/INSTALL.md)** for
+this app, and
+[the Voice install guide](https://github.com/davidmjackson/codecompanion/blob/main/docs/INSTALL.md)
+for the VS Code extension pack. Install Desktop first.
+
 ## Architecture
 
 The target architecture is documented in `docs/architecture.md`.
@@ -153,8 +167,10 @@ Current development install locations:
 
 - Code Companion Desktop: local installer under `artifacts\installer` after
   running `.\scripts\build-installer.ps1`.
-- Code Companion Voice: local VSIX from the Voice repository after running
-  `npm run package:vsix`.
+- Code Companion Voice: local VSIXs from the Voice repository after running
+  `npm run compile` and packaging each of `extensions/bridge`,
+  `extensions/voice`, and `extensions/pack` with
+  `npx vsce package --no-dependencies`.
 
 Marketplace and release publication are deferred to Milestone 9 in
 `docs/architecture.md`. Until that milestone is complete, use the local
