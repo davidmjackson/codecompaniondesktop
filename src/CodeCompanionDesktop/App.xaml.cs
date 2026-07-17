@@ -31,6 +31,8 @@ public partial class App : WpfApplication
         var settings = settingsStore.Load();
         var runtimeState = new BridgeRuntimeState(new SpeechHistoryStore(), new ProjectRegistryStore());
         runtimeState.ConfigureQueue(settings.QueueBridgeSpeechRequests, settings.MaxQueuedBridgeSpeechRequests);
+        runtimeState.ConfigureSelfTestPlayback(
+            string.Equals(settings.SelfTestPlayback, AppSettings.SelfTestPlaybackSilent, StringComparison.Ordinal));
         bridgeSpeechQueue = new BridgeSpeechQueue(SpeakFromBridgeAsync, runtimeState);
         speechCandidateProcessor = new SpeechCandidateProcessor(SpeakFromBridgeAsync, runtimeState, bridgeSpeechQueue);
         clientTrustStore = new ClientTrustStore();

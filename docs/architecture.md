@@ -351,6 +351,148 @@ Recommendation:
 The extension can still run in WSL or Windows. Moving the checkout to Windows is
 a developer workflow choice, not a runtime dependency.
 
+## Architecture Decision Records
+
+Architecture Decision Records capture significant, hard-to-reverse design
+choices and the reasoning behind them. They are append-only: when a later
+decision changes course, add a new record and mark the old one superseded
+rather than rewriting an existing record.
+
+### ADR 0001: Environment-Agnostic Speech Transport
+
+Status: Accepted (2026-05-20).
+
+#### Context
+
+Speech must work identically whether the active project runs in Windows,
+WSL, a Dev Container, or an SSH remote. Two prototype transports carry a
+speech candidate from where the work happens into Code Companion Desktop:
+
+- The authenticated HTTP bridge (`POST /v1/speech/candidates`).
+- The Windows-owned candidate inbox directory.
+
+Both assume the sender can reach the Windows loopback bridge or write
+files into a Windows-owned directory. Neither assumption holds from WSL:
+
+- WSL2 runs in a separate network namespace. From inside WSL, `127.0.0.1`
+  is WSL's own loopback, not Windows'. Reaching the Windows bridge needs
+  host-IP discovery or WSL mirrored networking — fragile or
+  environment-dependent.
+- Driving speech from assistant hooks (Codex or Claude Code) requires
+  registering a hook in that environment's home directory, for example
+  `~/.claude/settings.json`. That is per-environment configuration the
+  product would have to plant and maintain.
+
+A field incident made this concrete: a Claude Code review run inside WSL
+produced no speech. The Stop and UserPromptSubmit hooks that enforce
+spoken updates exist only in the Windows `~/.claude/`, and even when
+invoked from WSL they cannot reach the Windows bridge on `127.0.0.1`.
+
+An earlier prototype relayed speech through a VS Code webview, because a
+webview always renders on the local Windows side. That was abandoned: a
+webview only runs while its panel is open, so the transport dies whenever
+the user closes the panel.
+
+Product constraint: a market build must not require the app to plant
+configuration or state files into each environment in order to function.
+That rules out per-environment hook config, per-environment inbox
+directories, and `\\wsl.localhost` filesystem scraping as normal product
+paths.
+
+#### Decision
+
+Adopt the VS Code extension-host topology as the environment-agnostic
+transport. VS Code is the only component that already spans both the work
+environment and the local Windows machine, and it carries data across
+that boundary as a built-in capability. The webview was never the bridge;
+it was merely code that happened to run on the Windows side. A `ui`-kind
+extension host provides that same Windows-resident code as a persistent
+process, with no panel lifecycle.
+
+Ship Code Companion Voice as a VS Code Extension Pack of two thin
+extensions:
+
+- `code-companion-voice` — `extensionKind: ["workspace"]`. Runs in the
+  work environment (WSL, container, SSH host, or Windows). Observes the
+  assistant locally and builds the structured speech candidate.
+- `code-companion-bridge` — `extensionKind: ["ui"]`. Always runs on the
+  local Windows machine. The sole component that talks to the Code
+  Companion Desktop bridge: `POST /v1/client/hello` and
+  `POST /v1/speech/candidates`.
+
+The workspace extension forwards each candidate to the UI extension
+through the VS Code command registry, which is shared across extension
+hosts:
+
+```text
+const decision = await vscode.commands.executeCommand(
+  'codeCompanion.deliverCandidate', candidate);
+```
+
+VS Code marshals the JSON arguments across the host boundary. The UI
+extension delivers to the Desktop bridge over Windows loopback. When the
+workspace is plain Windows, both extensions run locally and the same code
+path applies; only VS Code's transport underneath differs, transparently.
+
+#### Consequences
+
+Positive:
+
+- The UI extension is a persistent extension-host process, not a webview.
+  There is no "panel must be open" dependency.
+- One mechanism covers WSL, Dev Containers, and SSH remotes, because the
+  UI host is always local.
+- No app-authored files in any work environment. VS Code's own extension
+  manager installs the workspace extension into the remote host — the
+  standard, user-consented mechanism every Remote-capable extension uses.
+- The Desktop bridge no longer needs to be reachable off-box. It can bind
+  loopback-only and drop the `IPAddress.Any` listener — a security
+  improvement.
+- The candidate inbox and per-environment assistant hooks are no longer
+  required for the normal speech path and can be retired.
+
+Negative, and limits:
+
+- Speech outside VS Code is out of scope. Observing an assistant in a bare
+  terminal still requires hook config in that environment, which the
+  product constraint forbids. The supported product boundary is: speech
+  works through the Code Companion Voice extension, in any environment VS
+  Code supports.
+- Two extension packages instead of one. Mitigated by shipping them as a
+  single Extension Pack, so the user installs one Marketplace item.
+- The UI extension must be activated for its command to exist. Its
+  activation events must cover the relay command or use
+  `onStartupFinished`.
+
+#### Alternatives considered
+
+- Single `workspace` extension using WSL interop: the extension spawns
+  `powershell.exe` through WSL interop so the HTTP call runs as a Windows
+  process. Rejected as the product path — WSL-only, since there is no
+  `powershell.exe` in a Dev Container or SSH Linux host, and it spawns a
+  process per candidate.
+- WSL mirrored networking (`networkingMode=mirrored` in `.wslconfig`) so
+  `127.0.0.1` resolves bidirectionally. Rejected as the primary mechanism:
+  it requires Windows 11 22H2 or later plus a host configuration
+  prerequisite, and it does not address observation outside VS Code.
+  Acceptable only as an optional power-user convenience.
+- Desktop reads WSL session logs via `\\wsl.localhost`. Rejected: it
+  reintroduces distro and path discovery, and file-watching over the 9p
+  mount is unreliable — the exact fragility this document exists to
+  remove.
+- VS Code webview relay. Rejected: the webview runs only while its panel
+  is open, so the transport is not durable.
+
+#### Supersedes
+
+- The HTTP bridge and candidate inbox as cross-environment transports
+  (Milestone 4A). Both remain valid as local Windows-side ingress and as
+  developer tools; they are no longer the normal cross-environment path.
+- The per-environment assistant hook approach for driving spoken updates.
+
+Implementation against the Code Companion Voice repository is tracked as
+follow-up work and is not yet scheduled into a milestone.
+
 ## Milestone Plan
 
 ### Milestone 0: Architecture Baseline
@@ -555,6 +697,9 @@ Status:
   JSONL event source until a direct Codex event API or managed session source is
   available. It must remain local to the active VS Code extension host and must
   not use `\\wsl.localhost` as a normal product path.
+- Superseded as the cross-environment transport by ADR 0001. The HTTP
+  bridge and candidate inbox remain valid local Windows ingress; the
+  normal cross-environment path is now the VS Code extension pack.
 
 ### Milestone 5: Project Identity
 
@@ -650,10 +795,14 @@ Local install model:
     `.\scripts\build-installer.ps1 -AppVersion <version>`.
   - Local portable publish artifact created by `.\scripts\publish-release.ps1`.
 - Current development source for Code Companion Voice:
-  - Local VSIX artifact created by `npm run package:vsix`.
-  - Installed into the Windows VS Code profile with Windows `code.cmd`.
-  - Installed into the WSL VS Code server with WSL `code` when testing WSL
-    workspaces.
+  - Three local VSIX artifacts created by running `npm run compile`, then
+    `npx vsce package --no-dependencies` in each of `extensions/bridge`,
+    `extensions/voice`, and `extensions/pack`.
+  - Installed into the Windows VS Code profile with Windows `code.cmd`, members
+    before the pack.
+  - `code-companion-voice` is additionally installed into the WSL VS Code server
+    with WSL `code` when testing WSL workspaces. `code-companion-bridge` is
+    `extensionKind: ui` and stays on the Windows host.
 - Public GitHub Release and VS Code Marketplace publication are explicitly
   deferred to Milestone 9.
 
@@ -723,6 +872,8 @@ Status:
 - Code Companion Desktop no longer accepts legacy bridge-token authorization on
   `/v1/speech/candidates`.
 - Code Companion Desktop no longer creates or stores `CodeCompanionDesktop/BridgeToken`.
+- ADR 0001 supersedes the candidate-inbox fallback and per-environment
+  hook approaches as cross-environment speech transports.
 
 ### Milestone 9: Public Release Packaging
 
@@ -824,6 +975,57 @@ Implemented slice:
   the active profile, the Status tab shows Demo Mode state, and focused tests
   cover command handling, bridge behavior, inbox behavior, diagnostics, and
   session-only reset.
+
+### Milestone 11: Environment-Agnostic Speech Delivery
+
+Goal:
+
+- Implement ADR 0001. Deliver TTS for every project, in any environment VS
+  Code supports, with no per-environment files and no webview.
+
+Scope:
+
+- Restructure Code Companion Voice into a VS Code Extension Pack: a `ui`-kind
+  bridge extension that is Windows-resident, and a `workspace`-kind observer
+  extension that runs in the work environment.
+- Relay speech candidates from the observer to the bridge extension through
+  the VS Code cross-host command registry.
+- Observe both Codex and Claude Code session activity locally in the workspace
+  extension host.
+- Fix active-session selection so the observed session follows the active
+  project rather than path-matching.
+- On activation, health-check the Desktop bridge and show a native VS Code
+  alert with fix instructions when Desktop is unreachable.
+- Remove the remaining webview panel; present status through the status bar,
+  commands, and notifications.
+- Retire the candidate inbox and per-environment hooks as product transports.
+
+Acceptance criteria:
+
+- Installing the extension pack and Desktop, then opening any project on
+  Windows or WSL Remote, produces TTS with no per-project setup.
+- Both Claude Code and Codex sessions produce speech.
+- When Desktop is unreachable, VS Code shows an actionable alert.
+- The extension contains no webview.
+- The product writes no files into the work environment.
+
+Status:
+
+- Implementation complete on branch `feature/extension-pack-split` of the
+  Code Companion Voice repository. Commits cover the two-extension pack
+  restructure, the cross-host relay, the Codex and Claude Code observation
+  layer, the connectivity alert, the pairing UX, the transport-code
+  cleanup, and local VSIX packaging.
+- Compiles clean; automated unit tests pass.
+- Runtime fresh-install verification on Windows VS Code and a WSL Remote
+  window - both assistants, plus the Desktop-unreachable alert path - is
+  the remaining step before the milestone is closed.
+- Supersedes the cross-environment transport described in Milestones 4A
+  and 8.
+
+Reference:
+
+- ADR 0001: Environment-Agnostic Speech Transport.
 
 ## Session Checklist
 

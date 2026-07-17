@@ -2,6 +2,19 @@
 
 Date: 2026-05-12
 
+> **Historical document — superseded. Do not follow the commands below.**
+>
+> This is a point-in-time snapshot from the start of the desktop migration,
+> kept for context on why the app exists. It has since been overtaken: the
+> webview audio path it describes is gone, and the Voice repository is now an
+> extension pack of three extensions rather than a single VSIX.
+>
+> For current instructions use:
+>
+> - `docs/INSTALL.md` — reinstall either side from scratch
+> - `docs/architecture.md` — the architecture source of truth
+> - `docs/release-checklist.md` — the paired Desktop/Voice release checklist
+
 ## Goal
 
 Build a Windows desktop companion app for Code Companion Voice so speech playback no longer depends on VS Code webview audio.

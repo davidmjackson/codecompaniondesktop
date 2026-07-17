@@ -7,7 +7,7 @@ public sealed class BridgeRuntimeState
     private const int MaxRecentBridgeClients = 8;
     private const int MaxRecentSpeechResults = 8;
     private const int MaxRecentProjects = 8;
-    private const int MaxRecentProjectSpeech = 40;
+    private const int MaxRecentProjectSpeech = 100;
 
     private readonly object syncRoot = new();
     private readonly SpeechHistoryStore? speechHistoryStore;
@@ -18,9 +18,9 @@ public sealed class BridgeRuntimeState
     private readonly List<ProjectSpeechHistoryRecord> recentProjectSpeech = new();
     private bool isSpeaking;
     private bool queueBridgeSpeechRequests;
+    private bool selfTestPlaybackSilent;
     private int pendingSpeechRequests;
     private int maxQueuedSpeechRequests = 3;
-    private PendingSpeechCandidate? pendingSpeechCandidate;
 
     public SpeechProfileState SpeechProfiles { get; }
 
@@ -42,6 +42,19 @@ public sealed class BridgeRuntimeState
             lock (syncRoot)
             {
                 return queueBridgeSpeechRequests;
+            }
+        }
+    }
+
+    // True when pipeline self-test candidates run the full pipeline but skip
+    // audio playback (Reliability spec, Task 4).
+    public bool SelfTestPlaybackSilent
+    {
+        get
+        {
+            lock (syncRoot)
+            {
+                return selfTestPlaybackSilent;
             }
         }
     }
@@ -203,6 +216,16 @@ public sealed class BridgeRuntimeState
         }
     }
 
+    // Apply the "Pipeline self-test playback" setting. When silent, a
+    // self-test candidate still runs the whole pipeline but is not spoken.
+    public void ConfigureSelfTestPlayback(bool isSilent)
+    {
+        lock (syncRoot)
+        {
+            selfTestPlaybackSilent = isSilent;
+        }
+    }
+
     public void DisableDemoMode()
     {
         lock (syncRoot)
@@ -241,32 +264,54 @@ public sealed class BridgeRuntimeState
         }
     }
 
-    public void RecordSpeechCandidate(BridgeClient client, BridgeWorkspace workspace, string messageId, string text)
+    public SpeechCandidateContext RecordSpeechCandidate(
+        BridgeClient client,
+        BridgeWorkspace workspace,
+        string messageId,
+        string text,
+        string source = "bridge")
     {
         lock (syncRoot)
         {
             RecordProjectSeen(client, workspace);
             var preview = text.Length <= 80 ? text : $"{text[..80]}...";
-            pendingSpeechCandidate = new PendingSpeechCandidate(
+            var context = new SpeechCandidateContext(
                 workspace.ProjectId,
                 workspace.DisplayName,
                 client.Name,
                 client.Environment,
                 messageId,
-                preview);
+                preview,
+                source);
             LastSpeechCandidate = $"{client.Environment} project {workspace.ProjectId} message {messageId}: {preview}";
-            LastStatus = "Bridge speech candidate received.";
+            LastStatus = source == "inbox"
+                ? "Bridge speech candidate received from the inbox."
+                : "Bridge speech candidate received.";
+            return context;
         }
     }
 
-    public void RecordSpeechCandidateDecision(string decision, string reason)
+    public void RecordSpeechCandidateDecision(SpeechCandidateContext context, string decision, string reason)
     {
+        ArgumentNullException.ThrowIfNull(context);
         lock (syncRoot)
         {
             LastSpeechDecision = $"{decision} ({reason})";
             LastStatus = $"Bridge speech candidate decision: {LastSpeechDecision}.";
             AddRecentSpeechResult($"Candidate {LastSpeechDecision}.");
-            AddRecentProjectSpeechResult(decision, reason);
+            AddRecentProjectSpeechResult(context, decision, reason);
+        }
+    }
+
+    public void RecordSpeechCandidatePlaybackStarted(SpeechCandidateContext context, string reason)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        lock (syncRoot)
+        {
+            LastSpeechDecision = $"playing ({reason})";
+            LastStatus = $"Bridge speech candidate playback started: {reason}.";
+            AddRecentSpeechResult($"Candidate playing ({reason}).");
+            AddRecentProjectSpeechResult(context, "playing", reason);
         }
     }
 
@@ -400,24 +445,20 @@ public sealed class BridgeRuntimeState
         SaveHistory();
     }
 
-    private void AddRecentProjectSpeechResult(string decision, string reason)
+    private void AddRecentProjectSpeechResult(SpeechCandidateContext context, string decision, string reason)
     {
-        if (pendingSpeechCandidate is null)
-        {
-            return;
-        }
-
         recentProjectSpeech.Insert(0, new ProjectSpeechHistoryRecord
         {
             TimestampUtc = DateTimeOffset.UtcNow,
-            ProjectId = pendingSpeechCandidate.ProjectId,
-            DisplayName = pendingSpeechCandidate.DisplayName,
-            ClientName = pendingSpeechCandidate.ClientName,
-            Environment = pendingSpeechCandidate.Environment,
-            MessageId = pendingSpeechCandidate.MessageId,
-            Preview = pendingSpeechCandidate.Preview,
+            ProjectId = context.ProjectId,
+            DisplayName = context.DisplayName,
+            ClientName = context.ClientName,
+            Environment = context.Environment,
+            MessageId = context.MessageId,
+            Preview = context.Preview,
             Decision = decision,
-            Reason = reason
+            Reason = reason,
+            Source = context.Source
         });
         if (recentProjectSpeech.Count > MaxRecentProjectSpeech)
         {
@@ -483,7 +524,7 @@ public sealed class BridgeRuntimeState
             .OrderByDescending(record => record.TimestampUtc)
             .Take(8)
             .Select(record =>
-                $"  - {FormatTimestamp(record.TimestampUtc)} {record.Decision}/{record.Reason} {record.Environment} {record.MessageId}: {record.Preview}");
+                $"  - {FormatTimestamp(record.TimestampUtc)} {record.Decision}/{record.Reason} via {record.Source} {record.Environment} {record.MessageId}: {record.Preview}");
 
         return string.Join(
             Environment.NewLine,
@@ -499,13 +540,14 @@ public sealed class BridgeRuntimeState
     }
 }
 
-internal sealed record PendingSpeechCandidate(
+public sealed record SpeechCandidateContext(
     string ProjectId,
     string DisplayName,
     string ClientName,
     string Environment,
     string MessageId,
-    string Preview);
+    string Preview,
+    string Source);
 
 public sealed record BridgeDiagnosticsSnapshot(
     bool IsSpeaking,

@@ -43,4 +43,30 @@ public sealed class AppSettingsTests
         Assert.Equal("model-id", settings.ElevenLabsModelId);
         Assert.Equal("output-format", settings.ElevenLabsOutputFormat);
     }
+
+    [Fact]
+    public void NewAppSettingsDefaultSelfTestPlaybackToSpeak()
+    {
+        Assert.Equal(AppSettings.SelfTestPlaybackSpeak, new AppSettings().SelfTestPlayback);
+    }
+
+    [Fact]
+    public void NormalizeKeepsSilentSelfTestPlayback()
+    {
+        var settings = new AppSettings { SelfTestPlayback = " silent " };
+
+        settings.Normalize();
+
+        Assert.Equal(AppSettings.SelfTestPlaybackSilent, settings.SelfTestPlayback);
+    }
+
+    [Fact]
+    public void NormalizeFallsBackToSpeakForAnUnknownSelfTestPlaybackValue()
+    {
+        var settings = new AppSettings { SelfTestPlayback = "nonsense" };
+
+        settings.Normalize();
+
+        Assert.Equal(AppSettings.SelfTestPlaybackSpeak, settings.SelfTestPlayback);
+    }
 }

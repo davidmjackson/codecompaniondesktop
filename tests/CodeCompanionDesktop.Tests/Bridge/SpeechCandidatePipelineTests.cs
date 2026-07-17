@@ -225,26 +225,153 @@ public sealed class SpeechCandidatePipelineTests
     }
 
     [Fact]
-    public void DoesNotRewriteUrlsOrBridgeRoutes()
+    public void KeepsTheCommitWordButDropsTheCommitHash()
     {
         var pipeline = new SpeechCandidatePipeline();
 
         var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
-            "message-route",
+            "message-commit-keyword",
             "assistant-message",
             "final",
             null,
-            "Bridge health is at http://127.0.0.1:47321/health and candidates use /v1/speech/candidates."));
+            "See commit a70c970 for the cap change."));
 
         Assert.Equal("accepted", result.Decision);
-        Assert.Equal("accepted", result.Reason);
-        Assert.Equal(
-            "Bridge health is at http://127.0.0.1:47321/health and candidates use /v1/speech/candidates.",
-            result.SpeechText);
+        Assert.Equal("speech_rewritten", result.Reason);
+        Assert.Equal("See commit for the cap change.", result.SpeechText);
     }
 
     [Fact]
-    public void TruncatesLongFinalCandidatesWithinSpeechLimit()
+    public void DropsABareCommitHashAndItsLeadingPreposition()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-commit-bare",
+            "assistant-message",
+            "final",
+            null,
+            "I committed the fix as 29ae17d and pushed it."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("speech_rewritten", result.Reason);
+        Assert.Equal("I committed the fix and pushed it.", result.SpeechText);
+    }
+
+    [Fact]
+    public void DropsAnUppercaseCommitHashRegardlessOfCase()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-commit-upper",
+            "assistant-message",
+            "final",
+            null,
+            "Pushed as 9F8E7D6 to origin."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Pushed to origin.", result.SpeechText);
+    }
+
+    [Fact]
+    public void LeavesPlainNumbersThatAreNotCommitHashesUntouched()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-not-a-hash",
+            "assistant-message",
+            "final",
+            null,
+            "The run 26160030582 finished with 14 checks."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("The run 26160030582 finished with 14 checks.", result.SpeechText);
+    }
+
+    [Fact]
+    public void ReplacesBareUrlsWithASpokenPlaceholder()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-url",
+            "assistant-message",
+            "final",
+            null,
+            "Bridge health is at http://127.0.0.1:47321/health."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Bridge health is at a link.", result.SpeechText);
+    }
+
+    [Fact]
+    public void ReplacesMarkdownLinksWithTheirVisibleLabel()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-md-link",
+            "assistant-message",
+            "final",
+            null,
+            "Confirmed - main CI is **green**. See [run 26160030582](https://github.com/davidmjackson/codecompanion/actions/runs/26160030582)."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Confirmed - main CI is green. See run 26160030582.", result.SpeechText);
+    }
+
+    [Fact]
+    public void StripsInlineCodeBackticksButKeepsTheWording()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-inline-code",
+            "assistant-message",
+            "final",
+            null,
+            "`npm ci` is clean - the `scrumpoker` service is the remaining step."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("npm ci is clean - the scrumpoker service is the remaining step.", result.SpeechText);
+    }
+
+    [Fact]
+    public void DropsFencedCodeBlocks()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-fenced",
+            "assistant-message",
+            "final",
+            null,
+            "Here is the fix:\n```\nsudo systemctl restart scrumpoker\n```\nThat should restore the service."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Here is the fix: That should restore the service.", result.SpeechText);
+    }
+
+    [Fact]
+    public void StripsEmphasisAndLineLeadingListMarkers()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-list",
+            "assistant-message",
+            "final",
+            null,
+            "Status:\n- **Done**: deploy verified\n- Pending: smoke test"));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Status: Done: deploy verified Pending: smoke test", result.SpeechText);
+    }
+
+    [Fact]
+    public void ShortensALongCandidateWithoutSentenceBreaksToAHardCut()
     {
         var pipeline = new SpeechCandidatePipeline();
         var longText = string.Join(" ", Enumerable.Repeat("website planning summary", 120));
@@ -257,9 +384,106 @@ public sealed class SpeechCandidatePipelineTests
             longText));
 
         Assert.Equal("accepted", result.Decision);
-        Assert.Equal("truncated", result.Reason);
+        Assert.Equal("shortened", result.Reason);
         Assert.NotNull(result.SpeechText);
-        Assert.True(result.SpeechText.Length <= SpeechCandidatePipeline.MaxSpeechTextLength);
+        Assert.True(result.SpeechText!.Length <= SpeechCandidatePipeline.MaxSpeechTextLength);
         Assert.EndsWith("...", result.SpeechText);
+    }
+
+    [Fact]
+    public void SpeaksOnlyTheOpeningSentencesOfALongFinalAnswer()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+        var longText =
+            "The deployment is complete and verified on production. " +
+            "All four pull requests are merged into the main branch. " +
+            "The systemd service is enabled and restarts automatically on boot. " +
+            "Access keys are now stored as salted hashes on disk. " +
+            "The database migration ran cleanly with no manual steps required. " +
+            "Monitoring dashboards were updated to track the new endpoints. " +
+            "Rollback instructions are documented in the runbook for the team. " +
+            "Load testing showed stable latency under the expected peak traffic. " +
+            "Smoke tests pass cleanly across every area that was checked.";
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-long-opening",
+            "assistant-message",
+            "final",
+            null,
+            longText));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("shortened", result.Reason);
+        Assert.NotNull(result.SpeechText);
+        Assert.True(result.SpeechText!.Length <= SpeechCandidatePipeline.MaxSpeechTextLength);
+        Assert.StartsWith("The deployment is complete and verified on production.", result.SpeechText);
+        Assert.EndsWith(".", result.SpeechText);
+        Assert.DoesNotContain("Smoke tests", result.SpeechText!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DropsMarkdownTables()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+        var text =
+            "Here is the summary of the work.\n" +
+            "\n" +
+            "| Phase | Outcome |\n" +
+            "|---|---|\n" +
+            "| **Review** | Full codebase review completed |\n" +
+            "| **Deploy** | Live on production |\n" +
+            "\n" +
+            "That wraps up the task.";
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-table",
+            "assistant-message",
+            "final",
+            null,
+            text));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Here is the summary of the work. That wraps up the task.", result.SpeechText);
+    }
+
+    [Fact]
+    public void AcceptsSelfTestCandidateKindAndTagsItDistinctly()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "self-test-message",
+            "self-test",
+            "final",
+            null,
+            "Code Companion pipeline self-test."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("self-test", result.Reason);
+        Assert.Equal("Code Companion pipeline self-test.", result.SpeechText);
+    }
+
+    [Fact]
+    public void IdentifiesSelfTestCandidateKind()
+    {
+        Assert.True(SpeechCandidatePipeline.IsSelfTestKind("self-test"));
+        Assert.True(SpeechCandidatePipeline.IsSelfTestKind("  Self-Test  "));
+        Assert.False(SpeechCandidatePipeline.IsSelfTestKind("assistant-message"));
+    }
+
+    [Fact]
+    public void RejectsAnUnknownCandidateKind()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-unknown-kind",
+            "diagnostic",
+            "final",
+            null,
+            "An unknown kind should not be spoken."));
+
+        Assert.Equal("ignored", result.Decision);
+        Assert.Equal("unsupported_candidate_kind", result.Reason);
     }
 }

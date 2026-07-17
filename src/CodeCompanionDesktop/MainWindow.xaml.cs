@@ -487,6 +487,16 @@ public partial class MainWindow : Window
         SaveBridgeSpeechSettings();
     }
 
+    private void SelfTestPlaybackCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (isInitializing)
+        {
+            return;
+        }
+
+        SaveBridgeSpeechSettings();
+    }
+
     private void MaxBridgeQueueComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         if (isInitializing)
@@ -806,11 +816,15 @@ public partial class MainWindow : Window
             StartWithWindowsCheckBox.IsChecked = startupRegistration.IsRegistered();
             QueueBridgeSpeechCheckBox.IsChecked = settings.QueueBridgeSpeechRequests;
             SetMaxBridgeQueueSelection(settings.MaxQueuedBridgeSpeechRequests);
+            SelfTestPlaybackCheckBox.IsChecked = !string.Equals(
+                settings.SelfTestPlayback, AppSettings.SelfTestPlaybackSilent, StringComparison.Ordinal);
             ApplyProviderSettingsToUi();
             RefreshCredentialStatus();
             bridgeRuntimeState.ConfigureQueue(
                 settings.QueueBridgeSpeechRequests,
                 settings.MaxQueuedBridgeSpeechRequests);
+            bridgeRuntimeState.ConfigureSelfTestPlayback(
+                string.Equals(settings.SelfTestPlayback, AppSettings.SelfTestPlaybackSilent, StringComparison.Ordinal));
             SettingsStatusText.Text = DescribeStartupPreferences("Startup preferences loaded.");
             RefreshStartupDiagnostics();
             RefreshBridgeStatus();
@@ -849,6 +863,9 @@ public partial class MainWindow : Window
     {
         settings.QueueBridgeSpeechRequests = QueueBridgeSpeechCheckBox.IsChecked == true;
         settings.MaxQueuedBridgeSpeechRequests = GetSelectedMaxBridgeQueue();
+        settings.SelfTestPlayback = SelfTestPlaybackCheckBox.IsChecked == true
+            ? AppSettings.SelfTestPlaybackSpeak
+            : AppSettings.SelfTestPlaybackSilent;
         settings.Normalize();
 
         try
@@ -857,6 +874,8 @@ public partial class MainWindow : Window
             bridgeRuntimeState.ConfigureQueue(
                 settings.QueueBridgeSpeechRequests,
                 settings.MaxQueuedBridgeSpeechRequests);
+            bridgeRuntimeState.ConfigureSelfTestPlayback(
+                string.Equals(settings.SelfTestPlayback, AppSettings.SelfTestPlaybackSilent, StringComparison.Ordinal));
             RefreshBridgeStatus();
             RefreshReadinessSummary();
         }
