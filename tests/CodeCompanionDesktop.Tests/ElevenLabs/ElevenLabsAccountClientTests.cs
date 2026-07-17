@@ -92,21 +92,87 @@ public sealed class ElevenLabsAccountClientTests
     }
 
     [Fact]
-    public async Task GetSubscriptionAsyncThrowsOnUnauthorized()
+    public async Task GetSubscriptionAsyncThrowsAccessDeniedOnUnauthorized()
     {
         var handler = new StubHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)
             {
-                Content = new StringContent("""{"detail":"invalid key"}"""),
+                Content = new StringContent(
+                    """{"detail":{"type":"authentication_error","code":"unauthorized","message":"The API key you used is missing the permission user_read to execute this operation."}}"""),
             }));
 
         var account = new ElevenLabsAccountClient(new HttpClient(handler));
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            account.GetSubscriptionAsync("bad-key"));
+        var ex = await Assert.ThrowsAsync<ElevenLabsAccountAccessDeniedException>(() =>
+            account.GetSubscriptionAsync("tts-only-key"));
 
-        Assert.Contains("401", ex.Message);
-        Assert.Contains("invalid key", ex.Message);
+        Assert.Contains("user_read", ex.Message);
+    }
+
+    [Fact]
+    public async Task GetSubscriptionAsyncThrowsAccessDeniedOnForbidden()
+    {
+        var handler = new StubHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.Forbidden)
+            {
+                Content = new StringContent("""{"detail":{"message":"forbidden here"}}"""),
+            }));
+
+        var account = new ElevenLabsAccountClient(new HttpClient(handler));
+
+        var ex = await Assert.ThrowsAsync<ElevenLabsAccountAccessDeniedException>(() =>
+            account.GetSubscriptionAsync("key"));
+
+        Assert.Equal("forbidden here", ex.Message);
+    }
+
+    [Fact]
+    public async Task GetSubscriptionAsyncAccessDeniedToleratesUnparseableBody()
+    {
+        var handler = new StubHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)
+            {
+                Content = new StringContent("<html>gateway blew up</html>"),
+            }));
+
+        var account = new ElevenLabsAccountClient(new HttpClient(handler));
+
+        var ex = await Assert.ThrowsAsync<ElevenLabsAccountAccessDeniedException>(() =>
+            account.GetSubscriptionAsync("key"));
+
+        Assert.Contains("gateway blew up", ex.Message);
+    }
+
+    [Fact]
+    public async Task GetSubscriptionAsyncAccessDeniedToleratesEmptyBody()
+    {
+        var handler = new StubHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)
+            {
+                Content = new StringContent(string.Empty),
+            }));
+
+        var account = new ElevenLabsAccountClient(new HttpClient(handler));
+
+        var ex = await Assert.ThrowsAsync<ElevenLabsAccountAccessDeniedException>(() =>
+            account.GetSubscriptionAsync("key"));
+
+        Assert.False(string.IsNullOrWhiteSpace(ex.Message));
+    }
+
+    [Fact]
+    public async Task GetSubscriptionAsyncStillThrowsInvalidOperationOnServerError()
+    {
+        var handler = new StubHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError)
+            {
+                Content = new StringContent("""{"detail":{"message":"boom"}}"""),
+            }));
+
+        var account = new ElevenLabsAccountClient(new HttpClient(handler));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            account.GetSubscriptionAsync("key"));
     }
 
     [Fact]

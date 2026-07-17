@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -44,6 +45,11 @@ public sealed class ElevenLabsAccountClient
             cancellationToken);
 
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            throw new ElevenLabsAccountAccessDeniedException(ExtractProviderMessage(body));
+        }
 
         if (!response.IsSuccessStatusCode)
         {
@@ -110,5 +116,40 @@ public sealed class ElevenLabsAccountClient
         return value.Length <= 500
             ? value
             : $"{value[..500]}...";
+    }
+
+    /// <summary>
+    /// Pulls ElevenLabs' own error text out of a `detail.message` body. Their
+    /// message names the exact missing scope, so it beats anything we invent and
+    /// does not rot if they rename a scope. Must never throw.
+    /// </summary>
+    internal static string ExtractProviderMessage(string body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return "ElevenLabs denied access to account information for this API key.";
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            if (document.RootElement.TryGetProperty("detail", out var detail) &&
+                detail.ValueKind == JsonValueKind.Object &&
+                detail.TryGetProperty("message", out var message) &&
+                message.ValueKind == JsonValueKind.String)
+            {
+                var text = message.GetString();
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    return text!;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Not JSON. Fall through and show the raw body.
+        }
+
+        return TrimError(body);
     }
 }
