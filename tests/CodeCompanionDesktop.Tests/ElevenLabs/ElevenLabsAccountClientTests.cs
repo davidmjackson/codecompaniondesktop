@@ -58,6 +58,35 @@ public sealed class ElevenLabsAccountClientTests
         Assert.Equal(string.Empty, subscription.Tier);
     }
 
+    [Theory]
+    [InlineData("null")]
+    [InlineData("5")]
+    [InlineData("true")]
+    [InlineData("[1,2,3]")]
+    [InlineData("\"just a string\"")]
+    public void ParseToleratesNonObjectJsonRoot(string json)
+    {
+        var subscription = ElevenLabsAccountClient.Parse(json);
+
+        Assert.Equal(0, subscription.CharacterCount);
+        Assert.Equal(0, subscription.CharacterLimit);
+        Assert.Equal(0, subscription.NextCharacterCountResetUnix);
+        Assert.Equal(string.Empty, subscription.Tier);
+    }
+
+    [Fact]
+    public void ExtractProviderMessageToleratesIllFormedUtf16()
+    {
+        // A real unpaired surrogate CHAR (not a \u escape): JsonDocument.Parse throws
+        // ArgumentException transcoding it to UTF-8. Called directly, because
+        // StringContent would sanitise this to U+FFFD before the client ever saw it.
+        var body = "{\"detail\":{\"message\":\"x\ud800y\"}}";
+
+        var message = ElevenLabsAccountClient.ExtractProviderMessage(body);
+
+        Assert.False(string.IsNullOrWhiteSpace(message));
+    }
+
     [Fact]
     public async Task GetSubscriptionAsyncSendsApiKeyHeaderAndCorrectPath()
     {

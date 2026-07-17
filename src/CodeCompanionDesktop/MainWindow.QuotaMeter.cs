@@ -29,6 +29,10 @@ public partial class MainWindow
     private string? quotaAccessDeniedMessage;
     private long? quotaUsageOnlyCharacters;
 
+    // null until the first refresh has looked. Distinguishes "no key saved" from
+    // "key saved but we have no data", which must not read the same on screen.
+    private bool? quotaApiKeyPresent;
+
     private void WireQuotaMeter()
     {
         if (!quotaWired)
@@ -117,6 +121,8 @@ public partial class MainWindow
             }
             return;
         }
+
+        quotaApiKeyPresent = !string.IsNullOrWhiteSpace(apiKey);
 
         if (string.IsNullOrWhiteSpace(apiKey))
         {
@@ -224,7 +230,11 @@ public partial class MainWindow
 
         if (snapshot is null || snapshot.CharacterLimit <= 0)
         {
-            QuotaCompactSummaryText.Text = "Save an ElevenLabs API key to see remaining characters.";
+            QuotaDetailSubtitleText.Text = "ElevenLabs character usage.";
+
+            QuotaCompactSummaryText.Text = quotaApiKeyPresent == false
+                ? "Save an ElevenLabs API key to see remaining characters."
+                : "Quota data is not available right now.";
             QuotaCompactProgressBar.Visibility = Visibility.Collapsed;
             QuotaCompactDetailText.Text = string.Empty;
 
@@ -232,7 +242,9 @@ public partial class MainWindow
             QuotaDetailCharactersText.Text = "Used: -";
             QuotaDetailRemainingText.Text = "Remaining: -";
             QuotaDetailResetText.Text = "Resets: -";
-            QuotaDetailAsOfText.Text = "No data yet.";
+            QuotaDetailAsOfText.Text = quotaApiKeyPresent == false
+                ? "No data yet."
+                : "No quota data — the last refresh did not succeed.";
             return;
         }
 

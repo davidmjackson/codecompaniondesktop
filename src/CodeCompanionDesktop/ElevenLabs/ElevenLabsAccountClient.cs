@@ -67,6 +67,14 @@ public sealed class ElevenLabsAccountClient
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
 
+        // TryGetProperty throws InvalidOperationException (not JsonException) when
+        // the root is valid JSON but not an object. ReadLong/ReadString below would
+        // hit that, so guard here — the same trap that produced four earlier bugs.
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            return new ElevenLabsSubscription(0, 0, 0, string.Empty);
+        }
+
         var characterCount = ReadLong(root, "character_count");
         var characterLimit = ReadLong(root, "character_limit");
         var reset = ReadLong(root, "next_character_count_reset_unix");
