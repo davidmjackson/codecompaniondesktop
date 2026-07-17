@@ -155,6 +155,12 @@ public sealed class ElevenLabsAccountClient
         {
             // Not JSON. Fall through and show the raw body.
         }
+        catch (InvalidOperationException)
+        {
+            // The body parsed, but a value would not decode — detail.message
+            // holding an unpaired UTF-16 surrogate is the known case, which
+            // GetString() refuses. Fall through and show the raw body.
+        }
 
         return TrimError(body);
     }

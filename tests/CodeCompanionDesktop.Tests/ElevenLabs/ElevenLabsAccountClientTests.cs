@@ -161,6 +161,25 @@ public sealed class ElevenLabsAccountClientTests
     }
 
     [Fact]
+    public async Task GetSubscriptionAsyncAccessDeniedToleratesUnpairedSurrogateInMessage()
+    {
+        // A lone high surrogate is valid JSON syntax but will not decode to a
+        // string. It must fall back, not escape as InvalidOperationException.
+        var handler = new StubHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)
+            {
+                Content = new StringContent("""{"detail":{"message":"\ud800"}}"""),
+            }));
+
+        var account = new ElevenLabsAccountClient(new HttpClient(handler));
+
+        var ex = await Assert.ThrowsAsync<ElevenLabsAccountAccessDeniedException>(() =>
+            account.GetSubscriptionAsync("key"));
+
+        Assert.False(string.IsNullOrWhiteSpace(ex.Message));
+    }
+
+    [Fact]
     public async Task GetSubscriptionAsyncStillThrowsInvalidOperationOnServerError()
     {
         var handler = new StubHandler((_, _) =>
