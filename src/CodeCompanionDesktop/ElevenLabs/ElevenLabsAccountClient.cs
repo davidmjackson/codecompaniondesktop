@@ -161,7 +161,7 @@ public sealed class ElevenLabsAccountClient
             // is already ill-formed UTF-16). Catching the category rather than each
             // site stops this becoming whack-a-mole. It stays a filter rather than a
             // bare catch so genuine faults like OutOfMemoryException still propagate.
-            return TrimError(body);
+            // Falls through to the shared TrimError return below.
         }
 
         return TrimError(body);
