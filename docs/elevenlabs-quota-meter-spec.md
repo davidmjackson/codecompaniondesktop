@@ -1,8 +1,13 @@
 # ElevenLabs Quota Meter — Completion Spec
 
 Date: 2026-07-17
-Branch: `feature/elevenlabs-quota-meter`
-Status: design approved, implementation pending
+Status: **shipped** to `main` on 2026-07-17 (merge `8880797`, suite 119/119).
+Both states verified live: usage-only with a text-to-speech-only key, and the full
+meter (tier `creator`, 247,849/322,001, 77%) once `user_read` was granted.
+
+Kept rather than archived: it records why the feature was parked, the two-source
+split, and the API traps — all of which the early-warning/graph follow-up will need.
+The implementation plan is archived under `~/codecompanion-archive/`.
 
 ## Purpose
 
