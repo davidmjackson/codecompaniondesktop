@@ -200,7 +200,15 @@ Then add this method to the same class, next to `TrimError`:
         try
         {
             using var document = JsonDocument.Parse(body);
-            if (document.RootElement.TryGetProperty("detail", out var detail) &&
+            var root = document.RootElement;
+
+            // TryGetProperty throws InvalidOperationException (not JsonException)
+            // when the root is valid JSON but not an object — a bare null, number,
+            // bool, array or string, which a gateway can return on a 401. Guard the
+            // kind rather than catching InvalidOperationException, which would mask
+            // unrelated real bugs.
+            if (root.ValueKind == JsonValueKind.Object &&
+                root.TryGetProperty("detail", out var detail) &&
                 detail.ValueKind == JsonValueKind.Object &&
                 detail.TryGetProperty("message", out var message) &&
                 message.ValueKind == JsonValueKind.String)
@@ -221,13 +229,39 @@ Then add this method to the same class, next to `TrimError`:
     }
 ```
 
+Also add this test, which is what proves the guard above is needed:
+
+```csharp
+    [Theory]
+    [InlineData("null")]
+    [InlineData("5")]
+    [InlineData("true")]
+    [InlineData("[1,2,3]")]
+    [InlineData("\"just a string\"")]
+    public async Task GetSubscriptionAsyncAccessDeniedToleratesNonObjectJsonRoot(string body)
+    {
+        var handler = new StubHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)
+            {
+                Content = new StringContent(body),
+            }));
+
+        var account = new ElevenLabsAccountClient(new HttpClient(handler));
+
+        var ex = await Assert.ThrowsAsync<ElevenLabsAccountAccessDeniedException>(() =>
+            account.GetSubscriptionAsync("key"));
+
+        Assert.False(string.IsNullOrWhiteSpace(ex.Message));
+    }
+```
+
 - [ ] **Step 5: Run tests to verify they pass**
 
 ```powershell
 dotnet test CodeCompanionDesktop.sln --filter "FullyQualifiedName~ElevenLabsAccountClientTests"
 ```
 
-Expected: PASS — 10 tests, 0 failed. The file had 6; one is replaced by the 5 above, so 6 − 1 + 5 = 10.
+Expected: PASS — 15 tests, 0 failed. The file had 6; one is replaced by the 5 `[Fact]` tests above, giving 10, and the `[Theory]` contributes 5 more cases.
 
 - [ ] **Step 6: Commit**
 
@@ -819,7 +853,7 @@ Expected: `Build succeeded.` with `0 Warning(s)` and `0 Error(s)`.
 dotnet test CodeCompanionDesktop.sln --no-build
 ```
 
-Expected: PASS, 0 failed. Baseline was 87; Task 1 nets +4 (6 → 10) and Task 2 adds +9, so expect **100** tests.
+Expected: PASS, 0 failed. Baseline was 87; Task 1 nets +9 (6 → 15, including the 5 `[Theory]` cases) and Task 2 adds +9, so expect **105** tests.
 
 - [ ] **Step 6: Verify live against the real app**
 
