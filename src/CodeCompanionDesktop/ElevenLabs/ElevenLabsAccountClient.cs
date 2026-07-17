@@ -133,7 +133,13 @@ public sealed class ElevenLabsAccountClient
         try
         {
             using var document = JsonDocument.Parse(body);
-            if (document.RootElement.TryGetProperty("detail", out var detail) &&
+            var root = document.RootElement;
+
+            // TryGetProperty throws InvalidOperationException (not JsonException)
+            // when the root is valid JSON but not an object — a bare null, number,
+            // bool, array or string, which a gateway can return on a 401.
+            if (root.ValueKind == JsonValueKind.Object &&
+                root.TryGetProperty("detail", out var detail) &&
                 detail.ValueKind == JsonValueKind.Object &&
                 detail.TryGetProperty("message", out var message) &&
                 message.ValueKind == JsonValueKind.String)

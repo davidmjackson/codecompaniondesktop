@@ -184,6 +184,28 @@ public sealed class ElevenLabsAccountClientTests
         await Assert.ThrowsAsync<ArgumentException>(() => account.GetSubscriptionAsync("   "));
     }
 
+    [Theory]
+    [InlineData("null")]
+    [InlineData("5")]
+    [InlineData("true")]
+    [InlineData("[1,2,3]")]
+    [InlineData("\"just a string\"")]
+    public async Task GetSubscriptionAsyncAccessDeniedToleratesNonObjectJsonRoot(string body)
+    {
+        var handler = new StubHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)
+            {
+                Content = new StringContent(body),
+            }));
+
+        var account = new ElevenLabsAccountClient(new HttpClient(handler));
+
+        var ex = await Assert.ThrowsAsync<ElevenLabsAccountAccessDeniedException>(() =>
+            account.GetSubscriptionAsync("key"));
+
+        Assert.False(string.IsNullOrWhiteSpace(ex.Message));
+    }
+
     private sealed class StubHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler;
