@@ -194,8 +194,19 @@ swallows into `GetLastPlotException`, so the control paints "OxyPlot exception:
 kind of failure, and the one an implementer hits if they simply "fix" a
 `ColumnSeries` compile error by renaming the type.
 
-**Placement.** In the Quota Details block on the Status tab, below the existing
-figures and above the status line.
+**Placement.** Its own "Daily Usage" card on the Status tab, immediately below the
+"ElevenLabs Quota" card.
+
+**It must NOT go inside `QuotaMeterCompactCard`.** That was tried. The card starts
+collapsed and is revealed by `ApplyQuotaCardVisibility()` once the quota resolves,
+and a `PlotView` handed its model while its host has no layout size renders against
+stale bounds and never re-renders. The chart came up **clipped on the left and
+top** — the first six days of the period gone, the tallest bars including the
+16,216 spike sheared flat, and the `0` and `15,000` axis labels missing. No
+exception, no failing test, 166/166 green throughout. Calling `UpdateLayout()` to
+force a re-measure made it worse, because it bakes in the collapsed size.
+
+Its own always-visible card avoids the collapse entirely.
 
 **This is not the compact card, and the distinction matters.**
 `ApplyQuotaCardVisibility()` governs `QuotaMeterCompactCard` only — the summary
