@@ -38,6 +38,13 @@ public sealed class AppSettings
 
     public ElevenLabsQuotaSnapshotData? LastKnownElevenLabsQuota { get; set; }
 
+    /// <summary>
+    /// The billing period the credit warning last fired for, as the period's
+    /// reset timestamp. Keyed this way so a new billing period re-arms the
+    /// warning with no expiry logic, and a restart mid-period does not re-nag.
+    /// </summary>
+    public long? LastQuotaWarningPeriodResetUnix { get; set; }
+
     public void Normalize()
     {
         MaxQueuedBridgeSpeechRequests = Math.Clamp(

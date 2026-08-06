@@ -79,4 +79,22 @@ public sealed class AppSettingsTests
 
         Assert.Equal(AppSettings.SelfTestPlaybackSilent, settings.SelfTestPlayback);
     }
+
+    [Fact]
+    public void LastQuotaWarningPeriodResetUnixDefaultsToNull()
+    {
+        var settings = new AppSettings();
+
+        Assert.Null(settings.LastQuotaWarningPeriodResetUnix);
+    }
+
+    [Fact]
+    public void NormalizeKeepsLastQuotaWarningPeriodResetUnix()
+    {
+        var settings = new AppSettings { LastQuotaWarningPeriodResetUnix = 1_786_964_373 };
+
+        settings.Normalize();
+
+        Assert.Equal(1_786_964_373, settings.LastQuotaWarningPeriodResetUnix);
+    }
 }
