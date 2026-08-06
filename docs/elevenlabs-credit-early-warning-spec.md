@@ -168,12 +168,19 @@ to draw roughly thirty bars.
 a `LineAnnotation` at the survival budget. Bars reuse the meter's existing
 threshold palette so the chart and the bar speak the same colour language.
 
-**Placement.** Inside the quota detail card on the Status tab, below the existing
-figures.
+**Placement.** In the Quota Details block on the Status tab, below the existing
+figures and above the status line.
 
-**Visibility routes through `ApplyQuotaCardVisibility()` and nowhere else.** That
-rule is load-bearing: setting card visibility anywhere else is what previously let
-the toggle reveal an empty bar while access was denied.
+**This is not the compact card, and the distinction matters.**
+`ApplyQuotaCardVisibility()` governs `QuotaMeterCompactCard` only — the summary
+the "Show quota meter" checkbox toggles. The chart lives in the Quota Details
+block, which that method does not touch, so the chart manages its own visibility:
+collapsed when there are no bars, visible when there are.
+
+The existing rule still stands untouched for the compact card. Setting *that*
+card's visibility anywhere other than `ApplyQuotaCardVisibility()` is what
+previously let the toggle reveal an empty bar while access was denied. Do not
+route the chart through it, and do not let the chart set the card's visibility.
 
 **In the access-denied state the bars still draw and the budget line does not.**
 Usage needs only the TTS key; only the line needs a limit. Show what is true, omit
