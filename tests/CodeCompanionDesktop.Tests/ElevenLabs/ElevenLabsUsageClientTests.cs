@@ -145,6 +145,75 @@ public sealed class ElevenLabsUsageClientTests
         Assert.Equal(3L, ElevenLabsUsageClient.SumUsage("""{"usage":{"All":[1e400,3.0]}}"""));
     }
 
+    [Fact]
+    public void ParseDailyUsagePairsTimestampsWithCharacters()
+    {
+        // 1785888000000 = 2026-08-05T00:00:00Z, 1785974400000 = 2026-08-06T00:00:00Z
+        const string json =
+            "{\"time\":[1785888000000,1785974400000],\"usage\":{\"All\":[16216.0,1806.0]}}";
+
+        var days = ElevenLabsUsageClient.ParseDailyUsage(json);
+
+        Assert.Equal(2, days.Count);
+        Assert.Equal(new DateOnly(2026, 8, 5), days[0].Date);
+        Assert.Equal(16216, days[0].Characters);
+        Assert.Equal(new DateOnly(2026, 8, 6), days[1].Date);
+        Assert.Equal(1806, days[1].Characters);
+    }
+
+    [Fact]
+    public void ParseDailyUsageReadsShorterOfTheTwoArrays()
+    {
+        // A length mismatch must degrade to fewer days, never throw.
+        const string json =
+            "{\"time\":[1785888000000,1785974400000,1786060800000],\"usage\":{\"All\":[10.0,20.0]}}";
+
+        var days = ElevenLabsUsageClient.ParseDailyUsage(json);
+
+        Assert.Equal(2, days.Count);
+        Assert.Equal(20, days[1].Characters);
+    }
+
+    [Fact]
+    public void ParseDailyUsageFallsBackToTheFirstSeriesWhenAllIsAbsent()
+    {
+        const string json =
+            "{\"time\":[1785888000000],\"usage\":{\"George\":[4242.0]}}";
+
+        var days = ElevenLabsUsageClient.ParseDailyUsage(json);
+
+        Assert.Single(days);
+        Assert.Equal(4242, days[0].Characters);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("not json at all")]
+    [InlineData("[]")]
+    [InlineData("{\"usage\":{}}")]
+    [InlineData("{\"time\":[],\"usage\":{\"All\":[]}}")]
+    [InlineData("{\"time\":\"nonsense\",\"usage\":{\"All\":[1.0]}}")]
+    public void ParseDailyUsageReturnsEmptyRatherThanThrowing(string json)
+    {
+        var days = ElevenLabsUsageClient.ParseDailyUsage(json);
+
+        Assert.Empty(days);
+    }
+
+    [Fact]
+    public void ParseDailyUsageSkipsNonFiniteAndNegativeValues()
+    {
+        const string json =
+            "{\"time\":[1785888000000,1785974400000],\"usage\":{\"All\":[-5.0,7.0]}}";
+
+        var days = ElevenLabsUsageClient.ParseDailyUsage(json);
+
+        Assert.Equal(2, days.Count);
+        Assert.Equal(0, days[0].Characters);
+        Assert.Equal(7, days[1].Characters);
+    }
+
     private sealed class StubHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler;
