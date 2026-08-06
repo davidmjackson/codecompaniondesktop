@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using CodeCompanionDesktop.ElevenLabs;
 using OxyPlot;
 using OxyPlot.Annotations;
@@ -76,6 +77,11 @@ public partial class MainWindow
             MinorStep = step,
             MajorGridlineStyle = LineStyle.None,
             MinorTickSize = 0,
+
+            // The chart is a fixed view of the billing period, not an explorable
+            // plot. See QuotaUsagePlot_PreviewMouseWheel.
+            IsZoomEnabled = false,
+            IsPanEnabled = false,
             LabelFormatter = value =>
             {
                 var index = (int)Math.Round(value);
@@ -97,7 +103,34 @@ public partial class MainWindow
             MinimumPadding = 0,
             StringFormat = "#,0",
             MajorGridlineStyle = LineStyle.Dot,
+            IsZoomEnabled = false,
+            IsPanEnabled = false,
         };
+    }
+
+    /// <summary>
+    /// OxyPlot's PlotView consumes the mouse wheel to zoom its axes. That made
+    /// scrolling the Status tab past the chart silently rescale it, and the zoom
+    /// stuck: the chart stopped showing the billing period it claims to show.
+    ///
+    /// Zoom and pan are disabled on both axes, and the wheel is forwarded to the
+    /// parent so it scrolls the page like every other part of the tab. Hover
+    /// tracking is unaffected - that is a mouse-move, not a wheel.
+    /// </summary>
+    private void QuotaUsagePlot_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        e.Handled = true;
+
+        if (QuotaUsagePlot.Parent is not UIElement parent)
+        {
+            return;
+        }
+
+        parent.RaiseEvent(new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+        {
+            RoutedEvent = MouseWheelEvent,
+            Source = sender,
+        });
     }
 
     /// <summary>
