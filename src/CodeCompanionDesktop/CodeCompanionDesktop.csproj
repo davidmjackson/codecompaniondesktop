@@ -18,6 +18,9 @@
     <InternalsVisibleTo Include="CodeCompanionDesktop.Tests" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="OxyPlot.Wpf" Version="2.2.0" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="Assets\app.ico" />
     <Resource Include="Assets\app.png" />
     <Resource Include="Assets\icon-128.png" />
