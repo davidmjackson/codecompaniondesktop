@@ -151,6 +151,8 @@ public partial class MainWindow
             speechesUntilReconcile = SpeechesBetweenServerReconcile;
 
             ApplyQuotaCardVisibility();
+            await RefreshDailyUsageAsync(apiKey);
+            EvaluateQuotaForecast();
             QuotaDetailStatusText.Text = $"Refreshed at {DateTimeOffset.Now:t}.";
         }
         catch (ElevenLabsAccountAccessDeniedException ex)
@@ -281,6 +283,10 @@ public partial class MainWindow
         ApplyQuotaCardVisibility();
         QuotaCompactProgressBar.Visibility = Visibility.Collapsed;
         QuotaCompactDetailText.Text = string.Empty;
+
+        // Usage needs only the text-to-speech key, so the bars are still true.
+        // Only the budget line needs a limit, and QuotaChartModel omits it.
+        RenderQuotaGraph(QuotaChartModel.Create(quotaDailyUsage, null));
 
         QuotaDetailTierText.Text = "Tier: unknown";
         QuotaDetailRemainingText.Text = "Remaining: unknown";

@@ -64,6 +64,15 @@ public partial class App : WpfApplication
         base.OnExit(e);
     }
 
+    /// <summary>
+    /// Surfaces a warning balloon from the tray icon. Used by the credit warning,
+    /// which must be visible while the window is hidden to tray.
+    /// </summary>
+    public void ShowTrayWarning(string title, string message)
+    {
+        trayIcon?.ShowBalloonTip(10000, title, message, Forms.ToolTipIcon.Warning);
+    }
+
     public void ShowMainWindow()
     {
         if (mainWindow is null)
