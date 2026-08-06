@@ -169,6 +169,22 @@ billing period, with a `LineAnnotation` at the survival budget. Bars reuse the
 meter's existing threshold palette so the chart and the bar speak the same colour
 language.
 
+**The X axis is a `LinearAxis`, not a `CategoryAxis`.** `RectangleBarSeries` is a
+plain XY series and does not consume `CategoryAxis` items the way `BarSeries` does,
+so pairing the two leaves the axis auto-ranging independently of the bars. On real
+data that rendered the columns bunched into a fraction of the plot, printed all 21
+date labels over one another, and auto-ranged the value axis to **−20,000**,
+wasting half the chart on impossible values. Indices map back to dates through a
+`LabelFormatter`, capped at six labels; the value axis sets `AbsoluteMinimum = 0`
+as well as `Minimum`.
+
+`RectangleBarSeries` also draws each item's `Title` onto the bar itself. With one
+bar per day that is an unreadable smear, so `TextColor` is transparent — the label
+is hidden, and `Title` survives for the hover tracker.
+
+**None of this was caught by a test.** All 166 passed while the chart was
+unreadable. It took looking at the screen.
+
 **Not `ColumnSeries`, and not `BarSeries`.** OxyPlot 2.2.0 ships no `ColumnSeries`
 — it was a 1.x type — and its `BarSeries` is horizontal-only. Verified by
 reflecting over the pinned assemblies: `BarSeries` against a bottom `CategoryAxis`
