@@ -10,8 +10,10 @@ public sealed partial class SpeechCandidatePipeline
 {
     // A spoken update is a short headline, not a recital: a long candidate is
     // shortened to its opening few sentences. This is the upper bound on that
-    // opening.
-    public const int MaxSpeechTextLength = 500;
+    // opening. Every character here is a billed TTS character, so the cap is a
+    // cost control as much as a listening one - 250 is roughly fifteen seconds
+    // of speech, which is as much as a status update ever needs.
+    public const int MaxSpeechTextLength = 250;
     private const string TruncationSuffix = "...";
 
     private readonly object syncRoot = new();
@@ -35,7 +37,8 @@ public sealed partial class SpeechCandidatePipeline
             return SpeechCandidatePipelineResult.Ignored("empty_candidate");
         }
 
-        var speechPolicyText = ReplaceCommitIdentifiers(ReplaceDirectoryPaths(normalized));
+        var speechPolicyText = TidyAfterRemovals(
+            ReplaceLongNumbers(ReplaceCommitIdentifiers(ReplaceDirectoryPaths(normalized))));
         var filtered = RedactSensitiveText(speechPolicyText);
         if (string.IsNullOrWhiteSpace(filtered))
         {
@@ -271,9 +274,33 @@ public sealed partial class SpeechCandidatePipeline
         result = PrepositionHashRegex().Replace(result, " ");
 
         // Any remaining bare hash -> drop it.
-        result = BareCommitHashRegex().Replace(result, " ");
+        return BareCommitHashRegex().Replace(result, " ");
+    }
 
-        // Tidy up the gaps the removals leave behind.
+    // A run of five or more digits in a spoken update is an identifier, not a
+    // quantity: an error code, a port, a run ID. Spoken aloud it is noise the
+    // listener cannot act on, and it is billed by the character like any other
+    // text. Anything genuinely countable in these updates is smaller than five
+    // digits (test counts, versions, percentages) or is written with a
+    // thousands separator, which breaks the run and so survives untouched.
+    // Money is exempt: "$12345" is a quantity even at that length.
+    private static string ReplaceLongNumbers(string text)
+    {
+        // "at/in/from <number>" -> drop the connector and the number together,
+        // so the sentence still reads.
+        var result = PrepositionLongNumberRegex().Replace(text, " ");
+
+        // Any remaining bare long number -> drop it, keeping the word that
+        // frames it ("the run 26160030582 finished" -> "the run finished").
+        return BareLongNumberRegex().Replace(result, " ");
+    }
+
+    // Removing a hash or an identifier leaves debris behind: the brackets that
+    // held it ("committed ( )"), a space before the closing full stop, and
+    // doubled spaces. Clean all of it up once, after every removal has run.
+    private static string TidyAfterRemovals(string text)
+    {
+        var result = EmptyBracketsRegex().Replace(text, string.Empty);
         result = SpaceBeforePunctuationRegex().Replace(result, "$1");
         return NormalizeForSpeech(result);
     }
@@ -429,6 +456,15 @@ public sealed partial class SpeechCandidatePipeline
 
     [GeneratedRegex(@"(?i)\b(?=[0-9a-f]*[0-9])(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b")]
     private static partial Regex BareCommitHashRegex();
+
+    [GeneratedRegex(@"(?i)\b(?:as|in|at|to|from)\s+(?<![$£€\d.,])\d{5,}\b(?![.,]\d)(?!\s*%)")]
+    private static partial Regex PrepositionLongNumberRegex();
+
+    [GeneratedRegex(@"(?<![$£€\d.,])\b\d{5,}\b(?![.,]\d)(?!\s*%)")]
+    private static partial Regex BareLongNumberRegex();
+
+    [GeneratedRegex(@"\s*[(\[{]\s*[)\]}]")]
+    private static partial Regex EmptyBracketsRegex();
 
     [GeneratedRegex(@"\s+([.,;:!?])")]
     private static partial Regex SpaceBeforePunctuationRegex();

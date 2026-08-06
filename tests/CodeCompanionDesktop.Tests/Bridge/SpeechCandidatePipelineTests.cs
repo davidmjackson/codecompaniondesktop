@@ -275,7 +275,7 @@ public sealed class SpeechCandidatePipelineTests
     }
 
     [Fact]
-    public void LeavesPlainNumbersThatAreNotCommitHashesUntouched()
+    public void KeepsTheFramingWordButDropsALongNumericIdentifier()
     {
         var pipeline = new SpeechCandidatePipeline();
 
@@ -287,7 +287,93 @@ public sealed class SpeechCandidatePipelineTests
             "The run 26160030582 finished with 14 checks."));
 
         Assert.Equal("accepted", result.Decision);
-        Assert.Equal("The run 26160030582 finished with 14 checks.", result.SpeechText);
+        Assert.Equal("The run finished with 14 checks.", result.SpeechText);
+    }
+
+    [Fact]
+    public void DropsAnErrorCodeLeftInsideBrackets()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-error-code",
+            "assistant-message",
+            "final",
+            null,
+            "A read-only refusal (25006) proves the parser accepted it."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("A read-only refusal proves the parser accepted it.", result.SpeechText);
+    }
+
+    [Fact]
+    public void DropsALongNumberAndItsLeadingPreposition()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-long-number-preposition",
+            "assistant-message",
+            "final",
+            null,
+            "The bridge is listening at 47321 for requests."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("The bridge is listening for requests.", result.SpeechText);
+    }
+
+    [Fact]
+    public void LeavesCountsVersionsAndSeparatedNumbersUntouched()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-short-numbers",
+            "assistant-message",
+            "final",
+            null,
+            "Version 4.1.10 is green on 436 tests, 10 of 10 checks, and 156,910 rows."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal(
+            "Version 4.1.10 is green on 436 tests, 10 of 10 checks, and 156,910 rows.",
+            result.SpeechText);
+    }
+
+    [Fact]
+    public void DropsTheEmptyBracketsLeftBehindByARemovedCommitHash()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-empty-brackets",
+            "assistant-message",
+            "final",
+            null,
+            "Spec and migration committed (8bc159f)."));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.Equal("Spec and migration committed.", result.SpeechText);
+    }
+
+    [Fact]
+    public void CapsASpokenUpdateToAShortHeadline()
+    {
+        var pipeline = new SpeechCandidatePipeline();
+        var longText = string.Join(" ", Enumerable.Repeat("deployment status summary", 120));
+
+        var result = pipeline.Prepare(new SpeechCandidatePipelineInput(
+            "message-headline-cap",
+            "assistant-message",
+            "final",
+            null,
+            longText));
+
+        Assert.Equal("accepted", result.Decision);
+        Assert.NotNull(result.SpeechText);
+        Assert.True(
+            result.SpeechText!.Length <= 250,
+            $"A spoken update must stay a headline; got {result.SpeechText.Length} characters.");
     }
 
     [Fact]
@@ -319,7 +405,7 @@ public sealed class SpeechCandidatePipelineTests
             "Confirmed - main CI is **green**. See [run 26160030582](https://github.com/davidmjackson/codecompanion/actions/runs/26160030582)."));
 
         Assert.Equal("accepted", result.Decision);
-        Assert.Equal("Confirmed - main CI is green. See run 26160030582.", result.SpeechText);
+        Assert.Equal("Confirmed - main CI is green. See run.", result.SpeechText);
     }
 
     [Fact]

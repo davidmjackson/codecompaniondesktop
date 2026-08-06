@@ -21,7 +21,10 @@ public sealed class AppSettings
 
     public int MaxQueuedBridgeSpeechRequests { get; set; } = DefaultMaxQueuedBridgeSpeechRequests;
 
-    public string SelfTestPlayback { get; set; } = SelfTestPlaybackSpeak;
+    // Silent by default: a self-test proves the pipeline end to end without
+    // needing to be heard, and speaking it bills TTS characters for a message
+    // that carries no news.
+    public string SelfTestPlayback { get; set; } = SelfTestPlaybackSilent;
 
     public string SpeechProvider { get; set; } = ElevenLabsProvider;
 
@@ -42,9 +45,9 @@ public sealed class AppSettings
             MinQueuedBridgeSpeechRequests,
             MaxQueuedBridgeSpeechRequestLimit);
 
-        SelfTestPlayback = string.Equals(SelfTestPlayback?.Trim(), SelfTestPlaybackSilent, StringComparison.OrdinalIgnoreCase)
-            ? SelfTestPlaybackSilent
-            : SelfTestPlaybackSpeak;
+        SelfTestPlayback = string.Equals(SelfTestPlayback?.Trim(), SelfTestPlaybackSpeak, StringComparison.OrdinalIgnoreCase)
+            ? SelfTestPlaybackSpeak
+            : SelfTestPlaybackSilent;
 
         SpeechProvider = string.Equals(SpeechProvider?.Trim(), ElevenLabsProvider, StringComparison.OrdinalIgnoreCase)
             ? ElevenLabsProvider

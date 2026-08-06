@@ -45,9 +45,9 @@ public sealed class AppSettingsTests
     }
 
     [Fact]
-    public void NewAppSettingsDefaultSelfTestPlaybackToSpeak()
+    public void NewAppSettingsDefaultSelfTestPlaybackToSilent()
     {
-        Assert.Equal(AppSettings.SelfTestPlaybackSpeak, new AppSettings().SelfTestPlayback);
+        Assert.Equal(AppSettings.SelfTestPlaybackSilent, new AppSettings().SelfTestPlayback);
     }
 
     [Fact]
@@ -61,12 +61,22 @@ public sealed class AppSettingsTests
     }
 
     [Fact]
-    public void NormalizeFallsBackToSpeakForAnUnknownSelfTestPlaybackValue()
+    public void NormalizeKeepsAnExplicitSpeakSelfTestPlayback()
+    {
+        var settings = new AppSettings { SelfTestPlayback = " speak " };
+
+        settings.Normalize();
+
+        Assert.Equal(AppSettings.SelfTestPlaybackSpeak, settings.SelfTestPlayback);
+    }
+
+    [Fact]
+    public void NormalizeFallsBackToSilentForAnUnknownSelfTestPlaybackValue()
     {
         var settings = new AppSettings { SelfTestPlayback = "nonsense" };
 
         settings.Normalize();
 
-        Assert.Equal(AppSettings.SelfTestPlaybackSpeak, settings.SelfTestPlayback);
+        Assert.Equal(AppSettings.SelfTestPlaybackSilent, settings.SelfTestPlayback);
     }
 }
