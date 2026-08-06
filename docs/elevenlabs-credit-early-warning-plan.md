@@ -8,9 +8,10 @@ out, and show a daily usage chart that explains why.
 **Architecture:** All decision logic lives in plain, WPF-free classes in
 `src/CodeCompanionDesktop/ElevenLabs/` so it is unit-testable: `QuotaForecast`
 computes the burn rate and projected dry date, `QuotaWarningPolicy` decides
-whether to fire, `QuotaChartModel` computes bar geometry. Two thin WPF partials
-(`MainWindow.QuotaGraph.cs`, and additions to `MainWindow.QuotaMeter.cs`) render
-and surface them. Data comes from daily buckets returned by
+whether to fire, `QuotaChartModel` computes bar geometry. Two thin new WPF partials
+(`MainWindow.QuotaGraph.cs` and `MainWindow.QuotaWarning.cs`) render and surface
+them; `MainWindow.QuotaMeter.cs` gains only five lines, because it is already at
+334 of its 400-line ceiling. Data comes from daily buckets returned by
 `/v1/usage/character-stats`, which `ElevenLabsUsageClient` already calls but
 currently reduces to a single total.
 
@@ -68,7 +69,16 @@ exception filter is deliberate: `System.Text.Json` signals failure through
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `tests/CodeCompanionDesktop.Tests/ElevenLabs/ElevenLabsUsageClientTests.cs`:
+Insert these methods **inside the `ElevenLabsUsageClientTests` class body** in
+`tests/CodeCompanionDesktop.Tests/ElevenLabs/ElevenLabsUsageClientTests.cs` —
+after the last existing `[Fact]` method (`SumUsageIgnoresNonFiniteNumbers`) and
+**before** the nested `private sealed class StubHandler : HttpMessageHandler`
+declaration.
+
+Do not append at the end of the file. The namespace is file-scoped, so members
+placed after the test class's closing brace sit directly in the namespace:
+`error CS0116: A namespace cannot directly contain members such as fields,
+methods or statements`.
 
 ```csharp
 [Fact]
@@ -785,7 +795,11 @@ public sealed class QuotaWarningPolicyTests
 }
 ```
 
-Append to `tests/CodeCompanionDesktop.Tests/Settings/AppSettingsTests.cs`:
+Insert these methods **inside the `AppSettingsTests` class body** in
+`tests/CodeCompanionDesktop.Tests/Settings/AppSettingsTests.cs`, after the last
+existing `[Fact]` method
+(`NormalizeFallsBackToSilentForAnUnknownSelfTestPlaybackValue`) and before the
+class's closing brace — not after it, which is `CS0116`.
 
 ```csharp
 [Fact]
@@ -1207,6 +1221,9 @@ public partial class MainWindow
     private static readonly OxyColor WarningBarColor = OxyColor.FromRgb(218, 165, 32);
     private static readonly OxyColor CriticalBarColor = OxyColor.FromRgb(205, 92, 92);
 
+    /// <summary>Half a column's width, in category units.</summary>
+    private const double ColumnHalfWidth = 0.35;
+
     private void RenderQuotaGraph(QuotaChartModel model)
     {
         ArgumentNullException.ThrowIfNull(model);
@@ -1224,30 +1241,8 @@ public partial class MainWindow
             PlotAreaBorderColor = OxyColors.LightGray,
         };
 
-        // Labels are added explicitly rather than via ItemsSource/LabelField:
-        // DateOnly does not format reliably through the axis StringFormat path.
-        var categoryAxis = new CategoryAxis
-        {
-            Position = AxisPosition.Bottom,
-            IsTickCentered = true,
-            GapWidth = 0.3,
-        };
-
-        foreach (var bar in model.Bars)
-        {
-            categoryAxis.Labels.Add(bar.Date.ToString("d MMM", CultureInfo.CurrentCulture));
-        }
-
-        plot.Axes.Add(categoryAxis);
-
-        plot.Axes.Add(new LinearAxis
-        {
-            Position = AxisPosition.Left,
-            Minimum = 0,
-            StringFormat = "#,0",
-            MajorGridlineStyle = LineStyle.Dot,
-        });
-
+        plot.Axes.Add(BuildCategoryAxis(model));
+        plot.Axes.Add(BuildValueAxis());
         plot.Series.Add(BuildBarSeries(model));
         AddBudgetLine(plot, model.BudgetLine);
 
@@ -1256,22 +1251,68 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// ColumnSeries, not BarSeries. In OxyPlot, BarSeries draws HORIZONTAL bars
-    /// against a left-hand CategoryAxis; ColumnSeries draws vertical columns
-    /// against a bottom one, which is what a day-by-day chart needs.
+    /// Labels are added explicitly rather than via ItemsSource/LabelField:
+    /// DateOnly does not format reliably through the axis StringFormat path.
     /// </summary>
-    private static ColumnSeries BuildBarSeries(QuotaChartModel model)
+    private static CategoryAxis BuildCategoryAxis(QuotaChartModel model)
     {
-        var series = new ColumnSeries
+        var axis = new CategoryAxis
         {
-            FillColor = NormalBarColor,
-            StrokeThickness = 0,
-            TrackerFormatString = "{Category}: {Value:#,0} characters",
+            Position = AxisPosition.Bottom,
+            IsTickCentered = true,
+            GapWidth = 0.3,
         };
 
         foreach (var bar in model.Bars)
         {
-            series.Items.Add(new ColumnItem(bar.Characters) { Color = ColorFor(bar.Level) });
+            axis.Labels.Add(bar.Date.ToString("d MMM", CultureInfo.CurrentCulture));
+        }
+
+        return axis;
+    }
+
+    private static LinearAxis BuildValueAxis()
+    {
+        return new LinearAxis
+        {
+            Position = AxisPosition.Left,
+            Minimum = 0,
+            StringFormat = "#,0",
+            MajorGridlineStyle = LineStyle.Dot,
+        };
+    }
+
+    /// <summary>
+    /// RectangleBarSeries. OxyPlot 2.2.0 ships no ColumnSeries (it was a 1.x type),
+    /// and its BarSeries is horizontal-only: BarSeriesBase.GetCategoryAxis() throws
+    /// "BarSeries requires a CategoryAxis on the Y Axis", which PlotModel.Update
+    /// swallows into GetLastPlotException and the view paints as
+    /// "OxyPlot exception: ..." in place of the chart - no build error, a blank
+    /// chart at runtime. RectangleBarSeries draws vertical columns against a bottom
+    /// CategoryAxis and its items carry a per-item Color, which the threshold
+    /// palette needs.
+    /// </summary>
+    private static RectangleBarSeries BuildBarSeries(QuotaChartModel model)
+    {
+        var series = new RectangleBarSeries
+        {
+            FillColor = NormalBarColor,
+            StrokeThickness = 0,
+            TrackerFormatString = "{Title}: {Y1:#,0} characters",
+        };
+
+        for (var index = 0; index < model.Bars.Count; index++)
+        {
+            var bar = model.Bars[index];
+            series.Items.Add(new RectangleBarItem(
+                index - ColumnHalfWidth,
+                0,
+                index + ColumnHalfWidth,
+                bar.Characters)
+            {
+                Color = ColorFor(bar.Level),
+                Title = bar.Date.ToString("d MMM", CultureInfo.CurrentCulture),
+            });
         }
 
         return series;
@@ -1340,17 +1381,26 @@ git commit -m "feat(quota): draw the daily usage chart with OxyPlot"
 Fetch buckets on refresh, render the chart, and fire the warning.
 
 **Files:**
-- Modify: `src/CodeCompanionDesktop/MainWindow.QuotaMeter.cs`
+- Create: `src/CodeCompanionDesktop/MainWindow.QuotaWarning.cs`
+- Modify: `src/CodeCompanionDesktop/MainWindow.QuotaMeter.cs` (5 lines only)
 - Modify: `src/CodeCompanionDesktop/App.xaml.cs`
 
 **Interfaces:**
 - Consumes: everything from Tasks 1-5.
 - Produces:
   - `public void App.ShowTrayWarning(string title, string message)`
+  - `private Task MainWindow.RefreshDailyUsageAsync(string apiKey)`
+  - `private void MainWindow.EvaluateQuotaForecast()`
 
-`MainWindow.QuotaMeter.cs` is at 334 lines against a 400-line ceiling. The
-additions below are about 55 lines. If it goes over 400, move the warning code
-into a new `MainWindow.QuotaWarning.cs` partial rather than shortening comments.
+**The new code goes in a new partial, not in `MainWindow.QuotaMeter.cs`.** That
+file is 334 lines against a 400-line ceiling, and these additions are about **137
+physical lines** — fields, four methods, two usings and the blank separators —
+which would land it near **470**. Moving only the two warning methods, an earlier
+draft of this plan's fallback, removes just 60 lines and still leaves it at 409.
+
+So `MainWindow.QuotaMeter.cs` gains **only** the two call lines in
+`RefreshQuotaAsync` and the three in `RenderQuotaAccessDenied`, finishing near 339.
+Everything else lands in `MainWindow.QuotaWarning.cs`, which ends up near 140.
 
 - [ ] **Step 1: Add the tray warning entry point**
 
@@ -1367,12 +1417,24 @@ In `src/CodeCompanionDesktop/App.xaml.cs`, add after `ShowMainWindow()`:
     }
 ```
 
-- [ ] **Step 2: Add the fields and constants to the quota meter partial**
+- [ ] **Step 2: Create the warning partial with its fields**
 
-In `src/CodeCompanionDesktop/MainWindow.QuotaMeter.cs`, add to the existing field
-block near the top of the class:
+Create `src/CodeCompanionDesktop/MainWindow.QuotaWarning.cs`:
 
 ```csharp
+using System;
+using System.Threading.Tasks;
+using CodeCompanionDesktop.ElevenLabs;
+
+namespace CodeCompanionDesktop;
+
+/// <summary>
+/// Fetches the daily usage series, projects when credits run out, and fires the
+/// warning. Separate from MainWindow.QuotaMeter.cs to keep both files inside the
+/// 400-line ceiling.
+/// </summary>
+public partial class MainWindow
+{
     private static readonly TimeSpan DailyUsageRefreshInterval = TimeSpan.FromHours(1);
 
     // One MaxSpeechTextLength of headroom beyond the warning itself, so the
@@ -1382,14 +1444,12 @@ block near the top of the class:
     private IReadOnlyList<UsageDay> quotaDailyUsage = Array.Empty<UsageDay>();
     private DateTimeOffset? quotaDailyUsageFetchedAt;
     private bool isSpeakingQuotaWarning;
+}
 ```
 
-Add these usings to the file:
-
-```csharp
-using System.Collections.Generic;
-using CodeCompanionDesktop.Bridge;
-```
+`System.Collections.Generic` and `System.Linq` are already global usings via
+`ImplicitUsings`, so `IReadOnlyList<T>` needs no directive here. The methods in
+Step 4 go inside this class body.
 
 - [ ] **Step 3: Fetch the buckets and evaluate after a successful refresh**
 
@@ -1411,7 +1471,8 @@ with:
 
 - [ ] **Step 4: Implement the fetch, the render and the warning**
 
-Add these methods to `MainWindow.QuotaMeter.cs`, after `TryGetUsageOnlyCharactersAsync`:
+Add these methods inside the `MainWindow` class body in the new
+`src/CodeCompanionDesktop/MainWindow.QuotaWarning.cs`, after the fields:
 
 ```csharp
     /// <summary>
@@ -1509,28 +1570,40 @@ Add these methods to `MainWindow.QuotaMeter.cs`, after `TryGetUsageOnlyCharacter
         isSpeakingQuotaWarning = true;
         try
         {
-            for (var attempt = 0; attempt < 2; attempt++)
-            {
-                try
-                {
-                    await PlayElevenLabsSpeechAsync(text, "credit warning");
-                    return;
-                }
-                catch (InvalidOperationException)
-                {
-                    // Busy or unavailable. Wait once for the current utterance to
-                    // finish, then give up rather than queueing behind the session.
-                    await Task.Delay(TimeSpan.FromSeconds(20));
-                }
-                catch (Exception)
-                {
-                    return;
-                }
-            }
+            await TryPlayQuotaWarningAsync(text);
         }
         finally
         {
             isSpeakingQuotaWarning = false;
+        }
+    }
+
+    private async Task TryPlayQuotaWarningAsync(string text)
+    {
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            try
+            {
+                await PlayElevenLabsSpeechAsync(text, "credit warning");
+                return;
+            }
+            catch (InvalidOperationException)
+            {
+                // Busy or unavailable. Wait once for the current utterance to
+                // finish, then give up rather than queueing behind the session.
+                // The delay is guarded on the attempt index: without the guard it
+                // runs on both passes, holding isSpeakingQuotaWarning for 40s.
+                if (attempt == 1)
+                {
+                    return;
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(20));
+            }
+            catch (Exception)
+            {
+                return;
+            }
         }
     }
 ```
@@ -1546,14 +1619,14 @@ In `RenderQuotaAccessDenied()`, add after the existing
         RenderQuotaGraph(QuotaChartModel.Create(quotaDailyUsage, null));
 ```
 
-- [ ] **Step 6: Check the file is still under the ceiling**
+- [ ] **Step 6: Check both files are under the ceiling**
 
 ```bash
-wc -l src/CodeCompanionDesktop/MainWindow.QuotaMeter.cs
+wc -l src/CodeCompanionDesktop/MainWindow.QuotaMeter.cs src/CodeCompanionDesktop/MainWindow.QuotaWarning.cs src/CodeCompanionDesktop/MainWindow.QuotaGraph.cs
 ```
 
-Expected: under 400. If not, move `FireQuotaWarning` and `SpeakQuotaWarningAsync`
-into a new `src/CodeCompanionDesktop/MainWindow.QuotaWarning.cs` partial.
+Expected: `MainWindow.QuotaMeter.cs` near 339, `MainWindow.QuotaWarning.cs` near
+140, `MainWindow.QuotaGraph.cs` near 120 — all under 400.
 
 - [ ] **Step 7: Build and run the full suite**
 

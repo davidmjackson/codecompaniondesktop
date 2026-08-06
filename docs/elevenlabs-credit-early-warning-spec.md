@@ -164,9 +164,19 @@ This is the application's first third-party dependency. For a Windows-only
 distributed binary, LiveCharts2 drags in macOS native assets and an OpenGL control
 to draw roughly thirty bars.
 
-**Form.** A `ColumnSeries` of one bar per day for the current billing period, with
-a `LineAnnotation` at the survival budget. Bars reuse the meter's existing
-threshold palette so the chart and the bar speak the same colour language.
+**Form.** A `RectangleBarSeries` of one vertical column per day for the current
+billing period, with a `LineAnnotation` at the survival budget. Bars reuse the
+meter's existing threshold palette so the chart and the bar speak the same colour
+language.
+
+**Not `ColumnSeries`, and not `BarSeries`.** OxyPlot 2.2.0 ships no `ColumnSeries`
+— it was a 1.x type — and its `BarSeries` is horizontal-only. Verified by
+reflecting over the pinned assemblies: `BarSeries` against a bottom `CategoryAxis`
+raises "BarSeries requires a CategoryAxis on the Y Axis", which `PlotModel.Update`
+swallows into `GetLastPlotException`, so the control paints "OxyPlot exception:
+..." where the chart should be. **It builds clean and renders nothing** — the worst
+kind of failure, and the one an implementer hits if they simply "fix" a
+`ColumnSeries` compile error by renaming the type.
 
 **Placement.** In the Quota Details block on the Status tab, below the existing
 figures and above the status line.
@@ -219,6 +229,7 @@ grow. New code lands in new files.
 | `ElevenLabs/QuotaWarningPolicy.cs` | fire-once-per-period decision | no |
 | `ElevenLabs/QuotaChartModel.cs` | bar values, colours, budget line position | no |
 | `MainWindow.QuotaGraph.cs` | builds the `PlotModel`, renders | yes, thin |
+| `MainWindow.QuotaWarning.cs` | fetches buckets, evaluates, fires the warning | yes, thin |
 | `ElevenLabs/ElevenLabsUsageClient.cs` | extend with `GetDailyUsageAsync` | no |
 | `Settings/AppSettings.cs` | persisted last-warned record | no |
 
